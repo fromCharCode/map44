@@ -22,6 +22,8 @@ var _label_specs: Array = []
 var _dfi_specs: Array = []       # [Transform3D (Anzeigemitte), w, h, name, lines, pos2]
 var _dfis: Array = []            # [name, pos2, lines, [ [Label3D linie, Label3D ziel, Label3D min] … ] ]
 var _dfi_t := 0.0
+var _near_t := 0.0
+var _was_near := false
 
 
 static func manifest() -> Dictionary:
@@ -298,31 +300,50 @@ func _make_dfi(spec: Array) -> void:
 			row.append(lb)
 		rows.append(row)
 	_dfis.append([String(spec[3]), spec[5], String(spec[4]).replace(" ", "").split(",", false), rows,
-		spec[6] if spec.size() > 6 else Vector2.ZERO, w * 0.56])
+		spec[6] if spec.size() > 6 else Vector2.ZERO, w])   # Tafelbreite (Zielspalte je Zeile aus der Minutenbreite)
 
 
 func _update_dfis() -> void:
 	for d in _dfis:
 		var rows: Array = d[3]
 		var dep := Departures.board(String(d[0]), d[1], d[2], rows.size(), d[4])
+		if dep.is_empty() and OS.has_environment("DRESDEN_DFIDBG"):
+			print("DFIDBG leer: ", d[0], " pos ", d[1], " linien ", d[2], " dir ", d[4], " built ", Departures._built,
+				" idx ", Departures._idx.size(), " name ", Departures._entries(String(d[0]), d[1]).size())
 		for i in rows.size():
 			var r: Array = rows[i]
 			if i < dep.size():
 				(r[0] as Label3D).text = String(dep[i][0])
-				(r[1] as Label3D).text = _fit_text(String(dep[i][1]), r[1] as Label3D, float(d[5]))
-				(r[2] as Label3D).text = Departures.fmt_min(float(dep[i][2]))
+				# Minuten zuerst: das Ziel bekommt genau den Platz, der links davon frei bleibt
+				var mt := Departures.fmt_min(float(dep[i][2]))
+				(r[2] as Label3D).text = mt
+				var dw: float = float(d[5])
+				var max_w := dw * (0.98 - 0.17 - 0.04) - _text_w(mt, r[2] as Label3D)
+				(r[1] as Label3D).text = _fit_text(String(dep[i][1]), r[1] as Label3D, max_w)
 			else:
 				for lb in r:
 					(lb as Label3D).text = ""
 
 
+static func _text_w(txt: String, lb: Label3D) -> float:
+	return ThemeDB.fallback_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, lb.font_size).x * lb.pixel_size
+
+
 static func _fit_text(txt: String, lb: Label3D, max_w: float) -> String:
 	## Ziel kürzen, bis es in die Spalte passt (sonst überlappt es die Minutenangabe)
-	var f: Font = ThemeDB.fallback_font
 	var t := txt
-	while t.length() > 3 and f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, lb.font_size).x * lb.pixel_size > max_w:
-		t = t.substr(0, t.length() - 2).strip_edges() + "."
-		t = t.trim_suffix("..") + ("" if t.ends_with(".") else "")
+	if _text_w(t, lb) <= max_w:
+		return t
+	# erst den Zusatz nach dem Komma weglassen ("Radebeul Ost, Gleisschleife" -> "Radebeul Ost"), dann Zeichen
+	var c := t.find(", ")
+	if c > 2:
+		t = t.substr(0, c)
+	while t.length() > 3 and _text_w(t, lb) > max_w:
+		t = t.trim_suffix(".")
+		t = t.substr(0, t.length() - 1).strip_edges()
+		while t.length() > 1 and ",;-/ ".contains(t[t.length() - 1]):
+			t = t.substr(0, t.length() - 1)
+		t += "."
 	return t
 
 
@@ -342,12 +363,17 @@ func _process(delta: float) -> void:
 		if _label_specs.is_empty() and _dfi_specs.is_empty():
 			set_process(false)
 		return
+	# alle 0,5 s Nähe prüfen; beim Herankommen sofort füllen, danach alle 4 s aktualisieren
 	_dfi_t -= delta
-	if _dfi_t <= 0.0:
-		_dfi_t = 4.0
+	_near_t -= delta
+	if _near_t <= 0.0:
+		_near_t = 0.5
 		var cam := get_viewport().get_camera_3d()
-		if cam == null or _near(cam.global_position):
+		var nr := cam == null or _near(cam.global_position)
+		if nr and (not _was_near or _dfi_t <= 0.0):
+			_dfi_t = 4.0
 			_update_dfis()
+		_was_near = nr
 
 
 func _near(p: Vector3) -> bool:

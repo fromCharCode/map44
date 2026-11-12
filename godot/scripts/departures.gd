@@ -32,8 +32,46 @@ static func _index() -> void:
 					_add(String(st[3]), ["bus", ri, float(st[0]), Vector2(float(st[1]), float(st[2]))])
 
 
+static func _norm(n: String) -> String:
+	## Haltestellennamen vergleichbar machen: Stadt-Steige (L1233) heißen "Görlitzer Straße", OSM-Linienhalte
+	## "Görlitzer Straße (Nordbad)", "Löbtau, Tharandter Straße" oder "Bahnhof Mitte / Könneritzstraße".
+	var s := n.strip_edges().to_lower()
+	var p := s.find(", ")
+	if p > 0:
+		s = s.substr(p + 2)
+	p = s.find("(")
+	if p > 0:
+		s = s.substr(0, p)
+	p = s.find(" / ")
+	if p > 0:
+		s = s.substr(0, p)
+	return s.strip_edges()
+
+
+static var _near_cache := {}
+
+
+static func _entries(name: String, pos: Vector2) -> Array:
+	## Linienhalte zu einer Tafel: per Name (≤ 90 m), sonst alle Linienhalte im Umkreis von 45 m (einmal gesucht)
+	var es: Array = _idx.get(_norm(name), [])
+	for e in es:
+		if (e[3] as Vector2).distance_to(pos) <= 90.0:
+			return es
+	var key := "%s|%d|%d" % [name, int(pos.x), int(pos.y)]
+	if _near_cache.has(key):
+		return _near_cache[key]
+	var out: Array = []
+	for k in _idx:
+		for e in _idx[k]:
+			if (e[3] as Vector2).distance_to(pos) <= 45.0:
+				out.append(e)
+	if _built:
+		_near_cache[key] = out                   # erst cachen, wenn der Index steht
+	return out
+
+
 static func _add(name: String, e: Array) -> void:
-	var k := name.strip_edges().to_lower()
+	var k := _norm(name)
 	if k == "":
 		return
 	if not _idx.has(k):
@@ -71,7 +109,7 @@ static func board(name: String, pos: Vector2, lines: PackedStringArray, max_rows
 	_index()
 	var now := hours * 60.0 + minute_offset
 	var groups := {}          # ref -> [[art, route, s_stop, ziel], …]
-	for e in _idx.get(name.strip_edges().to_lower(), []):
+	for e in _entries(name, pos):
 		var kind: String = e[0]
 		var ri: int = e[1]
 		var s_stop: float = e[2]
@@ -131,6 +169,7 @@ static func _tangent(pts: PackedVector2Array, cum: PackedFloat32Array, s: float)
 
 
 static func fmt_min(m: float) -> String:
+	## wie die DVB-Tafeln (Kopf "Linie  Ziel  in Min"): nur die Zahl, unter 1 Minute "sofort"
 	if m < 0.75:
 		return "sofort"
-	return "%d min" % int(round(m))
+	return "%d" % int(round(m))
