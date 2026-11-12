@@ -56,6 +56,12 @@ def curbs_tile(name):
     # Asphaltfläche oft nicht ganz ab; der Bordstein sitzt an der Gehwegkante)
     from scipy.ndimage import binary_dilation
     side = walk > 110
+    # Grünstreifen im Straßenraum (tools/street_green.py) haben zur Fahrbahn ebenfalls einen Bordstein
+    sgp = d / "street_green.png"
+    if sgp.exists():
+        sg = np.asarray(Image.open(sgp)) > 0
+        if sg.shape == side.shape:
+            side = side | sg
     # nur dort, wo Gehweg direkt (≤ 1 m) an Fahrbahn grenzt – nicht an Grün/Höfe
     road = binary_dilation(s0[:, :, 0] > 128, iterations=int(1 * f)) & ~side
     H, W = road.shape
