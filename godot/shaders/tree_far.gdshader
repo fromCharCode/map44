@@ -35,12 +35,12 @@ void fragment() {
 		float clump = smoothstep(0.3, 0.72, n1 * 0.6 + n2 * 0.4);
 		// Lücken zwischen den Laubballen dunkel, Ballen oben heller (Himmelslicht)
 		float up = clamp((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).y, 0.0, 1.0);
-		base *= mix(0.5, 1.12, clump) * mix(0.9, 1.08, up);
+		base *= mix(0.42, 0.95, clump) * mix(0.9, 1.06, up);     // etwas dunkler als die Kugel-Farbe (passt zu nahen Bäumen)
 		// unruhige Normale (Blattmasse) – nur leicht, sonst flimmert es in der Ferne
 		vec3 g = vec3(vnoise(wpos * 2.3 + vec3(1.7, 0.0, 0.0)), vnoise(wpos * 2.3 + vec3(0.0, 2.9, 0.0)),
 				vnoise(wpos * 2.3 + vec3(0.0, 0.0, 4.1))) - 0.5;
 		NORMAL = normalize(NORMAL + (VIEW_MATRIX * vec4(g * 0.9, 0.0)).xyz);
-		BACKLIGHT = base * 0.35;
+		BACKLIGHT = base * 0.2;
 		ROUGHNESS = 0.92;
 		SPECULAR = 0.25;
 	} else {
