@@ -64,11 +64,16 @@ wenn sich ihre Version ändert). Deinstallieren unter Linux: `… install.sh | b
 - Ganz Dresden aus Geodaten: Gelände (DGM1), Luftbilder, 3D-Gebäude (LoD2) mit Fassadenstil nach Baujahr und
   Stadtstruktur, Wahrzeichen (Frauenkirche, Hofkirche, Semperoper, Hausmannsturm, Kreuzkirche, Hochhaus am
   Pirnaischen Platz mit „Naddl und Ronny siegt“ …), Elbe mit Dampfern, Brücken
-- Straßen mit Markierungen, Bordsteinen, Ampeln, Verkehrszeichen; Gehwegbeläge je Viertel; echte Straßenbäume aus dem
-  Dresdner Baumkataster
+- Straßen in echter Breite (aus dem öffentlichen Straßenraum abgeleitet), Gehwege bis zur Hauskante, Granit-Bordsteine,
+  Markierungen, Ampeln, Verkehrszeichen; Gehwegbeläge je Viertel; über 120 000 echte Bäume aus dem Dresdner
+  Baumkataster (Art, Höhe, Standort) mit Baumscheiben; Plätze wie der Altmarkt als gepflasterte Freiflächen
+- Brücken nach Recherche: Sandstein-Bogenbrücken (Augustus-, Albert-, Marienbrücke …) mit echten Bögen und Pfeilern,
+  Geländer je Bauwerk (Stein, Stahl in Originalfarbe, Glaswände), Blaues Wunder als Stahlfachwerk; die 2024
+  eingestürzte und abgerissene Carolabrücke fehlt wie in echt
 - Verkehr mit Vorfahrt und Ampeln, Fußgänger, Buslinien (OSM) mit Zielanzeigen
-- Straßenbahnen der DVB (NGT D12DD und NGT DX DD) auf ihren echten Linien, Haltestellen an den echten Steigen mit
-  Masten, Wartehallen und Abfahrtsanzeigen (Takt nach Tageszeit)
+- Straßenbahnen der DVB (NGT D12DD und NGT DX DD, maßstäblich nachgebaut) auf ihren echten Linien mit Zielanzeigen,
+  Haltestellen an allen 1 761 echten Steigen: Masten mit Linien und Zielen, Bahnsteige mit Bordhöhe und
+  Blindenleitstreifen, Wartehallen, Abfahrtstafeln mit Minutenanzeige (Takt nach Tageszeit, echte Bahnen live)
 - Fahrphysik mit Reifenmodell, Federung, ABS/ESP, Schaden, Reifenspuren
 
 ## Aus dem Quellcode starten (Entwickler)

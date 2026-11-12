@@ -12,6 +12,7 @@ const V_BUS := 4.9
 static var trams: Trams
 static var traffic: Traffic
 static var hours := 12.0     # Spielzeit (main.gd setzt sie laufend)
+static var minute_offset := 0.0   # steht die Spieluhr still, läuft der Fahrplan mit der echten Zeit weiter
 static var _idx := {}        # Haltestellenname -> [[art, route, s, Vector2]]
 static var _built := false
 
@@ -68,7 +69,7 @@ static func _route(kind: String, ri: int) -> Dictionary:
 ## und wechseln das Ziel.
 static func board(name: String, pos: Vector2, lines: PackedStringArray, max_rows := 4, dir := Vector2.ZERO) -> Array:
 	_index()
-	var now := hours * 60.0
+	var now := hours * 60.0 + minute_offset
 	var groups := {}          # ref -> [[art, route, s_stop, ziel], …]
 	for e in _idx.get(name.strip_edges().to_lower(), []):
 		var kind: String = e[0]

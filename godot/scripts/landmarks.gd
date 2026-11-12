@@ -25,6 +25,10 @@ const LIST := [
 			[-25.96, -25.5, 0.0, 5.45, -6.0, -3.6], [-25.96, -25.5, 0.0, 5.45, 3.6, 6.0],
 			[-20.99, -20.53, 0.0, 5.45, -6.0, -3.6], [-20.99, -20.53, 0.0, 5.45, 3.6, 6.0],
 			[-16.03, -15.57, 0.0, 5.45, -6.0, -3.6], [-16.03, -15.57, 0.0, 5.45, 3.6, 6.0]]},
+	# Loschwitzer Brücke (tools/blender/blaueswunder/): Stahlüberbau; befahrbar bleibt das LoD2-Deck. Lage/Höhe/Drehung
+	# aus blaues_wunder.json (Fahrbahnhöhe, nicht Boden)
+	{"file": "blaues_wunder.glb", "json": "blaues_wunder.json", "x": 0.0, "z": 0.0, "yaw": 0.0, "w": 0.0, "d": 0.0,
+		"name": "Blaues Wunder", "no_collision": true},
 ]
 
 var terrain: Terrain
@@ -66,19 +70,32 @@ func build(t: Terrain, noise: ImageTexture) -> void:
 		var path: String = DIR + lm["file"]
 		if not ResourceLoader.exists(path):
 			continue
-		var root := (load(path) as PackedScene).instantiate() as Node3D
 		var x: float = lm["x"]
 		var z: float = lm["z"]
+		var fixed_y = null
+		var yaw_deg: float = lm["yaw"]
+		if lm.has("json"):
+			var jp: String = DIR + String(lm["json"])
+			if not FileAccess.file_exists(jp):
+				continue
+			var j = JSON.parse_string(FileAccess.get_file_as_string(jp))
+			if not (j is Dictionary):
+				continue
+			x = float(j.get("x", 0.0))
+			z = float(j.get("z", 0.0))
+			fixed_y = float(j.get("y", 0.0))
+			yaw_deg = float(j.get("yaw_deg", 0.0))
 		if not t.contains(x, z):
 			continue
+		var root := (load(path) as PackedScene).instantiate() as Node3D
 		var hw: float = lm["w"] * 0.5
 		var hd: float = lm["d"] * 0.5
 		var gy := 0.0
 		for off in [Vector2(-hw, -hd), Vector2(hw, -hd), Vector2(-hw, hd), Vector2(hw, hd), Vector2(0, 0)]:
 			gy += terrain.height_at(x + off.x * 0.8, z + off.y * 0.8)
 		gy /= 5.0
-		root.position = Vector3(x, gy - 0.25, z)
-		root.rotation.y = deg_to_rad(lm["yaw"])
+		root.position = Vector3(x, gy - 0.25 if fixed_y == null else float(fixed_y), z)
+		root.rotation.y = deg_to_rad(yaw_deg)
 		root.name = lm["name"]
 		if lm.has("keep"):
 			_clip_to_box(root, lm["keep"])
@@ -97,6 +114,8 @@ func build(t: Terrain, noise: ImageTexture) -> void:
 				c2.position = Vector3((bx[0] + bx[1]) * 0.5, (bx[2] + bx[3]) * 0.5, (bx[4] + bx[5]) * 0.5)
 				bb.add_child(c2)
 			add_child(bb)
+			continue
+		if lm.get("no_collision", false):
 			continue
 		# Kollision: einfache Box über der Grundfläche
 		var body := StaticBody3D.new()

@@ -44,11 +44,11 @@ func build(t: Terrain, c: Dictionary, idx: RoadIndex) -> void:
 		_lod2_bridge(bm, stone_parts.has(String(bm.get("id", ""))))
 	var slab_ids := {}
 	for b in city["bridges"]:
-		slab_ids[b["id"]] = true
+		slab_ids[int(b["id"])] = true
 	for wid in arches.get("ways", []):
-		slab_ids[int(wid)] = true                  # Bogenbrücken: Pfeiler kommen aus bridge_arches
+		slab_ids[int(wid)] = true                  # recherchierte Brücken: Pfeiler kommen aus bridge_arches/Modell
 	for r in city["roads"]:
-		if r["bridge"] and not slab_ids.has(r["id"]):
+		if r["bridge"] and not slab_ids.has(int(r["id"])):    # JSON-Zahlen sind float -> int vergleichen
 			_piers(r["pts"], float(r["width"]) + 2.0, 1.0)
 	_bridge_rails(city.get("bridge_rails", []))
 	_curbs(city.get("curbs", []))
@@ -827,6 +827,37 @@ static func _curb_quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: V
 
 func _bridge_arches(data: Dictionary) -> void:
 	## Steinbögen historischer Brücken (tools/bridge_arches.py): Stirnwände mit Bogenöffnungen, Laibungen, Pfeiler.
+	## Dazu Pfeiler der übrigen recherchierten Brücken an den echten Feldgrenzen ("piers").
+	var pst := SurfaceTool.new()
+	pst.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var npier := 0
+	for pr in data.get("piers", []):
+		var w := float(pr[3])
+		var top := float(pr[4])
+		var bot := float(pr[5])
+		if top - bot < 1.0:
+			continue
+		var b := Basis(Vector3.UP, float(pr[2]))
+		var c := Vector3(float(pr[0]), (top + bot) * 0.5, float(pr[1]))
+		var ax := b * Vector3(1, 0, 0)
+		var az := b * Vector3(0, 0, 1)
+		# Pfeilerscheibe quer zur Achse (Breite w), 2,2 m stark
+		_box_between(pst, c - az * 1.1 + Vector3(0, -(top - bot) * 0.5, 0), c + az * 1.1 + Vector3(0, -(top - bot) * 0.5, 0), ax, w * 0.85, 0.0, top - bot)
+		npier += 1
+	if npier > 0:
+		var pm := pst.commit()
+		pm.surface_set_material(0, concrete_mat)
+		var pmi := MeshInstance3D.new()
+		pmi.mesh = pm
+		pmi.visibility_range_end = 1800.0
+		add_child(pmi)
+	var steel: Dictionary = data.get("steel", {})
+	if (steel.get("tris", []) as Array).size() >= 9:
+		var sm := StandardMaterial3D.new()
+		sm.albedo_color = Color(String(steel.get("color", "#c9ccd0")))
+		sm.metallic = 0.45
+		sm.roughness = 0.4
+		_tri_mesh(steel["tris"], steel.get("n", []), sm, 2500.0)
 	var t: Array = data.get("tris", [])
 	var nn: Array = data.get("n", [])
 	if t.size() < 9:
@@ -857,4 +888,30 @@ func _bridge_arches(data: Dictionary) -> void:
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.visibility_range_end = 1800.0
+	add_child(mi)
+
+
+func _tri_mesh(t: Array, nn: Array, mat: Material, vis: float) -> void:
+	## Dreiecksliste [x, y, z, …] mit Normale je Dreieck -> Mesh (Umlaufsinn nach Normale korrigiert)
+	var v := PackedVector3Array()
+	var n := PackedVector3Array()
+	for i in t.size() / 9:
+		var a := Vector3(t[i * 9], t[i * 9 + 1], t[i * 9 + 2])
+		var b := Vector3(t[i * 9 + 3], t[i * 9 + 4], t[i * 9 + 5])
+		var c := Vector3(t[i * 9 + 6], t[i * 9 + 7], t[i * 9 + 8])
+		var fn := Vector3(nn[i * 3], nn[i * 3 + 1], nn[i * 3 + 2]) if nn.size() >= (i + 1) * 3 else (b - a).cross(c - a).normalized()
+		var pts := [a, b, c] if (b - a).cross(c - a).dot(fn) < 0.0 else [a, c, b]
+		for p in pts:
+			v.append(p)
+			n.append(fn)
+	var arr := []
+	arr.resize(Mesh.ARRAY_MAX)
+	arr[Mesh.ARRAY_VERTEX] = v
+	arr[Mesh.ARRAY_NORMAL] = n
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	mesh.surface_set_material(0, mat)
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.visibility_range_end = vis
 	add_child(mi)

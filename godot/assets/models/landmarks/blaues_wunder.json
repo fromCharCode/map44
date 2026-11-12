@@ -1,0 +1,15 @@
+{
+ "x": 5603.105,
+ "z": -235.778,
+ "y": 4.42,
+ "yaw_deg": -59.144,
+ "length": 271.68,
+ "width": 23.3,
+ "height": 30.8,
+ "tris": 46116,
+ "utm33_center": [
+  416603.11,
+  5656435.78
+ ],
+ "notes": "Blaues Wunder / Loschwitzer Brücke (1891-93, Koepcke/Krüger): versteifte Hängebrücke bzw. Hängefachwerk mit 3 Gelenken, keine Strompfeiler. Modell = Stahlüberbau ohne Fahrbahnplatte (Spiel nutzt LoD2-Deck, y=4.42 flach). Ursprung = Mittelgelenk auf Fahrbahnoberkante; Godot -Z = Loschwitz (NO), +Z = Blasewitz/Schillerplatz (SW), +X = oberstrom (SO). Lage: Achse = OSM-Weg 30129851 (Peilung 59.14 Grad), Mitte per Fit an GeoSN-DOM1 um +1.75 m Richtung Loschwitz und 0.17 m nach NW gegenüber der OSM-Wegmitte versetzt (Median-Abweichung Obergurt 0.2 m). Maße: Mittelöffnung 146.68 m (Pylonachsen bei z=±73.34), Seitenfelder bis ±135.84 (Stahl 271.7 m; amtlich 280 m inkl. Widerlager), Feldweiten 6.11 m (Mitte, 12 je Hälfte) / 6.25 m (Seite). Obergurt (Oberkante über Fahrbahn) laut DOM: 24.2 m am Pylon, Mitte 24.2-0.521x+0.0022x² bis Knick bei ±18.34 m, dann 2.2 m (niedriges Mittelstück mit Mittelgelenk); Seite 24.2-0.4906x+0.0015x², Ankerkasten 1.35 m ab ±129.6 m. Türmchen-Dach 26.4 m, Masten bis 30.8 m. Hauptträgerachsen x=±6.18 (Innenkante Untergurt ±5.83, Fahrbahngeländer ±5.56; echte Fahrbahn 10.20 m). ACHTUNG: Spielstraße ist 12.7 m breit (±6.35 um OSM-Achse) -> ragt ~0.5-0.8 m in die Träger; auf <=10.2 m begrenzen. Querriegel über der Fahrbahn Unterkante 5.0 m (Kopfbänder ab 3.7 m an den Trägern, ±4.5 m frei bis 5.0 m). Gehwege (Holzbohlen, +0.21 m) außen auf Konsolen von ±6.73 bis ±9.85 m, Ausbuchtung ±11.5 m um Pylon/Wendeltreppe, ±10.6 m in Feldmitte. Sandsteinpfeiler (Ufer) unter den Pylonen mit Rundtürmen/Zinnen, Oberkante -1.92, reichen bis -16 m (im Gelände versenkt); Widerlagerblöcke an den Enden. Reale Fahrbahn ist überhöht (DOM: 118.83 m NHN Mitte, 118.6 Pylone, 117.1 Enden = y 6.06/5.83/4.33), Modell flach auf dem Spiel-Deck. Farbe Hellblau #94BACD (Fotos: verwittert #91ACBB, neu #619DC2), Geländer #80B1D2. Materialien: BridgeSteelBlue, BridgeRail (doppelseitig), BridgeStone, BridgeWood, BridgeGlass, BridgeDark, BridgeLampGlass (emittierend), BridgeMesh (Treppenkäfig, Alpha-Blend). Leerknoten LampLight_000..079 an den Laternen (Doppelkandelaber je ~12 m). Quellen: de/en.wikipedia (Mittelöffnung 146.68 m, Breite 12 m, Fahrbahn 10.20 m, Gehwege seit 1935 außen), GeoSN DOM1/DGM1/DOP (dl-de/by-2.0), OSM (ODbL), Commons-Fotos nur zur Sichtanalyse. Skript tools/blender/blaueswunder/build_blaues_wunder.py."
+}

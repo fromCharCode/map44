@@ -56,7 +56,7 @@ def arch_bridges():
         return []
     out = []
     for b in json.loads(RESEARCH.read_text(encoding="utf-8")).get("bridges", []):
-        if b.get("type") not in TYPES or not b.get("spans_m"):
+        if not b.get("spans_m") or b.get("type") in ("abgerissen", "fuss_holz_klein"):
             continue
         ids = set()
         for w in b.get("osm_way_ids") or []:
@@ -70,6 +70,23 @@ def arch_bridges():
             b["pier_stations_m"] = _lit(b.get("pier_stations_m"))
             out.append((b, ids))
     return out
+
+
+def _beam(tris, norms, a, b, side, w, h):
+    """Kastenträger von a nach b (x, y, z), Breite w quer (side = (nx, nz)), Höhe h; Dreiecke mit Normalen."""
+    ax, ay, az = a
+    bx, by, bz = b
+    sx, sz = side[0] * w * 0.5, side[1] * w * 0.5
+    hh = h * 0.5
+    c = [(ax - sx, ay - hh, az - sz), (ax + sx, ay - hh, az + sz), (ax + sx, ay + hh, az + sz), (ax - sx, ay + hh, az - sz),
+         (bx - sx, by - hh, bz - sz), (bx + sx, by - hh, bz + sz), (bx + sx, by + hh, bz + sz), (bx - sx, by + hh, bz - sz)]
+    faces = [(0, 1, 5, 4, (0, -1, 0)), (3, 7, 6, 2, (0, 1, 0)), (0, 4, 7, 3, (-side[0], 0, -side[1])),
+             (1, 2, 6, 5, (side[0], 0, side[1]))]
+    for i0, i1, i2, i3, n in faces:
+        for tri in ((i0, i1, i2), (i0, i2, i3)):
+            for i in tri:
+                tris.extend(c[i])
+            norms.extend([round(n[0], 3), round(n[1], 3), round(n[2], 3)])
 
 
 def tile_arches(name, bridges):
@@ -135,6 +152,9 @@ def tile_arches(name, bridges):
     xmin, xmax, zmin, zmax = x0, x0 + 2000.0, z0, z0 + 2000.0
     count = 0
     way_ids, lod2_ids = set(), set()
+    piers_out = []
+    steel_tris, steel_n = [], []
+    steel_col = "#c9ccd0"
     for b, ids in bridges:
         segs = [LineString(ways[i]) for i in ids if i in ways]
         if not segs:
@@ -142,6 +162,84 @@ def tile_arches(name, bridges):
         m = linemerge(segs)
         axis = max(getattr(m, "geoms", [m]), key=lambda g: g.length)
         L = axis.length
+        arch_i = b.get("arch") or {}
+        ps_i = b.get("pier_stations_m") if isinstance(b.get("pier_stations_m"), dict) else {}
+        if isinstance(arch_i, dict) and "Stahlbogen" in str(arch_i.get("shape", "")) and ps_i.get("arch_springing"):
+            # Stahlbogen über der Fahrbahn (Waldschlößchenbrücke): zwei Kastenbögen + Hänger
+            brg = b.get("bearing_deg")
+            p_a, p_b = axis.coords[0], axis.coords[-1]
+            ax_brg = math.degrees(math.atan2(p_b[0] - p_a[0], -(p_b[1] - p_a[1]))) % 360.0
+            if brg is not None and abs(((ax_brg - float(brg)) + 180.0) % 360.0 - 180.0) > 90.0:
+                axis = LineString(list(axis.coords)[::-1])
+            sa, sb = (float(v) for v in ps_i["arch_springing"][:2])
+            rises = arch_i.get("rise_m") or [26.0]
+            crown_over_water = float(rises[0]) if rises and rises[0] else 26.0
+            off = min(float(b.get("width_m") or 24.0) * 0.5 - 2.5, 12.0)
+            col = (b.get("colors") or {}).get("steel_arch") or "#c9ccd0"
+            mid = 0.5 * (sa + sb)
+            pm = axis.interpolate(mid)
+            yc = water_y(pm.x, pm.y) + crown_over_water
+            n_seg = 48
+            prev = None
+            for k in range(n_seg + 1):
+                sv = sa + (sb - sa) * k / n_seg
+                p = axis.interpolate(min(max(sv, 0.0), L))
+                q = axis.interpolate(min(sv + 1.0, L))
+                r0 = axis.interpolate(max(sv - 1.0, 0.0))
+                tx, tz = q.x - r0.x, q.y - r0.y
+                tl = math.hypot(tx, tz) or 1.0
+                tx, tz = tx / tl, tz / tl
+                nx, nz = -tz, tx
+                ysp = max(ground(p.x, p.y), water_y(p.x, p.y)) + 1.0
+                u = (sv - mid) / (0.5 * (sb - sa))
+                y = ysp + (yc - ysp) * (1.0 - u * u)
+                cur = (p.x, p.y, y, nx, nz, tx, tz)
+                if prev is not None and (xmin <= p.x < xmax and zmin <= p.y < zmax):
+                    for sd in (1.0, -1.0):
+                        a3 = (prev[0] + prev[3] * off * sd, prev[2], prev[1] + prev[4] * off * sd)
+                        b3 = (cur[0] + cur[3] * off * sd, cur[2], cur[1] + cur[4] * off * sd)
+                        _beam(steel_tris, steel_n, a3, b3, (cur[3], cur[4]), 1.0, 1.7)
+                        # Hänger zur Fahrbahn alle 2 Segmente, wo der Bogen über dem Deck liegt
+                        yd = deck_y(cur[0], cur[1])
+                        if k % 2 == 0 and yd is not None and cur[2] > yd + 2.0:
+                            h0 = (b3[0], yd + 0.3, b3[2])
+                            _beam(steel_tris, steel_n, h0, (b3[0], cur[2] - 0.8, b3[2]), (cur[3], cur[4]), 0.12, 0.12)
+                prev = cur
+            steel_col = col
+            way_ids.update(ids)
+        if b.get("type") not in TYPES:
+            # Balken-/Stahlbrücken: Pfeiler an den echten Feldgrenzen (statt gleichmäßiger Standardpfeiler)
+            sp = [float(v) for v in b["spans_m"]]
+            if "Blaues Wunder" in (b.get("name") or "") or "Loschwitzer" in (b.get("name") or ""):
+                way_ids.update(ids)                       # Uferpfeiler/Türme liefert das Modell (landmarks)
+                continue
+            S = sum(sp)
+            if S < 10.0 or len(sp) < 2:
+                continue
+            k = min(L / S, 1.0)
+            st = 0.5 * (L - S * k)
+            wpier = float(b.get("width_m") or 12.0)
+            added = False
+            for v in sp[:-1]:
+                st += v * k
+                p = axis.interpolate(st)
+                if not (xmin <= p.x < xmax and zmin <= p.y < zmax):
+                    continue
+                q = axis.interpolate(min(st + 1.0, L))
+                r0 = axis.interpolate(max(st - 1.0, 0.0))
+                yaw = math.atan2(q.x - r0.x, q.y - r0.y)
+                yd = deck_y(p.x, p.y)
+                if yd is None:
+                    continue
+                gnd = max(ground(p.x, p.y), water_y(p.x, p.y)) - 1.0
+                if yd - gnd < 2.5:
+                    continue
+                piers_out.append([round(p.x, 2), round(p.y, 2), round(yaw, 3), round(min(max(wpier, 6.0), 30.0), 1),
+                                  round(yd - 1.2, 2), round(gnd, 2)])
+                added = True
+            if added:
+                way_ids.update(ids)
+            continue
         spans = [float(s) for s in b["spans_m"]]
         npier = max(len(spans) - 1, 0)
         S = sum(spans)
@@ -297,7 +395,8 @@ def tile_arches(name, bridges):
             if isinstance(lod, dict):
                 lod2_ids.update(lod.get("ids") or [])
     city["bridge_arches"] = {"tris": [round(v, 3) for v in tris], "n": norms, "ways": sorted(way_ids),
-                             "lod2": sorted(lod2_ids)}
+                             "lod2": sorted(lod2_ids), "piers": piers_out,
+                             "steel": {"tris": [round(v, 3) for v in steel_tris], "n": steel_n, "color": steel_col}}
     cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
     return count
 

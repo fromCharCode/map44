@@ -94,8 +94,8 @@ def mat(name, hexc, rough=0.5, metal=0.0, emit=None, alpha=1.0, double=False):
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 MATS = {
-    "steel": mat("BridgeSteelBlue", "#8CB3C7", rough=0.6),
-    "rail": mat("BridgeRail", "#79AACB", rough=0.5, double=True),
+    "steel": mat("BridgeSteelBlue", "#94BACD", rough=0.6),
+    "rail": mat("BridgeRail", "#80B1D2", rough=0.5, double=True),
     "stone": mat("BridgeStone", "#A39579", rough=0.92),
     "wood": mat("BridgeWood", "#71665A", rough=0.85),
     "glass": mat("BridgeGlass", "#24313A", rough=0.12),
@@ -176,8 +176,9 @@ def hexa(g, m, bot, top):
     g.add(vs, fs, m)
 
 
-def sweep(g, m, pts, w, d, sides=None, side=XA, caps=True):
-    """Kastenprofil entlang Polylinie mit Gehrung; w entlang side (je Punkt oder fest), d senkrecht dazu."""
+def sweep(g, m, pts, w, d, sides=None, side=XA, caps=True, ridge=0.0):
+    """Kastenprofil entlang Polylinie mit Gehrung; w entlang side (je Punkt oder fest), d senkrecht dazu.
+    ridge > 0: Satteldach-Abdeckung (Obergurt), Profil nach oben ausgerichtet."""
     pts = [V(p) for p in pts]
     n = len(pts)
     if n < 2:
@@ -198,15 +199,22 @@ def sweep(g, m, pts, w, d, sides=None, side=XA, caps=True):
             k = 1.0 / max(0.35, t.dot(d1))
         sd = V(sides[i]) if sides is not None else V(side)
         u, v = _frame(t, sd)
+        if ridge > 0 and v.z < 0:
+            u, v = -u, -v
         hw, hd = w / 2, d / 2 * k
-        vs += [pts[i] + u * hw + v * hd, pts[i] - u * hw + v * hd, pts[i] - u * hw - v * hd, pts[i] + u * hw - v * hd]
+        ring = [u * hw + v * hd]
+        if ridge > 0:
+            ring.append(v * (hd + ridge * k))
+        ring += [-u * hw + v * hd, -u * hw - v * hd, u * hw - v * hd]
+        vs += [pts[i] + r for r in ring]
+    r = 5 if ridge > 0 else 4
     fs = []
     for i in range(n - 1):
-        o = 4 * i
-        fs += [[o + j, o + (j + 1) % 4, o + 4 + (j + 1) % 4, o + 4 + j] for j in range(4)]
+        o = r * i
+        fs += [[o + j, o + (j + 1) % r, o + r + (j + 1) % r, o + r + j] for j in range(r)]
     if caps:
-        o = 4 * (n - 1)
-        fs += [[3, 2, 1, 0], [o, o + 1, o + 2, o + 3]]
+        o = r * (n - 1)
+        fs += [list(range(r - 1, -1, -1)), list(range(o, o + r))]
     g.add(vs, fs, m)
 
 
@@ -240,6 +248,15 @@ def prism_xz(g, m, poly, y0, y1):
     # Blick von -Y: X rechts, Z oben -> Normale -Y für die Fläche bei y0
     vs = [(x, y0, z) for x, z in poly] + [(x, y1, z) for x, z in poly]
     fs = [[i, n + i, n + (i + 1) % n, (i + 1) % n] for i in range(n)]
+    fs += [list(range(n)), list(range(2 * n - 1, n - 1, -1))]
+    g.add(vs, fs, m)
+
+
+def prism_yz(g, m, poly, x0, x1):
+    """Prisma aus Profil in der Y-Z-Ebene (gegen Uhrzeigersinn mit Y nach rechts, Z oben = Blick von +X), quer X."""
+    n = len(poly)
+    vs = [(x1, y, z) for y, z in poly] + [(x0, y, z) for y, z in poly]
+    fs = [[i, n + i, n + (i + 1) % n, (i + 1) % n][::-1] for i in range(n)]
     fs += [list(range(n)), list(range(2 * n - 1, n - 1, -1))]
     g.add(vs, fs, m)
 
@@ -278,7 +295,7 @@ LOW_NODES = [YK - j * PC / 2 for j in range(7)]            # Mittelstück, 6 = M
 TALL = 7.3                                                 # ab dieser Gurt-Oberkante Querverband über Fahrbahn
 
 
-def diag(g, ya, za, yb, zb, x, w=0.42, d=0.2):
+def diag(g, ya, za, yb, zb, x, w=0.24, d=0.27):
     box(g, STEEL, (x, ya, za), (x, yb, zb), w, d, side=XA)
 
 
@@ -288,15 +305,21 @@ def truss_half(sx, sy):
     # --- Obergurt Seitenöffnung: Ende -> Knick -> Pylon (Ankerkasten = gleiches Profil, flach)
     pts = [(x, sy * YE, zc(YE))] + [(x, sy * a, zc(a)) for a in reversed(SIDE_NODES[1:10])]
     pts.append((x, sy * (YP + 0.55), zc(YP + 0.55)))
-    sweep(g, STEEL, pts, 0.85, CH)
+    sweep(g, STEEL, pts, 0.85, CH, ridge=0.12)
     # --- Obergurt Mittelöffnung: Pylon -> Knick
     pts = [(x, sy * (YP - 0.55), zc(YP - 0.55))] + [(x, sy * a, zc(a)) for a in CENTER_NODES[1:10]]
-    sweep(g, STEEL, pts, 0.85, CH)
+    sweep(g, STEEL, pts, 0.85, CH, ridge=0.12)
+    # Knotenblech am Knick (Übergang hoher Obergurt -> niedriges Mittelstück)
+    yk = sy * YK
+    prof = [(yk - sy * 1.6, BC), (yk + sy * 1.2, BC), (yk + sy * 1.2, TOP_LOW), (yk - sy * 0.4, TOP_LOW + 0.5)]
+    if sy < 0:
+        prof = list(reversed(prof))
+    prism_yz(g, STEEL, prof, x - 0.12, x + 0.12)
     # --- niedriger Obergurt Mittelstück (bis Mittelgelenk, Fuge 0,1 m)
     box(g, STEEL, (x, sy * YK, TOP_LOW - 0.22), (x, sy * 0.05, TOP_LOW - 0.22), 0.62, 0.45, side=XA)
     # --- Pfosten
     for a in SIDE_NODES[1:10] + CENTER_NODES[1:10]:
-        box(g, STEEL, (x, sy * a, BC), (x, sy * a, zc(a)), 0.55, 0.42, side=XA, caps=False)
+        box(g, STEEL, (x, sy * a, BC), (x, sy * a, zc(a)), 0.42, 0.52, side=XA, caps=False)
     for a in LOW_NODES[1:6]:
         box(g, STEEL, (x, sy * a, BC), (x, sy * a, TOP_LOW - 0.4), 0.34, 0.26, side=XA, caps=False)
     box(g, STEEL, (x, sy * 0.3, BC), (x, sy * 0.3, TOP_LOW - 0.1), 0.5, 0.4, side=XA)    # Gelenkpfosten
@@ -310,21 +333,21 @@ def truss_half(sx, sy):
                 diag(g, sy * nodes[k], zt[k], sy * nodes[k + 2], zb, x)
             if zt[k + 2] - zb > 0.9:
                 diag(g, sy * nodes[k + 2], zt[k + 2], sy * nodes[k], zb, x)
-        diag(g, sy * nodes[m - 1], zt[m - 1], sy * nodes[m], zb, x, 0.36, 0.18)
+        diag(g, sy * nodes[m - 1], zt[m - 1], sy * nodes[m], zb, x, 0.28, 0.26)
         for k in range(m):
             hmin = min(zc(nodes[k]), zc(nodes[k + 1])) - CH / 2 - BC
             if hmin > 6.0:
                 zh = BC + 0.55 * hmin
-                box(g, STEEL, (x, sy * nodes[k], zh), (x, sy * nodes[k + 1], zh), 0.3, 0.24, side=XA, caps=False)
+                box(g, STEEL, (x, sy * nodes[k], zh), (x, sy * nodes[k + 1], zh), 0.22, 0.24, side=XA, caps=False)
     # --- Mittelstück: Ständerfachwerk mit wechselnden Streben (Foto Mittelgelenk)
     for j in range(6):
         a0, a1 = LOW_NODES[j], LOW_NODES[j + 1]
         if j == 5:
             a1 = 0.45
         if j % 2 == 0:
-            diag(g, sy * a0, TOP_LOW - 0.4, sy * a1, BC + 0.1, x, 0.3, 0.16)
+            diag(g, sy * a0, TOP_LOW - 0.4, sy * a1, BC + 0.1, x, 0.26, 0.2)
         else:
-            diag(g, sy * a0, BC + 0.1, sy * a1, TOP_LOW - 0.4, x, 0.3, 0.16)
+            diag(g, sy * a0, BC + 0.1, sy * a1, TOP_LOW - 0.4, x, 0.26, 0.2)
     # --- Untergurt über Fahrbahn + Blechträger darunter (je Hälfte, Stoß in Feldmitte)
     box(g, STEEL, (x, 0, (BC - 0.1) / 2), (x, sy * YE, (BC - 0.1) / 2), 0.7, BC + 0.1, side=XA)
     box(g, STEEL, (x, 0, -0.95), (x, sy * YE, -0.95), 0.32, 1.7, side=XA, caps=False)        # Steg
@@ -365,6 +388,11 @@ def underdeck(sy):
     for a in ys:
         if a < YE - 0.1:
             box(g, STEEL, (-XT, sy * a, -1.3), (XT, sy * a, -1.3), 0.3, 0.7, side=YA, caps=False)
+    gird = [0.0] + [a for a in ys if a < YE - 0.1]
+    for a0, a1 in zip(gird[:-1], gird[1:]):                      # unterer Windverband (Kreuze)
+        for sx in SIGNS:
+            box(g, STEEL, (sx * (XT - 0.2), sy * a0, -1.62), (-sx * (XT - 0.2), sy * a1, -1.62), 0.12, 0.16,
+                side=ZA, caps=False)
     for a in ys + mids + [0.0]:
         if a > YE - 0.3 or (sy < 0 and a == 0.0):
             continue

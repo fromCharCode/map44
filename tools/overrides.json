@@ -24,5 +24,9 @@
   "DESNATPU10001qAc",
   "DESNATPU10004Bgu"
  ],
- "skip_bridge_parts_note": "Carolabrücke: Teileinsturz 11.09.2024, Abriss 2025 (data/research/bruecken.md); LoD2-Daten zeigen noch den Altbestand"
+ "skip_bridge_parts_note": "Carolabrücke: Teileinsturz 11.09.2024, Abriss 2025 (data/research/bruecken.md); LoD2-Daten zeigen noch den Altbestand",
+ "road_width": {
+  "30129851": 10.2
+ },
+ "road_width_note": "Feste Fahrbahnbreiten (OSM-Weg-ID -> m), z. B. Blaues Wunder: 10,20 m zwischen den Fachwerkträgern"
 }

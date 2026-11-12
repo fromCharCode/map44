@@ -1067,6 +1067,9 @@ SPEED = {"motorway": 100, "trunk": 70, "primary": 50, "secondary": 50, "tertiary
 def road_width(tags: dict) -> float:
     """Fahrbahnbreite inkl. Parkstreifen auf der Fahrbahn (parking:*=lane/half_on_kerb, siehe parking.py)."""
     cls = tags["highway"]
+    ov = OVERRIDES.get("road_width", {}).get(str(tags.get("_id")))
+    if ov:
+        return float(ov)
     w = num(tags.get("width"))
     pl, pr = lane_widths(park_sides(tags)) if cls in DRIVE else (0.0, 0.0)
     oneway = tags.get("oneway") in ("yes", "1", "true", "-1") or tags.get("junction") == "roundabout"
