@@ -66,7 +66,7 @@ def check_tile(name: str, verbose: bool = True) -> dict:
     # LoD2-Deck-Oberkante (Kollisionsfläche) aus bridge_meshes.top
     tris = []
     for m in city.get("bridge_meshes", []):
-        t = m["top"]
+        t = m.get("top0") or m["top"]
         for k in range(0, len(t) - 8, 9):
             tris.append([(t[k] + ORIGIN_E, ORIGIN_N - t[k + 2], t[k + 1]), (t[k + 3] + ORIGIN_E, ORIGIN_N - t[k + 5], t[k + 4]),
                          (t[k + 6] + ORIGIN_E, ORIGIN_N - t[k + 8], t[k + 7])])
@@ -83,7 +83,7 @@ def check_tile(name: str, verbose: bool = True) -> dict:
             except Exception:
                 continue
             for m in nbc.get("bridge_meshes", []):
-                t = m["top"]
+                t = m.get("top0") or m["top"]
                 if not t:
                     continue
                 xs, zs = t[0::3], t[2::3]

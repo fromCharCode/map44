@@ -374,7 +374,7 @@ def _clear_objects(d, city, tl):
                 return yf - 0.6 < y < yf + CLEAR + 0.2
         return False
     for m in city.get("bridge_meshes", []):
-        for key in ("top", "side", "bot"):
+        for key in ("top", "top0", "side", "bot", "top_walk", "top_ballast", "top_conc", "curb"):
             v = m.get(key) or []
             if not v:
                 continue

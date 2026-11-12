@@ -167,7 +167,7 @@ def main() -> None:
     deck = Image.new("L", (SIZE, SIZE), 0)
     dd = ImageDraw.Draw(deck)
     for m in city.get("bridge_meshes", []):
-        t = m["top"]
+        t = m.get("top0") or m["top"]
         for k in range(0, len(t) - 8, 9):
             dd.polygon([local_to_px(t[k], t[k + 2]), local_to_px(t[k + 3], t[k + 5]), local_to_px(t[k + 6], t[k + 8])], fill=255)
     deck = deck.filter(ImageFilter.MaxFilter(5))

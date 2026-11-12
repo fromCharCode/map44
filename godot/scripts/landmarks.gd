@@ -28,7 +28,7 @@ const LIST := [
 	# Loschwitzer Brücke (tools/blender/blaueswunder/): Stahlüberbau; befahrbar bleibt das LoD2-Deck. Lage/Höhe/Drehung
 	# aus blaues_wunder.json (Fahrbahnhöhe, nicht Boden)
 	{"file": "blaues_wunder.glb", "json": "blaues_wunder.json", "x": 0.0, "z": 0.0, "yaw": 0.0, "w": 0.0, "d": 0.0,
-		"name": "Blaues Wunder", "no_collision": true},
+		"name": "Blaues Wunder", "no_collision": true, "trimesh_kind": "bridge"},
 ]
 
 var terrain: Terrain
@@ -115,6 +115,9 @@ func build(t: Terrain, noise: ImageTexture) -> void:
 				bb.add_child(c2)
 			add_child(bb)
 			continue
+		if lm.has("trimesh_kind"):
+			# Kollision aus den Modelldreiecken (Träger, Pylone, Pfeiler, Geländer); Fahrbahn bleibt das LoD2-Deck
+			_trimesh_body(root, String(lm["trimesh_kind"]))
 		if lm.get("no_collision", false):
 			continue
 		# Kollision: einfache Box über der Grundfläche
@@ -131,6 +134,35 @@ func build(t: Terrain, noise: ImageTexture) -> void:
 			cs.position = Vector3((kb[0] + kb[1]) * 0.5, gy + 15.0, (kb[2] + kb[3]) * 0.5)
 		body.add_child(cs)
 		add_child(body)
+
+
+func _trimesh_body(root: Node3D, kind: String) -> void:
+	var faces := PackedVector3Array()
+	var stack: Array = [[root, root.transform]]
+	while not stack.is_empty():
+		var it: Array = stack.pop_back()
+		var n: Node = it[0]
+		var xf: Transform3D = it[1]
+		for c in n.get_children():
+			if c is Node3D:
+				stack.append([c, xf * (c as Node3D).transform])
+		if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+			var f := (n as MeshInstance3D).mesh.get_faces()
+			for i in f.size():
+				f[i] = xf * f[i]
+			faces.append_array(f)
+	if faces.is_empty():
+		return
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.set_meta("kind", kind)
+	var cs := CollisionShape3D.new()
+	var sh := ConcavePolygonShape3D.new()
+	sh.backface_collision = true
+	sh.set_faces(faces)
+	cs.shape = sh
+	body.add_child(cs)
+	add_child(body)
 
 
 func _clip_to_box(root: Node3D, kb: Array) -> void:

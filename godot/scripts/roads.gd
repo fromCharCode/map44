@@ -14,6 +14,8 @@ var stone_mat: StandardMaterial3D
 var concrete_mat: StandardMaterial3D
 var concrete_dark_mat: StandardMaterial3D
 var junctions: Dictionary = {}
+var _gen_piers := true
+var _slab_rails: Array = []      # Geländer der OSM-Plattenbrücken (gleiche Darstellung wie bridge_rails)
 
 # Sammler je Zelle
 var _mk: Dictionary = {}
@@ -30,8 +32,7 @@ func build(t: Terrain, c: Dictionary, idx: RoadIndex) -> void:
 		_markings(r)
 	_crossings()
 	for rl in city["rails"]:
-		if not rl["bridge"]:
-			_rail(rl)
+		_rail(rl)
 	_flush(_mk, mark_mat, 230.0)
 	_flush(_rl, rail_mat, 260.0)
 	for b in city["bridges"]:
@@ -47,10 +48,12 @@ func build(t: Terrain, c: Dictionary, idx: RoadIndex) -> void:
 		slab_ids[int(b["id"])] = true
 	for wid in arches.get("ways", []):
 		slab_ids[int(wid)] = true                  # recherchierte Brücken: Pfeiler kommen aus bridge_arches/Modell
+	# Standardpfeiler: aus der Pipeline (bridge_arches.py "gpiers", nie auf Straßen/Gleisen darunter); alte Daten: hier
+	_gen_piers = not arches.has("gpiers")
 	for r in city["roads"]:
-		if r["bridge"] and not slab_ids.has(int(r["id"])):    # JSON-Zahlen sind float -> int vergleichen
-			_piers(r["pts"], float(r["width"]) + 2.0, 1.0)
-	_bridge_rails(city.get("bridge_rails", []))
+		if _gen_piers and r["bridge"] and not slab_ids.has(int(r["id"])):    # JSON-Zahlen sind float -> int vergleichen
+			_piers(r["pts"], float(r["width"]) + 2.0, 1.0, "road:%d" % int(r["id"]))
+	_bridge_rails(city.get("bridge_rails", []) + _slab_rails)
 	_curbs(city.get("curbs", []))
 	_bridge_arches(city.get("bridge_arches", {}))
 
@@ -196,20 +199,55 @@ func _line_strip(bucket_map: Dictionary, pts: Array, offset: float, width: float
 
 
 func _markings(r: Dictionary) -> void:
+	## Fahrstreifen nach StVO-Markierung: Leitlinien (3 m Strich / 6 m Lücke, Autobahn 6/12) zwischen gleichgerichteten
+	## Streifen, Mittellinie zwischen den Richtungen (ab 4 Streifen durchgezogen), Randlinien an Hauptstraßen.
+	## Fahrbahnband ohne Parkstreifen (pl/pr); Straßenbahn in der Mitte (tram_mid): keine Linie über den Gleisen,
+	## sondern Begrenzung des Gleisbereichs.
 	var cls: String = r["cls"]
 	var w: float = r["width"]
-	if cls in ["service", "living_street", "motorway_link", "trunk_link"] or w < 5.0:
+	if cls in ["service", "living_street"] or w < 5.0:
 		return
 	var pts: Array = r["pts"]
 	var deck: bool = bool(r["bridge"])
-	var edge := cls in ["primary", "secondary", "tertiary", "trunk", "motorway"] and w >= 6.5
-	if int(r["oneway"]) == 0 and w >= 5.4:
-		_line_strip(_mk, pts, 0.0, 0.12, 3.0, 6.0, w * 0.5 + 3.0, deck)
-	elif int(r["oneway"]) != 0 and int(r["lanes"]) >= 2:
-		_line_strip(_mk, pts, 0.0, 0.12, 3.0, 6.0, w * 0.5 + 3.0, deck)
+	var a := -w * 0.5 + float(r.get("pl", 0.0))         # linker Rand des Fahrbands (Versatz rechts positiv)
+	var b := w * 0.5 - float(r.get("pr", 0.0))
+	var dw := b - a
+	var lanes := maxi(int(r.get("lanes", 1)), 1)
+	var two_way := int(r["oneway"]) == 0
+	var mw := cls in ["motorway", "trunk"]
+	var dash_on := 6.0 if mw else 3.0
+	var dash_off := 12.0 if mw else 6.0
+	var skip := w * 0.5 + 3.0
+	var tm := float(r.get("tram_mid", 0.0))
+	if tm > 0.0 and (dw * 0.5 - tm) < 2.75:
+		tm = 0.0                                        # Gleise liegen im Fahrstreifen (zu schmal für eigenen Bereich)
+	var m := (a + b) * 0.5
+	if two_way:
+		var per := maxi(lanes / 2, 1)
+		if dw < 5.4:
+			pass                                        # zu schmal für Mittellinie
+		elif tm > 0.0:
+			_line_strip(_mk, pts, m - tm, 0.15, 0.0, 0.0, skip, deck)
+			_line_strip(_mk, pts, m + tm, 0.15, 0.0, 0.0, skip, deck)
+		elif lanes >= 4:
+			_line_strip(_mk, pts, m - 0.1, 0.12, 0.0, 0.0, skip, deck)     # doppelte durchgezogene Mittellinie
+			_line_strip(_mk, pts, m + 0.1, 0.12, 0.0, 0.0, skip, deck)
+		else:
+			_line_strip(_mk, pts, m, 0.12, dash_on, dash_off, skip, deck)
+		if per >= 2:
+			var inner := tm if tm > 0.0 else 0.0
+			var half := (b - m) - inner
+			for k in range(1, per):
+				var off := inner + half * float(k) / float(per)
+				_line_strip(_mk, pts, m + off, 0.12, dash_on, dash_off, skip, deck)
+				_line_strip(_mk, pts, m - off, 0.12, dash_on, dash_off, skip, deck)
+	else:
+		for k in range(1, lanes):
+			_line_strip(_mk, pts, a + dw * float(k) / float(lanes), 0.12, dash_on, dash_off, skip, deck)
+	var edge := cls in ["primary", "secondary", "tertiary", "trunk", "motorway", "motorway_link", "trunk_link"] and dw >= 6.5
 	if edge:
-		_line_strip(_mk, pts, w * 0.5 - 0.3, 0.13, 0.0, 0.0, w * 0.5 + 2.5, deck)
-		_line_strip(_mk, pts, -(w * 0.5 - 0.3), 0.13, 0.0, 0.0, w * 0.5 + 2.5, deck)
+		_line_strip(_mk, pts, b - 0.3, 0.13 if not mw else 0.2, 0.0, 0.0, w * 0.5 + 2.5, deck)
+		_line_strip(_mk, pts, a + 0.3, 0.13 if not mw else 0.2, 0.0, 0.0, w * 0.5 + 2.5, deck)
 
 
 func _crossings() -> void:
@@ -239,9 +277,17 @@ func _crossings() -> void:
 
 
 func _rail(rl: Dictionary) -> void:
+	## Schienen (Spurweite 1435 mm); auf Brücken in Deckhöhe (Schotterbett: Schienenkopf 0,17 m über Deck)
 	var pts: Array = rl["pts"]
+	var deck := bool(rl["bridge"])
+	var lift: Array = pts
+	if deck:
+		var dy := 0.12 if String(rl.get("kind", "")) != "tram" else 0.0
+		lift = []
+		for p in pts:
+			lift.append([p[0], p[1], float(p[2]) + dy])
 	for off in [-0.7175, 0.7175]:
-		_line_strip(_rl, pts, off, 0.075, 0.0, 0.0, 0.0)
+		_line_strip(_rl, lift, off, 0.075, 0.0, 0.0, 0.0, deck)
 
 
 func _flush(buckets: Dictionary, mat: Material, range_end: float) -> void:
@@ -296,6 +342,30 @@ func _tris_to_surface(flat: Array, uv_mode: int) -> Dictionary:
 
 
 static var _masonry: Material
+static var _walk: Material
+static var _ballast: Material
+static var _kappe: Material
+
+
+static func _walk_mat() -> Material:
+	## Gehwegplatten auf Brücken (wie Gehwege der Stadt)
+	if _walk == null:
+		_walk = TexLib.tri_material("sidewalk", 0.84)
+	return _walk
+
+
+static func _ballast_mat() -> Material:
+	## Schotterbett der Eisenbahnbrücken
+	if _ballast == null:
+		_ballast = TexLib.tri_material("gravel", 0.7)
+	return _ballast
+
+
+static func _kappe_mat() -> Material:
+	## Betonkappe / Bordstein
+	if _kappe == null:
+		_kappe = TexLib.tri_material("concrete", 1.15)
+	return _kappe
 
 
 static func masonry_mat() -> Material:
@@ -308,15 +378,16 @@ static func masonry_mat() -> Material:
 func _lod2_bridge(bm: Dictionary, stone := false) -> void:
 	var mesh := ArrayMesh.new()
 	var all_faces := PackedVector3Array()
-	var mats: Array = [deck_mat, concrete_mat, concrete_dark_mat]
+	var mats: Array = [deck_mat, concrete_mat, concrete_dark_mat, _walk_mat(), _ballast_mat(), _kappe_mat(), _kappe_mat()]
 	if stone:
-		mats = [deck_mat, masonry_mat(), masonry_mat()]
-	var keys := ["top", "side", "bot"]
-	for i in 3:
-		var flat: Array = bm[keys[i]]
+		mats = [deck_mat, masonry_mat(), masonry_mat(), _walk_mat(), _ballast_mat(), masonry_mat(), masonry_mat()]
+	# Deckaufbau (tools/bridge_decks.py): Asphalt nur in Fahrbahnbreite, Gehweg +15 cm, Schotterbett, Betonkappe
+	var keys := ["top", "side", "bot", "top_walk", "top_ballast", "top_conc", "curb"]
+	for i in keys.size():
+		var flat: Array = bm.get(keys[i], [])
 		if flat.size() < 9:
 			continue
-		var sf := _tris_to_surface(flat, 0 if i == 0 else 1)
+		var sf := _tris_to_surface(flat, 1 if i in [1, 2, 6] else 0)
 		if (sf["v"] as PackedVector3Array).is_empty():
 			continue
 		var arr := []
@@ -334,6 +405,7 @@ func _lod2_bridge(bm: Dictionary, stone := false) -> void:
 	add_child(mi)
 	var body := StaticBody3D.new()
 	body.collision_layer = 1
+	body.set_meta("kind", "lod2:" + String(bm.get("id", "")))
 	var cs := CollisionShape3D.new()
 	var sh := ConcavePolygonShape3D.new()
 	sh.backface_collision = true
@@ -368,6 +440,7 @@ func _bridge_rails(rails: Array) -> void:
 		return
 	var body := StaticBody3D.new()
 	body.collision_layer = 1
+	body.set_meta("kind", "rail")
 	var cs := CollisionShape3D.new()
 	var sh := ConcavePolygonShape3D.new()
 	sh.backface_collision = true
@@ -578,24 +651,23 @@ static func _box_between(st: SurfaceTool, a: Vector3, b: Vector3, side: Vector3,
 
 
 func _bridge(b: Dictionary) -> void:
+	## OSM-Brücke ohne LoD2-Deck: Platte 0,9 m mit Betonstirn; Straßenbrücke: Asphalt in Fahrbahnbreite, beidseits
+	## 1 m Kappe/Gehweg (+15 cm, Bordstein), Stahlgeländer; Fußgängerbrücke: Gehwegplatten, Stahlgeländer.
 	var pts: Array = b["pts"]
 	if pts.size() < 2:
 		return
-	var w: float = max(b["width"], 2.5)
-	if b["kind"] == "drive":
-		w += 2.0   # Gehwege/Brüstung
-	var verts := PackedVector3Array()
-	var norms := PackedVector3Array()
-	var uvs := PackedVector2Array()
-	var idx := PackedInt32Array()
+	var drive: bool = b["kind"] == "drive"
+	var wc: float = max(b["width"], 2.5)
+	var w := wc + (2.0 if drive else 0.0)
+	var raise := 0.15 if drive else 0.0
+	var tops := {"road": [PackedVector3Array(), PackedVector3Array(), PackedVector2Array(), PackedInt32Array()],
+		"walk": [PackedVector3Array(), PackedVector3Array(), PackedVector2Array(), PackedInt32Array()]}
 	var sv := PackedVector3Array()
 	var sn := PackedVector3Array()
 	var si := PackedInt32Array()
 	var faces := PackedVector3Array()
-	var acc := 0.0
 	var thick := 0.9
-	var prev_l := Vector3.ZERO
-	var prev_r := Vector3.ZERO
+	var prev := []
 	for i in pts.size():
 		var p := Vector3(pts[i][0], pts[i][2], pts[i][1])
 		var t2: Vector2
@@ -606,35 +678,52 @@ func _bridge(b: Dictionary) -> void:
 		else:
 			t2 = Vector2(pts[i + 1][0] - pts[i - 1][0], pts[i + 1][1] - pts[i - 1][1])
 		t2 = t2.normalized()
-		var n2 := Vector2(-t2.y, t2.x)
-		var l := p + Vector3(n2.x, 0, n2.y) * (w * 0.5)
-		var r := p - Vector3(n2.x, 0, n2.y) * (w * 0.5)
+		var n3 := Vector3(-t2.y, 0, t2.x)
+		# Querschnitt: Außenkante links, Bord links, Bord rechts, Außenkante rechts
+		var cur := [p + n3 * (w * 0.5), p + n3 * (wc * 0.5), p - n3 * (wc * 0.5), p - n3 * (w * 0.5)]
 		if i > 0:
-			acc += Vector2(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]).length()
-			# Deckfläche oben
-			_strip_quad(verts, norms, uvs, idx, faces, prev_l, prev_r, r, l, Vector3.UP)
-			# Unterseite
+			var up := Vector3(0, raise, 0)
 			var d := Vector3(0, -thick, 0)
-			_strip_quad(verts, norms, uvs, idx, faces, prev_r + d, prev_l + d, l + d, r + d, Vector3.DOWN)
-			# Seitenwände (innen/außen) als Brüstung
-			var hp := Vector3(0, 1.05, 0)
-			var ml := (prev_l + l) * 0.5
-			var mr := (prev_r + r) * 0.5
-			if not _near_other_bridge(ml, b):
-				_side_quad(sv, sn, si, faces, prev_l + d, l + d, l + hp, prev_l + hp, (prev_l - prev_r).normalized())
-			if not _near_other_bridge(mr, b):
-				_side_quad(sv, sn, si, faces, prev_r + hp, r + hp, r + d, prev_r + d, (prev_r - prev_l).normalized())
-		prev_l = l
-		prev_r = r
+			if drive:
+				var tw: Array = tops["walk"]
+				var tr: Array = tops["road"]
+				_strip_quad(tw[0], tw[1], tw[2], tw[3], faces, prev[0] + up, prev[1] + up, cur[1] + up, cur[0] + up, Vector3.UP)
+				_strip_quad(tr[0], tr[1], tr[2], tr[3], faces, prev[1], prev[2], cur[2], cur[1], Vector3.UP)
+				_strip_quad(tw[0], tw[1], tw[2], tw[3], faces, prev[2] + up, prev[3] + up, cur[3] + up, cur[2] + up, Vector3.UP)
+				# Bordsteinkanten (zur Fahrbahn hin)
+				_side_quad(sv, sn, si, faces, prev[1], cur[1], cur[1] + up, prev[1] + up, (prev[2] - prev[1]).normalized())
+				_side_quad(sv, sn, si, faces, prev[2], cur[2], cur[2] + up, prev[2] + up, (prev[1] - prev[2]).normalized())
+			else:
+				var tw2: Array = tops["walk"]
+				_strip_quad(tw2[0], tw2[1], tw2[2], tw2[3], faces, prev[0], prev[3], cur[3], cur[0], Vector3.UP)
+			# Unterseite
+			_side_quad(sv, sn, si, faces, prev[3] + d, prev[0] + d, cur[0] + d, cur[3] + d, Vector3.DOWN)
+			# Stirnseiten (Beton) bis Deckoberkante; Geländer darauf, außer wo eine Nachbarbrücke anschließt
+			var ml: Vector3 = (prev[0] + cur[0]) * 0.5
+			var mr: Vector3 = (prev[3] + cur[3]) * 0.5
+			_side_quad(sv, sn, si, faces, prev[0] + d, cur[0] + d, cur[0] + up, prev[0] + up, (prev[0] - prev[3]).normalized())
+			_side_quad(sv, sn, si, faces, prev[3] + up, cur[3] + up, cur[3] + d, prev[3] + d, (prev[3] - prev[0]).normalized())
+			var inl: Vector3 = (prev[3] - prev[0]).normalized() * 0.15
+			if not _near_other_bridge(ml, b) and not _rail_on_road(ml + Vector3(0, raise, 0)):
+				_slab_rails.append([prev[0].x + inl.x, prev[0].z + inl.z, cur[0].x + inl.x, cur[0].z + inl.z,
+					(prev[0].y + cur[0].y) * 0.5 + raise, "steel", "#8c9294" if drive else "#7a7f84", 1.1])
+			if not _near_other_bridge(mr, b) and not _rail_on_road(mr + Vector3(0, raise, 0)):
+				_slab_rails.append([prev[3].x - inl.x, prev[3].z - inl.z, cur[3].x - inl.x, cur[3].z - inl.z,
+					(prev[3].y + cur[3].y) * 0.5 + raise, "steel", "#8c9294" if drive else "#7a7f84", 1.1])
+		prev = cur
 	var mesh := ArrayMesh.new()
-	var arr := []
-	arr.resize(Mesh.ARRAY_MAX)
-	arr[Mesh.ARRAY_VERTEX] = verts
-	arr[Mesh.ARRAY_NORMAL] = norms
-	arr[Mesh.ARRAY_TEX_UV] = uvs
-	arr[Mesh.ARRAY_INDEX] = idx
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
-	mesh.surface_set_material(0, deck_mat if b["kind"] == "drive" else stone_mat)
+	for key in ["road", "walk"]:
+		var arrs: Array = tops[key]
+		if (arrs[0] as PackedVector3Array).is_empty():
+			continue
+		var arr := []
+		arr.resize(Mesh.ARRAY_MAX)
+		arr[Mesh.ARRAY_VERTEX] = arrs[0]
+		arr[Mesh.ARRAY_NORMAL] = arrs[1]
+		arr[Mesh.ARRAY_TEX_UV] = arrs[2]
+		arr[Mesh.ARRAY_INDEX] = arrs[3]
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+		mesh.surface_set_material(mesh.get_surface_count() - 1, deck_mat if key == "road" else _walk_mat())
 	if not sv.is_empty():
 		var arr2 := []
 		arr2.resize(Mesh.ARRAY_MAX)
@@ -642,12 +731,15 @@ func _bridge(b: Dictionary) -> void:
 		arr2[Mesh.ARRAY_NORMAL] = sn
 		arr2[Mesh.ARRAY_INDEX] = si
 		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr2)
-		mesh.surface_set_material(1, stone_mat)
+		mesh.surface_set_material(mesh.get_surface_count() - 1, _kappe_mat())
+	if mesh.get_surface_count() == 0:
+		return
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	add_child(mi)
 	var body := StaticBody3D.new()
 	body.collision_layer = 1
+	body.set_meta("kind", "slab:%d" % int(b["id"]))
 	var cs := CollisionShape3D.new()
 	var sh := ConcavePolygonShape3D.new()
 	sh.backface_collision = true
@@ -655,7 +747,21 @@ func _bridge(b: Dictionary) -> void:
 	cs.shape = sh
 	body.add_child(cs)
 	mi.add_child(body)
-	_piers(pts, w, thick)
+	if _gen_piers and not city.get("bridge_arches", {}).has("gpiers"):
+		_piers(pts, w, thick, "slab:%d" % int(b["id"]))
+
+
+func _rail_on_road(p: Vector3) -> bool:
+	## Geländer einer Plattenbrücke stünde in einer Fahrbahn auf gleicher Höhe (Fußgängersteg neben/auf der Straße,
+	## Seitenstraße an der Brücke) -> weglassen
+	if index == null:
+		return false
+	var hit: Dictionary = index.nearest(p.x, p.z, 12.0)
+	if hit.is_empty() or bool(hit.get("bridge", false)):
+		return false
+	var rd: Dictionary = hit["road"]
+	var d := Vector2(float(hit["px"]) - p.x, float(hit["pz"]) - p.z).length()
+	return d < float(rd.get("width", 4.0)) * 0.5 - 0.1 and absf(float(hit["py"]) - p.y) < 1.5
 
 
 func _near_other_bridge(p: Vector3, self_b: Dictionary) -> bool:
@@ -683,7 +789,7 @@ func _near_other_bridge(p: Vector3, self_b: Dictionary) -> bool:
 	return false
 
 
-func _piers(pts: Array, w: float, thick: float) -> void:
+func _piers(pts: Array, w: float, thick: float, src := "") -> void:
 	## Pfeiler alle ~30 m, wenn die Fahrbahn deutlich über dem Boden liegt.
 	var total := 0.0
 	for i in pts.size() - 1:
@@ -716,6 +822,7 @@ func _piers(pts: Array, w: float, thick: float) -> void:
 				add_child(inst)
 				var pb := StaticBody3D.new()
 				pb.collision_layer = 1
+				pb.set_meta("kind", "pier:" + src)
 				var pcs := CollisionShape3D.new()
 				var bs := BoxShape3D.new()
 				bs.size = bm.size
@@ -831,10 +938,14 @@ func _bridge_arches(data: Dictionary) -> void:
 	var pst := SurfaceTool.new()
 	pst.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var npier := 0
-	for pr in data.get("piers", []):
-		var w := float(pr[3])
+	# piers: recherchierte Feldgrenzen; gpiers: Standardpfeiler. [x, z, yaw, breite, oben, unten, (dicke)]
+	# Breite = sichtbare Breite (Pipeline spart Verkehrsbänder darunter aus; alte Daten: volle Brückenbreite × 0,85)
+	var new_fmt := data.has("gpiers")
+	for pr in data.get("piers", []) + data.get("gpiers", []):
+		var w := float(pr[3]) if new_fmt else float(pr[3]) * 0.85
 		var top := float(pr[4])
 		var bot := float(pr[5])
+		var th := float(pr[6]) * 0.5 if pr.size() > 6 else 1.1
 		if top - bot < 1.0:
 			continue
 		var b := Basis(Vector3.UP, float(pr[2]))
@@ -842,7 +953,7 @@ func _bridge_arches(data: Dictionary) -> void:
 		var ax := b * Vector3(1, 0, 0)
 		var az := b * Vector3(0, 0, 1)
 		# Pfeilerscheibe quer zur Achse (Breite w), 2,2 m stark
-		_box_between(pst, c - az * 1.1 + Vector3(0, -(top - bot) * 0.5, 0), c + az * 1.1 + Vector3(0, -(top - bot) * 0.5, 0), ax, w * 0.85, 0.0, top - bot)
+		_box_between(pst, c - az * th + Vector3(0, -(top - bot) * 0.5, 0), c + az * th + Vector3(0, -(top - bot) * 0.5, 0), ax, w, 0.0, top - bot)
 		npier += 1
 	if npier > 0:
 		var pm := pst.commit()
@@ -851,13 +962,30 @@ func _bridge_arches(data: Dictionary) -> void:
 		pmi.mesh = pm
 		pmi.visibility_range_end = 1800.0
 		add_child(pmi)
+		_static_faces(pm.get_faces(), "arch_pier")
+	for gr in data.get("groups", []):
+		# Blechträger/Gussstützen (Stahl, Farbe je Brücke) und Betonstirn erneuerter Überbauten
+		if (gr.get("tris", []) as Array).size() < 9:
+			continue
+		var gm: Material
+		if String(gr.get("mat", "")) == "concrete":
+			gm = concrete_mat
+		else:
+			var smat := StandardMaterial3D.new()
+			smat.albedo_color = Color(String(gr.get("color", "#4a4846")))
+			smat.metallic = 0.55
+			smat.roughness = 0.55
+			gm = smat
+		var gmesh := _tri_mesh(gr["tris"], gr.get("n", []), gm, 1500.0)
+		_static_faces(gmesh.get_faces(), "girder")
 	var steel: Dictionary = data.get("steel", {})
 	if (steel.get("tris", []) as Array).size() >= 9:
 		var sm := StandardMaterial3D.new()
 		sm.albedo_color = Color(String(steel.get("color", "#c9ccd0")))
 		sm.metallic = 0.45
 		sm.roughness = 0.4
-		_tri_mesh(steel["tris"], steel.get("n", []), sm, 2500.0)
+		var stm := _tri_mesh(steel["tris"], steel.get("n", []), sm, 2500.0)
+		_static_faces(stm.get_faces(), "steel")
 	var t: Array = data.get("tris", [])
 	var nn: Array = data.get("n", [])
 	if t.size() < 9:
@@ -889,9 +1017,26 @@ func _bridge_arches(data: Dictionary) -> void:
 	mi.mesh = mesh
 	mi.visibility_range_end = 1800.0
 	add_child(mi)
+	_static_faces(mesh.get_faces(), "arch")
 
 
-func _tri_mesh(t: Array, nn: Array, mat: Material, vis: float) -> void:
+func _static_faces(faces: PackedVector3Array, kind: String) -> void:
+	## Kollision für Brückenbauteile, die bisher nur sichtbar waren (Bögen, Pfeiler, Stahlüberbau)
+	if faces.size() < 3:
+		return
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.set_meta("kind", kind)
+	var cs := CollisionShape3D.new()
+	var sh := ConcavePolygonShape3D.new()
+	sh.backface_collision = true
+	sh.set_faces(faces)
+	cs.shape = sh
+	body.add_child(cs)
+	add_child(body)
+
+
+func _tri_mesh(t: Array, nn: Array, mat: Material, vis: float) -> ArrayMesh:
 	## Dreiecksliste [x, y, z, …] mit Normale je Dreieck -> Mesh (Umlaufsinn nach Normale korrigiert)
 	var v := PackedVector3Array()
 	var n := PackedVector3Array()
@@ -915,3 +1060,4 @@ func _tri_mesh(t: Array, nn: Array, mat: Material, vis: float) -> void:
 	mi.mesh = mesh
 	mi.visibility_range_end = vis
 	add_child(mi)
+	return mesh

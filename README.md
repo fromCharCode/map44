@@ -68,10 +68,14 @@ wenn sich ihre Version ändert). Deinstallieren unter Linux: `… install.sh | b
   Markierungen, Ampeln, Verkehrszeichen; Gehwegbeläge je Viertel; über 120 000 echte Bäume aus dem Dresdner
   Baumkataster (Art, Höhe, Standort) mit Baumscheiben; Grünstreifen und Allee-Mittelstreifen als Rasen; Plätze wie
   der Altmarkt als gepflasterte Freiflächen
-- Brücken nach Recherche: Sandstein-Bogenbrücken (Augustus-, Albert-, Marienbrücke …) mit echten Bögen und Pfeilern,
-  Geländer je Bauwerk (Stein, Stahl in Originalfarbe, Glaswände), Blaues Wunder als Stahlfachwerk,
-  Waldschlößchenbrücke mit Stahlbogen und V-Streben; die 2024 eingestürzte und abgerissene Carolabrücke fehlt wie in
-  echt
+- Brücken nach Recherche: Sandstein-Bogenbrücken (Augustus-, Albert-, Marienbrücke …) mit echten Bögen, Stirnring,
+  Konsolgesims und Pfeilern, Geländer je Bauwerk (Stein, Stahl in Originalfarbe, Glaswände), Blaues Wunder als
+  Stahlfachwerk, Waldschlößchenbrücke mit Stahlbogen und V-Streben, Eisenbahnüberführungen der Hochlegung als
+  Blechträger auf Sandsteinwiderlagern mit Gussstützen, Fachwerkbrücken (Hafenbrücken); Deckhöhen per
+  Oberflächenmodell (DOM1) korrigiert; auf den Brücken Fahrbahn in echter Breite und Spurzahl (Recherche bzw. Deckbreite),
+  erhöhte Gehwege mit Bordstein, Schotterbett und Gleise auf Bahnbrücken, Fahrleitung über Straßenbahnbrücken;
+  Pfeiler, Stützen und Widerlager stehen nie auf Straßen, Gleisen oder Wegen darunter, Unterführungen haben
+  Lichtraumhöhe; die 2024 eingestürzte und abgerissene Carolabrücke fehlt wie in echt
 - Verkehr mit Vorfahrt und Ampeln, Fußgänger, Buslinien (OSM) mit Zielanzeigen
 - Straßenbahnen der DVB (NGT D12DD und NGT DX DD, maßstäblich nachgebaut) auf ihren echten Linien mit Zielanzeigen,
   Haltestellen an allen 1 761 echten Steigen: Masten mit Linien und Zielen, Bahnsteige mit Bordhöhe,
@@ -94,7 +98,11 @@ Noch nicht drin: Verkehr durch die Tunnel (nur der Spieler fährt hindurch), Fah
 
 Pipeline (Python 3 mit `.venv`, siehe `tools/`): `tools/run_tile.sh E,N` baut eine Kachel (Luftbild, Gelände, Stadt),
 `tools/rebuild_city.sh E,N` nur Stadt + Vegetation; alle Kacheln: `xargs -P 6 -I{} bash tools/rebuild_city.sh {} <
-data/raw/tile_order.txt`, danach einmal `tools/tunnels.py` (Tunnel über Kachelgrenzen). Release-Pakete:
+data/raw/tile_order.txt`, danach einmal `tools/tunnels.py` (Tunnel über Kachelgrenzen). Nur Brückenbauwerke und
+Deckaufbau neu: `bash tools/post_bridges.sh` (bridge_arches + bridge_decks für alle Kacheln, dann tunnels.py).
+Brückenprüfung ohne Fahren (lädt je Kachel das 3×3-Umfeld, prüft auf und unter jeder Brücke ein Fahrzeug mittig in
+jeder Spur): `godot --headless --path godot -- --cam=0,0,0,-30,80 --bridgeaudit [--auditout=<json>]`;
+Durchfahrt mit Fahrphysik: `--drive=x,z --routetest=<kachel>:<weg-id>` bzw. `--routelist=<json>`. Release-Pakete:
 `tools/package_release.sh <version> <datenversion>`.
 
 ## Daten und Lizenzen

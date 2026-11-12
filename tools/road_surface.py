@@ -29,6 +29,14 @@ from shapely.geometry import LineString, box
 STEP = 2.0          # m, maximaler Abstand der Profilpunkte
 PAD = 320.0         # m, Fensterrand um die Kachel
 W_DECK = 300.0      # Gewicht eines Brückendeck-Punkts (praktisch fest)
+# Unterführungen: Mindest-Durchfahrtshöhe unter der Deckunterkante (LoD2-Deck 1 m dick). Das DGM ist unter Brücken
+# interpoliert (Laserscan sieht nicht unter das Deck) und kennt kurze Senken der Unterführung nicht.
+W_CLR = 60.0
+CLR_UNDER = {"motorway": 4.7, "trunk": 4.5, "primary": 4.5, "secondary": 4.5, "tertiary": 4.2, "motorway_link": 4.5,
+             "trunk_link": 4.5, "primary_link": 4.5, "secondary_link": 4.5, "tertiary_link": 4.2, "unclassified": 4.0,
+             "residential": 4.0, "living_street": 3.6, "service": 3.6, "track": 3.6, "pedestrian": 2.6,
+             "footway": 2.6, "path": 2.6, "cycleway": 2.6, "steps": 2.6, "bridleway": 2.6,
+             "tram": 4.7, "rail": 5.5, "light_rail": 5.0, "narrow_gauge": 4.0}
 EPS = 1e-6          # Regularisierung freier Punkte
 HUBER = 0.25        # m, ab dieser Abweichung vom DGM wird ein Punkt herabgewichtet
 
@@ -242,7 +250,11 @@ class RoadSurface:
                     while j + 1 < m and has[j + 1]:
                         j += 1
                     a, b = max(k - 1, 0), min(j + 1, m - 1)
-                    if bridge_nodes[idx[a:b + 1]].any():
+                    # Deck kaum über dem Gelände (Bachbrücke auf Straßenhöhe, Rampe auf die Brücke): darunter passt
+                    # kein Fahrzeug durch -> der Weg liegt AUF dem Deck, auch ohne Brückenkennzeichnung in OSM
+                    dd = (hi[k:j + 1] - ter[k:j + 1])[np.isfinite(ter[k:j + 1])]
+                    low_deck = len(dd) > 0 and float(np.median(dd)) < (2.4 if p["lc"] in ("walk", "steps") else 3.2)
+                    if bridge_nodes[idx[a:b + 1]].any() or low_deck:
                         mode[k:j + 1] = np.where((hi[k:j + 1] - lo[k:j + 1]) < 1.5, 1, 2)
                     else:
                         mode[k:j + 1] = 3
@@ -340,6 +352,19 @@ class RoadSurface:
                     tgt[g] = np.where(use, dm, ter[g])
                     r = np.abs(yg - tgt[g])
                     w[g] = 1.0 / np.maximum(1.0, r / HUBER)
+                fr = mode == 3
+                if fr.any():
+                    # Unterführung: Fahrbahn höchstens Deckunterkante − Lichtraum (max. 2,5 m unter das DGM)
+                    clr = CLR_UNDER.get(str(p.get("cls", "")), 4.0)
+                    lim = lo[fr] - 1.0 - clr
+                    yy = y[idx][fr]
+                    tf = ter[fr]
+                    ok2 = np.isfinite(lim) & (yy > lim + 0.05) & (lim > np.where(np.isfinite(tf), tf, lim) - 2.5)
+                    if ok2.any():
+                        tg_, ww_ = tgt[fr], w[fr]
+                        tg_[ok2] = lim[ok2]
+                        ww_[ok2] = W_CLR
+                        tgt[fr], w[fr] = tg_, ww_
                 b4 = mode == 4
                 if b4.any():
                     dm = self.dom[idx][b4]

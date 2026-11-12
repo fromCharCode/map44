@@ -42,7 +42,7 @@ def _deck_heights(city, x0, z0):
     """Raster (1 m) der Deck-Oberkante aus den LoD2-Dreiecken (NaN = kein Deck)."""
     h = np.full((2000, 2000), np.nan, dtype=np.float32)
     for m in city.get("bridge_meshes", []):
-        t = m["top"]
+        t = m.get("top0") or m["top"]
         for k in range(0, len(t) - 8, 9):
             ax, ay, az = t[k] - x0, t[k + 1], t[k + 2] - z0
             bx, by, bz = t[k + 3] - x0, t[k + 4], t[k + 5] - z0
@@ -103,7 +103,7 @@ def ramps_tile(name):
     deck = Image.new("L", (2000, 2000), 0)
     dd = ImageDraw.Draw(deck)
     for m in city.get("bridge_meshes", []):
-        t = m["top"]
+        t = m.get("top0") or m["top"]
         for k in range(0, len(t) - 8, 9):
             dd.polygon([(t[k] - x0, t[k + 2] - z0), (t[k + 3] - x0, t[k + 5] - z0), (t[k + 6] - x0, t[k + 8] - z0)], fill=255)
     for b in city.get("bridges", []):                     # OSM-Brückenplatten (Spiel baut dort eigene Decks)

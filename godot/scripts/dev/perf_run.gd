@@ -118,7 +118,7 @@ func _run_tour() -> void:
 		while not w.all_loaded() and Time.get_ticks_msec() - t0 < 90000:
 			fly.position = Vector3(x, w.height_at(x, z) + float(st.get("h", 1.7)), z)
 			await _wait(5)
-		fly.position = Vector3(x, w.height_at(x, z) + float(st.get("h", 1.7)), z)
+		fly.position = Vector3(x, float(st["y"]) if st.has("y") else w.height_at(x, z) + float(st.get("h", 1.7)), z)
 		fly.rotation = Vector3(deg_to_rad(float(st.get("pitch", 0.0))), deg_to_rad(float(st.get("yaw", 0.0))), 0.0)
 		await _wait(int(st.get("frames", 120)))
 		var img := get_viewport().get_texture().get_image()

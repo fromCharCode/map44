@@ -500,7 +500,7 @@ func _build_wires_and_poles(terr: Terrain, first: int, container: Node3D, poles:
 	for pl in poles:
 		var px := float(pl[0])
 		var pz := float(pl[1])
-		var py := terr.height_at(px, pz)
+		var py := float(pl[7]) if pl.size() > 7 else terr.height_at(px, pz)     # Brückenmasten: Deckhöhe
 		var yaw := float(pl[3])
 		pole_xf.append(Transform3D(Basis(Vector3.UP, yaw), Vector3(px, py, pz)))
 		var toward := Vector3(cos(yaw), 0, -sin(yaw))
@@ -513,12 +513,11 @@ func _build_wires_and_poles(terr: Terrain, first: int, container: Node3D, poles:
 	for wi in range(first, ways.size()):
 		var w: Dictionary = ways[wi]
 		var pts: Array = w["pts"]
-		if w["bridge"]:
-			continue
+		# Fahrdraht auch über Brücken (Masten dort aus tools/bridge_decks.py am Deckrand)
 		for i in pts.size() - 1:
 			wire_v.append(Vector3(pts[i].x, pts[i].y + 5.7, pts[i].z))
 			wire_v.append(Vector3(pts[i + 1].x, pts[i + 1].y + 5.7, pts[i + 1].z))
-		if not poles.is_empty():
+		if not poles.is_empty() or w["bridge"]:
 			continue          # Masten kommen aus den Kacheldaten
 		# Masten alle ~38 m, abwechselnd links/rechts
 		var step := 38.0

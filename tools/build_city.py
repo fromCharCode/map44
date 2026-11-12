@@ -27,7 +27,7 @@ from shapely.ops import linemerge, polygonize, unary_union
 from shapely.strtree import STRtree
 
 from config import BASE_HEIGHT, BBOX_UTM, DOP_DIR, ORIGIN_E, ORIGIN_N, OSM_DIR, PROCESSED, RAW
-from bridge_fix import DomMosaic
+from bridge_fix import DgmMosaic, DomMosaic
 from road_surface import PAD as RS_PAD, Mosaic, RoadSurface, raster_tris
 from parking import lane_widths, park_sides
 
@@ -1281,6 +1281,139 @@ def _dip_fix(part):
     return q
 
 
+def _part_width(p) -> float:
+    """mittlere Breite der Grundfläche (2·Fläche/Umfang) eines LoD2-Brückenteils"""
+    polys = []
+    for ext, _holes in p.get("roofs", []):
+        if len(ext) >= 3:
+            try:
+                pg = Polygon([(q[0], q[1]) for q in ext])
+                polys.append(pg if pg.is_valid else make_valid(pg))
+            except Exception:
+                pass
+    if not polys:
+        return 0.0
+    u = unary_union([g.buffer(0.01) for g in polys])
+    return 2.0 * u.area / max(u.length, 1e-6)
+
+
+CLR_RAISE = {"motorway": 4.5, "trunk": 4.5, "primary": 4.5, "secondary": 4.5, "tertiary": 4.2, "motorway_link": 4.5,
+             "trunk_link": 4.5, "primary_link": 4.5, "secondary_link": 4.5, "tertiary_link": 4.2, "tram": 4.7, "rail": 5.5,
+             "light_rail": 5.0}
+
+
+def _clearance_raise(parts, log=print, dry=False):
+    """LoD2-Decks, die über einer Straße/einem Gleis zu tief liegen (Lichtraum < Soll), auf die Oberkante heben, die
+    das Oberflächenmodell (DOM) GENAU über der Fahrbahn zeigt – nur wenn es dort klar höher liegt (≥ 60 % der Punkte
+    > 0,3 m über LoD2) und der Lichtraum damit stimmt. Ergänzt die flächige DOM-Korrektur (bridge_fix), die Teile mit
+    Treppen/Gebäudeanschluss oder schräger Lage ablehnt (TU-Campusbrücke über die Bergstraße: LoD2 2,6 m zu tief)."""
+    from road_surface import raster_tris
+    lines = []
+    for name in ("roads", "rail"):
+        for el in load(name):
+            t = el.get("tags", {})
+            if el["type"] != "way" or t.get("tunnel") not in (None, "no") or t.get("bridge") not in (None, "no"):
+                continue
+            if name == "roads":
+                cls = t.get("highway")
+                if cls not in DRIVE:
+                    continue
+                hw, need = road_width(t) * 0.5, CLR_RAISE.get(cls, 4.0)
+            else:
+                cls = t.get("railway")
+                if cls not in ("tram", "rail", "light_rail"):
+                    continue
+                hw, need = 1.6, CLR_RAISE[cls]
+            c = way_coords(el)
+            if len(c) >= 2:
+                lines.append((LineString(c), hw, need))
+    if not lines:
+        return parts
+    tree = STRtree([l_[0] for l_ in lines])
+    out = []
+    n_up = 0
+    for p in parts:
+        polys = []
+        for ext, _h in p.get("roofs", []):
+            if len(ext) >= 3:
+                pg = Polygon([(q[0], q[1]) for q in ext])
+                polys.append(pg if pg.is_valid else make_valid(pg))
+        if not polys:
+            out.append(p)
+            continue
+        foot = unary_union([g.buffer(0.01) for g in polys])
+        cand = [lines[int(i)] for i in tree.query(foot)]
+        cand = [c_ for c_ in cand if c_[0].intersects(foot)]
+        if not cand:
+            out.append(p)
+            continue
+        _, utm = _oriented_tris(p["roofs"])
+        tris = [[(q[0], q[1], q[2] - BASE_HEIGHT) for q in t_] for t_ in utm]
+        mn_e, mn_n, mx_e, mx_n = foot.bounds
+        x0, ytop = math.floor(mn_e) - 1, math.ceil(mx_n) + 1
+        w, h = int(mx_e - x0) + 3, int(ytop - mn_n) + 3
+        if w * h > 4_000_000:
+            out.append(p)
+            continue
+        hi, _lo = raster_tris(tris, x0, ytop, w, h)
+        best = None
+        for ln, hw, need in cand:
+            band = ln.buffer(hw, cap_style=2).intersection(foot.buffer(-0.5))
+            if band.is_empty or band.area < 4.0:
+                continue
+            bx0, by0, bx1, by1 = band.bounds
+            es, ns = np.meshgrid(np.arange(bx0, bx1, 1.0) + 0.5, np.arange(by0, by1, 1.0) + 0.5)
+            es, ns = es.ravel(), ns.ravel()
+            inside = np.array([band.contains(Point(e_, n_)) for e_, n_ in zip(es, ns)], dtype=bool)
+            if inside.sum() < 4:
+                continue
+            es, ns = es[inside], ns[inside]
+            cc = np.clip((es - x0).astype(int), 0, w - 1)
+            rr = np.clip((ytop - ns).astype(int), 0, h - 1)
+            top = hi[rr, cc]
+            ok = np.isfinite(top)
+            if ok.sum() < 4:
+                continue
+            es, ns, top = es[ok], ns[ok], top[ok]
+            g = DGM_RAW.sample(es, ns)
+            d = DOM.sample(es, ns)
+            fin = np.isfinite(g) & np.isfinite(d)
+            if fin.sum() < 4:
+                continue
+            top, g, d = top[fin], g[fin], d[fin]
+            clr = float(np.median(top - 1.0 - g))
+            if clr >= need - 0.3:
+                continue
+            higher = d > top + 0.3
+            if higher.mean() < 0.6:
+                continue
+            raise_ = float(np.median(d[higher] - top[higher]))
+            new_clr = clr + raise_
+            if not (0.5 <= raise_ <= 4.5) or new_clr < need - 0.6:
+                continue
+            if best is None or raise_ > best[0]:
+                best = (raise_, clr, new_clr)
+        if best is None:
+            out.append(p)
+            continue
+        dz = best[0]
+        log(f"  Brücke {p['id']}: Lichtraum {best[1]:.2f} m -> DOM über Fahrbahn: +{dz:.2f} m (neu {best[2]:.2f} m)")
+        n_up += 1
+        if dry:
+            out.append(p)
+            continue
+
+        def mv(polys_):
+            return [([(q[0], q[1], q[2] + dz) for q in ext], [[(q[0], q[1], q[2] + dz) for q in hh] for hh in holes])
+                    for ext, holes in polys_]
+        q = dict(p)
+        q["roofs"], q["walls"], q["ground"] = mv(p["roofs"]), mv(p["walls"]), mv(p["ground"])
+        q["clr_fix"] = round(dz, 2)
+        out.append(q)
+    log(f"  Lichtraumkorrektur: {n_up} LoD2-Teile über Straßen/Gleisen angehoben")
+    return out
+
+
 def collect_bridges():
     """Brücken aus LoD2 (Bauwerke 53001_1800 / 51009_1700), Höhen per DOM1 korrigiert (bridge_fix).
     Gibt (meshes, rails, deck, deck_win) zurück: meshes nur für Teile dieser Kachel; deck = (SIZE,SIZE)-Raster der
@@ -1290,10 +1423,15 @@ def collect_bridges():
     win = (MIN_E - RS_PAD, MIN_N - RS_PAD, MAX_E + RS_PAD, MAX_N + RS_PAD)
     skip = set(OVERRIDES.get("skip_bridge_parts", []))      # z. B. abgerissene Carolabrücke
     parts = [p for p in lod2.read_bridges(win) if p.get("id") not in skip]
+    # Schmale Streifen (≈ 0,5 m: Kappen/Brüstungen/Lärmschutzwände als eigenes "Brückenteil" erfasst) sind keine
+    # Decks – als 1-m-Platte gebaut hingen sie teils bis auf die Straße darunter (A17 über Pesterwitzer Straße).
+    # Geländer entstehen ohnehin aus den Deckkanten (bridge_styles.py).
+    parts = [p for p in parts if _part_width(p) >= 1.2]
     dip = set(OVERRIDES.get("bridge_part_dip_fix", []))
     if dip:
         parts = [_dip_fix(p) if p.get("id") in dip else p for p in parts]
-    parts = correct_parts(parts, DOM, _oriented_tris)
+    parts = correct_parts(parts, DOM, _oriented_tris, dgm=DGM_RAW)
+    parts = _clearance_raise(parts)
     tris = []
     for p in parts:
         _, utm = _oriented_tris(p["roofs"])
@@ -1376,6 +1514,7 @@ def collect_bridges():
 DECK = None
 DECK_LO = None
 DOM = DomMosaic()
+DGM_RAW = DgmMosaic()
 PLAT = None          # Plattformhöhe (Terrassen/Bastionen), NaN = keine
 
 

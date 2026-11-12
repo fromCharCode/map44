@@ -11,6 +11,8 @@ extends Node3D
 ##   --drivebench=<s>         Fahr-Leistungstest (scripts/dev/drive_bench.gd; --benchspeed, --benchabl, --attachtrace,
 ##                            --nostream, --nosdfgi), z. B. mit --resolution 3840x2160
 ##   --tunneltest=<kachel>:<i> Durchfahrt Tunnelkette i (scripts/dev/tunnel_test.gd; --tunnelgas)
+##   --bridgeaudit[=k1,k2]   alle Brücken prüfen: Fahrbahn auf/unter Brücken frei (scripts/dev/bridge_audit.gd)
+##   --routetest=<kachel>:<weg>[:-1]  Durchfahrt eines Weges mit Fahrphysik (scripts/dev/route_test.gd; mit --drive=x,z)
 ##   --vehshot=<ordner>      Nahaufnahmen von Bussen/Bahnen (scripts/dev/veh_shot.gd; --vehkind=bus|tram)
 ##   --skidtest               Reifenspuren-Test (Vollgas, dann Handbremse + Einschlag), mit --shot/--street
 ##   --scale=<0.5..1>         3D-Auflösung (FSR2); ohne Angabe automatisch nach Bildschirmgröße
@@ -248,6 +250,12 @@ func _build() -> void:
 		dc.make_current()
 	if args.has("bridgetest"):
 		await _bridge_test()
+	if args.has("bridgeaudit"):
+		var ba := BridgeAudit.new()
+		ba.name = "BridgeAudit"
+		add_child(ba)
+		ba.start(self, args)
+		ba.call_deferred("run")
 	await _stage("Fertig", 100)
 	print("Aufbau gesamt: %d ms" % (Time.get_ticks_msec() - t0))
 	loading_layer.queue_free()
@@ -497,6 +505,12 @@ func _setup_game() -> void:
 		db.name = "DriveBench"
 		add_child(db)
 		db.start(self, player, traffic, world, args)
+		AudioServer.set_bus_mute(0, true)
+	if args.has("routetest") or args.has("routelist"):
+		var rt := RouteTest.new()
+		rt.name = "RouteTest"
+		add_child(rt)
+		rt.start(self, args)
 		AudioServer.set_bus_mute(0, true)
 	if args.has("tunneltest"):
 		var tt := TunnelTest.new()
