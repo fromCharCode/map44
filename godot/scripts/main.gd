@@ -972,3 +972,6 @@ static func _release_statics() -> void:
 	StreetLife._sign_plates.clear()
 	StreetLife._mat_cache.clear()
 	ParkedCars._static_parts.clear()
+	Stops._scenes.clear()
+	Stops._mats.clear()
+	Stops._rail_parts.clear()

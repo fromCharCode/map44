@@ -50,6 +50,33 @@ static func prewarm() -> void:
 	for m in FALLBACK:
 		scene(m)
 	manifest()
+	_rail_mesh_parts()
+
+
+static var _rail_parts: Array = []      # [[Mesh, Transform3D relativ zur Modellwurzel], …] aus platform_rail.glb
+static var _rail_loaded := false
+
+
+static func _rail_mesh_parts() -> Array:
+	if _rail_loaded:
+		return _rail_parts
+	_rail_loaded = true
+	var ps := scene("platform_rail")
+	if ps == null:
+		return _rail_parts
+	var root := ps.instantiate() as Node3D
+	var stack: Array = [[root, Transform3D.IDENTITY]]
+	while not stack.is_empty():
+		var e: Array = stack.pop_back()
+		var nd: Node = e[0]
+		var xf: Transform3D = e[1]
+		if nd is MeshInstance3D and (nd as MeshInstance3D).mesh != null:
+			_rail_parts.append([(nd as MeshInstance3D).mesh, xf])
+		for c in nd.get_children():
+			if c is Node3D:
+				stack.append([c, xf * (c as Node3D).transform])
+	root.free()
+	return _rail_parts
 
 
 static func model_info(model: String) -> Dictionary:
@@ -78,6 +105,7 @@ func build(t: Terrain, data: Dictionary) -> void:
 	if data.is_empty():
 		return
 	_platforms(data.get("platforms", []))
+	_prails(data.get("prails", []))
 	for m in data.get("masts", []):
 		_mast(m)
 	for s in data.get("shelters", []):
@@ -327,6 +355,51 @@ func _near(p: Vector3) -> bool:
 		if (d[1] as Vector2).distance_to(Vector2(p.x, p.z)) < 120.0:
 			return true
 	return false
+
+
+# --- Schutzgitter an Haltestelleninseln (tools/platform_rails.py: [x, z, y, yaw] je 2-m-Segment) ------------------
+func _prails(segs: Array) -> void:
+	if segs.is_empty():
+		return
+	var parts := _rail_mesh_parts()
+	if parts.is_empty():
+		return
+	# je Insel eine Gruppe (Segmente liegen hintereinander; Lücke > 3 m = neue Insel) -> gutes Culling
+	var groups: Array = []
+	var cur: Array = []
+	var last := Vector2(INF, INF)
+	for sg in segs:
+		var p := Vector2(float(sg[0]), float(sg[1]))
+		if not cur.is_empty() and p.distance_to(last) > 3.0:
+			groups.append(cur)
+			cur = []
+		cur.append(sg)
+		last = p
+	if not cur.is_empty():
+		groups.append(cur)
+	var box := BoxShape3D.new()
+	box.size = Vector3(2.0, 1.05, 0.12)
+	for g in groups:
+		var xfs: Array = []
+		var body := StaticBody3D.new()
+		for sg in g:
+			var xf := Transform3D(Basis(Vector3.UP, float(sg[3])), Vector3(float(sg[0]), float(sg[2]), float(sg[1])))
+			xfs.append(xf)
+			var cs := CollisionShape3D.new()
+			cs.shape = box
+			cs.transform = xf.translated_local(Vector3(0, 0.52, 0))
+			body.add_child(cs)
+		for part in parts:
+			var mm := MultiMesh.new()
+			mm.mesh = part[0]
+			RenderUtil.fill_multimesh(mm, xfs, part[1])
+			var mmi := MultiMeshInstance3D.new()
+			mmi.multimesh = mm
+			mmi.visibility_range_end = 260.0
+			mmi.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
+			mmi.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+			add_child(mmi)
+		add_child(body)
 
 
 # --- Bahnsteige ------------------------------------------------------------------------------------------------

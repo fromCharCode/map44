@@ -89,6 +89,29 @@ def _beam(tris, norms, a, b, side, w, h):
             norms.extend([round(n[0], 3), round(n[1], 3), round(n[2], 3)])
 
 
+def _strut(tris, norms, a, b, side, w, t):
+    """Schräge Strebe von a nach b: Querschnitt w (quer zur Brücke, side) × t (senkrecht zu Strebe und side)."""
+    dx, dy, dz = b[0] - a[0], b[1] - a[1], b[2] - a[2]
+    L = math.sqrt(dx * dx + dy * dy + dz * dz) or 1.0
+    dx, dy, dz = dx / L, dy / L, dz / L
+    sx, sy, sz = side[0], 0.0, side[1]
+    ux, uy, uz = dy * sz - dz * sy, dz * sx - dx * sz, dx * sy - dy * sx      # u = d × s
+    ul = math.sqrt(ux * ux + uy * uy + uz * uz) or 1.0
+    ux, uy, uz = ux / ul, uy / ul, uz / ul
+    hw, ht = w * 0.5, t * 0.5
+
+    def c(p, i, j):
+        return (p[0] + sx * hw * i + ux * ht * j, p[1] + sy * hw * i + uy * ht * j, p[2] + sz * hw * i + uz * ht * j)
+    cs = [c(a, -1, -1), c(a, 1, -1), c(a, 1, 1), c(a, -1, 1), c(b, -1, -1), c(b, 1, -1), c(b, 1, 1), c(b, -1, 1)]
+    faces = [(0, 4, 5, 1, (-ux, -uy, -uz)), (3, 2, 6, 7, (ux, uy, uz)), (0, 3, 7, 4, (-sx, -sy, -sz)),
+             (1, 5, 6, 2, (sx, sy, sz))]
+    for i0, i1, i2, i3, n in faces:
+        for tri in ((i0, i1, i2), (i0, i2, i3)):
+            for i in tri:
+                tris.extend(cs[i])
+            norms.extend([round(n[0], 3), round(n[1], 3), round(n[2], 3)])
+
+
 def tile_arches(name, bridges):
     d = TILES / name
     cf = d / "city.json"
@@ -206,7 +229,44 @@ def tile_arches(name, bridges):
                             _beam(steel_tris, steel_n, h0, (b3[0], cur[2] - 0.8, b3[2]), (cur[3], cur[4]), 0.12, 0.12)
                 prev = cur
             steel_col = col
+            # Vorlandbrücken auf V-förmigen Doppelstreben (Recherche pier_shape: je Achse zwei V-Paare unter den
+            # Stahltrögen). Einzelfelder 30–80 m nicht einzeln belegt -> gleichmäßig ≈ 52 m (Schätzung).
+            stations = []
+            for f0, f1 in ((0.0, sa), (sb, L)):
+                fl = f1 - f0
+                nf = max(1, int(round(fl / 52.0)))
+                stations += [f0 + fl * i / nf for i in range(1, nf)]
+            stations += [sa, sb]                                  # am Bogenfuß ebenfalls Streben statt Pfeilerscheibe
+            v_off = min(float(b.get("width_m") or 24.0) * 0.5 - 6.5, 8.0)
+            for sv in stations:
+                p = axis.interpolate(sv)
+                if not (xmin <= p.x < xmax and zmin <= p.y < zmax):
+                    continue
+                yd = deck_y(p.x, p.y)
+                if yd is None:
+                    continue
+                gnd = max(ground(p.x, p.y), water_y(p.x, p.y))
+                hgt = yd - 2.6 - gnd                              # Unterkante Stahltrog ≈ Deck − 2,5 m
+                if hgt < 2.0:
+                    continue
+                q = axis.interpolate(min(sv + 1.0, L))
+                r0 = axis.interpolate(max(sv - 1.0, 0.0))
+                tx, tz = q.x - r0.x, q.y - r0.y
+                tl = math.hypot(tx, tz) or 1.0
+                tx, tz = tx / tl, tz / tl
+                nx, nz = -tz, tx
+                spread = min(max(hgt * 0.75, 3.0), 7.0)          # halbe Öffnung oben (längs)
+                for sd in (1.0, -1.0):
+                    fx, fz = p.x + nx * v_off * sd, p.y + nz * v_off * sd
+                    foot = (fx, gnd - 0.5, fz)
+                    for lg in (1.0, -1.0):
+                        top = (fx + tx * spread * lg, yd - 2.5, fz + tz * spread * lg)
+                        _strut(steel_tris, steel_n, foot, top, (nx, nz), 1.1, 0.9)
+                    # Fundament-Sockel
+                    _beam(steel_tris, steel_n, (fx - tx * 1.0, gnd - 0.4, fz - tz * 1.0),
+                          (fx + tx * 1.0, gnd - 0.4, fz + tz * 1.0), (nx, nz), 2.2, 1.0)
             way_ids.update(ids)
+            continue                                              # keine Standard-Pfeilerscheiben
         if b.get("type") not in TYPES:
             # Balken-/Stahlbrücken: Pfeiler an den echten Feldgrenzen (statt gleichmäßiger Standardpfeiler)
             sp = [float(v) for v in b["spans_m"]]
