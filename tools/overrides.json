@@ -32,5 +32,9 @@
  "skip_tunnels": [
   "Coventrystraße"
  ],
- "skip_tunnels_note": "Unterführung B 173 (Coventrystraße, 76 m): Einfahrt im Test blockiert (Stufe an der Platte, Ursache offen) - bis zur Klärung ohne Tunnel"
+ "skip_tunnels_note": "Unterführung B 173 (Coventrystraße, 76 m): Einfahrt im Test blockiert (Stufe an der Platte, Ursache offen) - bis zur Klärung ohne Tunnel",
+ "bridge_part_dip_fix": [
+  "DESNATPU10001mWt"
+ ],
+ "bridge_part_dip_fix_note": "A17-Talbrücke Lockwitztal: LoD2-Deck mit 25-m-Knick in Feldmitte (Datenfehler) -> gerade zwischen den Enden"
 }

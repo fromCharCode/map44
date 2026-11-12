@@ -1224,6 +1224,63 @@ def bridge_lines():
     return res
 
 
+def _dip_fix(part):
+    """LoD2-Brückenteil mit Knick im Deck (Datenfehler, overrides.json bridge_part_dip_fix): Querschnitte, deren
+    Oberkante mehr als 0,5 m unter der Geraden zwischen den Deckhöhen an beiden Enden liegt, anheben."""
+    allp = [q for ext, holes in part["roofs"] + part["walls"] + part["ground"] for q in ext]
+    if len(allp) < 6:
+        return part
+    P = np.array([(q[0], q[1]) for q in allp])
+    c = P.mean(axis=0)
+    ev, evec = np.linalg.eigh(np.cov((P - c).T))
+    ax = evec[:, 1]
+    tops = [(float((q[0] - c[0]) * ax[0] + (q[1] - c[1]) * ax[1]), q[2]) for ext, _ in part["roofs"] for q in ext]
+    if len(tops) < 6:
+        return part
+    us = np.array([t[0] for t in tops])
+    zs = np.array([t[1] for t in tops])
+    u0, u1 = float(us.min()), float(us.max())
+    L = max(u1 - u0, 1.0)
+    a = zs[us < u0 + 0.15 * L]
+    b = zs[us > u1 - 0.15 * L]
+    if len(a) == 0 or len(b) == 0:
+        return part
+    za, zb = float(np.percentile(a, 80)), float(np.percentile(b, 80))
+    # Oberkante je 4-m-Abschnitt
+    bins = {}
+    for u, z in zip(us, zs):
+        k = int((u - u0) // 4.0)
+        bins[k] = max(bins.get(k, -1e9), z)
+
+    def delta(q):
+        u = float((q[0] - c[0]) * ax[0] + (q[1] - c[1]) * ax[1])
+        k = int((u - u0) // 4.0)
+        top = max(bins.get(k, -1e9), bins.get(k - 1, -1e9), bins.get(k + 1, -1e9))
+        target = za + (zb - za) * min(max((u - u0) / L, 0.0), 1.0)
+        d = target - top
+        return d if (top > -1e8 and d > 0.5) else 0.0
+
+    def mv(polys):
+        return [([(q[0], q[1], q[2] + delta(q)) for q in ext], [[(q[0], q[1], q[2] + delta(q)) for q in hh] for hh in holes])
+                for ext, holes in polys]
+    def mv_top(polys):
+        # Oberkante eckenweise: Dreiecke spannen im Knick hohe und tiefe Ecken an derselben Stelle
+        def up(q):
+            u = float((q[0] - c[0]) * ax[0] + (q[1] - c[1]) * ax[1])
+            target = za + (zb - za) * min(max((u - u0) / L, 0.0), 1.0)
+            return (q[0], q[1], target) if target - q[2] > 0.5 else q
+        return [([up(q) for q in ext], [[up(q) for q in hh] for hh in holes]) for ext, holes in polys]
+    def target_of(qq):
+        u = float((qq[0] - c[0]) * ax[0] + (qq[1] - c[1]) * ax[1])
+        return za + (zb - za) * min(max((u - u0) / L, 0.0), 1.0)
+    # Seitenwände, die tiefer als jede Deckdicke unter die Soll-Linie reichen, gehören zum Knick -> weglassen
+    walls = [(ext, holes) for ext, holes in part["walls"] if max(target_of(qq) - qq[2] for qq in ext) <= 6.0]
+    q = dict(part)
+    q["roofs"], q["walls"], q["ground"] = mv_top(part["roofs"]), mv(walls), mv(part["ground"])
+    print(f"  Brücke {part['id']}: Knick im Deck begradigt (Enden {za:.1f} / {zb:.1f} m)", flush=True)
+    return q
+
+
 def collect_bridges():
     """Brücken aus LoD2 (Bauwerke 53001_1800 / 51009_1700), Höhen per DOM1 korrigiert (bridge_fix).
     Gibt (meshes, rails, deck, deck_win) zurück: meshes nur für Teile dieser Kachel; deck = (SIZE,SIZE)-Raster der
@@ -1232,7 +1289,11 @@ def collect_bridges():
     from bridge_fix import correct_parts
     win = (MIN_E - RS_PAD, MIN_N - RS_PAD, MAX_E + RS_PAD, MAX_N + RS_PAD)
     skip = set(OVERRIDES.get("skip_bridge_parts", []))      # z. B. abgerissene Carolabrücke
-    parts = correct_parts([p for p in lod2.read_bridges(win) if p.get("id") not in skip], DOM, _oriented_tris)
+    parts = [p for p in lod2.read_bridges(win) if p.get("id") not in skip]
+    dip = set(OVERRIDES.get("bridge_part_dip_fix", []))
+    if dip:
+        parts = [_dip_fix(p) if p.get("id") in dip else p for p in parts]
+    parts = correct_parts(parts, DOM, _oriented_tris)
     tris = []
     for p in parts:
         _, utm = _oriented_tris(p["roofs"])
