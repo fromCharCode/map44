@@ -66,15 +66,21 @@ wenn sich ihre Version ändert). Deinstallieren unter Linux: `… install.sh | b
   Pirnaischen Platz mit „Naddl und Ronny siegt“ …), Elbe mit Dampfern, Brücken
 - Straßen in echter Breite (aus dem öffentlichen Straßenraum abgeleitet), Gehwege bis zur Hauskante, Granit-Bordsteine,
   Markierungen, Ampeln, Verkehrszeichen; Gehwegbeläge je Viertel; über 120 000 echte Bäume aus dem Dresdner
-  Baumkataster (Art, Höhe, Standort) mit Baumscheiben; Plätze wie der Altmarkt als gepflasterte Freiflächen
+  Baumkataster (Art, Höhe, Standort) mit Baumscheiben; Grünstreifen und Allee-Mittelstreifen als Rasen; Plätze wie
+  der Altmarkt als gepflasterte Freiflächen
 - Brücken nach Recherche: Sandstein-Bogenbrücken (Augustus-, Albert-, Marienbrücke …) mit echten Bögen und Pfeilern,
-  Geländer je Bauwerk (Stein, Stahl in Originalfarbe, Glaswände), Blaues Wunder als Stahlfachwerk; die 2024
-  eingestürzte und abgerissene Carolabrücke fehlt wie in echt
+  Geländer je Bauwerk (Stein, Stahl in Originalfarbe, Glaswände), Blaues Wunder als Stahlfachwerk,
+  Waldschlößchenbrücke mit Stahlbogen und V-Streben; die 2024 eingestürzte und abgerissene Carolabrücke fehlt wie in
+  echt
 - Verkehr mit Vorfahrt und Ampeln, Fußgänger, Buslinien (OSM) mit Zielanzeigen
 - Straßenbahnen der DVB (NGT D12DD und NGT DX DD, maßstäblich nachgebaut) auf ihren echten Linien mit Zielanzeigen,
-  Haltestellen an allen 1 761 echten Steigen: Masten mit Linien und Zielen, Bahnsteige mit Bordhöhe und
-  Blindenleitstreifen, Wartehallen, Abfahrtstafeln mit Minutenanzeige (Takt nach Tageszeit, echte Bahnen live)
+  Haltestellen an allen 1 761 echten Steigen: Masten mit Linien und Zielen, Bahnsteige mit Bordhöhe,
+  Blindenleitstreifen und Schutzgittern an Inseln, Wartehallen, Abfahrtstafeln im DVB-Format („3 Wilder Mann 2“, Takt
+  nach Tageszeit, echte Bahnen live)
 - Fahrphysik mit Reifenmodell, Federung, ABS/ESP, Schaden, Reifenspuren
+
+Noch nicht drin: Tunnel (A17, Wiener Platz, Waldschlößchen-Nordseite – die Straße endet am Portal), Fahrplan nach
+echtem DVB-Fahrplan (bisher Takt nach Tageszeit).
 
 ## Aus dem Quellcode starten (Entwickler)
 

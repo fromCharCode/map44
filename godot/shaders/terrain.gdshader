@@ -191,7 +191,15 @@ void fragment() {
 		alb = mix(alb, L.a, m1.b); nrm = mix(nrm, L.n, m1.b); rgh = mix(rgh, L.r, m1.b);
 	}
 	if (e_cob > EPS) {
-		Layer L = layer(nlow > 0.5 ? 3 : 4, wuv, k);
+		// Platzbelag (Großpflaster oder Sandsteinplatten) großräumig wählen (~400 m), damit ein Platz einen
+		// durchgehenden Belag hat; vorher wechselte er im 90-m-Rauschen hart = Tarnflecken
+		float psel = smoothstep(0.44, 0.56, texture(noise_tex, wuv * 0.0025 + vec2(0.31, 0.17)).r);
+		Layer L = layer(psel > 0.5 ? 3 : 4, wuv, k);
+		if (psel > 0.02 && psel < 0.98) {
+			Layer Lb = layer(psel > 0.5 ? 4 : 3, wuv, k);
+			float f = psel > 0.5 ? 1.0 - psel : psel;
+			L.a = mix(L.a, Lb.a, f); L.n = mix(L.n, Lb.n, f); L.r = mix(L.r, Lb.r, f);
+		}
 		alb = mix(alb, L.a, m0.b); nrm = mix(nrm, L.n, m0.b); rgh = mix(rgh, L.r, m0.b);
 	}
 	if (e_walk > EPS) {
