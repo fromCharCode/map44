@@ -69,11 +69,12 @@ Layer layer(int i, vec2 wuv, float k) {
 	L.a = mix(a1, a2, k);
 	// Farbgrading pro Material (Quelltexturen sind teils zu bunt/hell)
 	float g = dot(L.a, vec3(0.3, 0.59, 0.11));
-	if (i == 2) { L.a = mix(vec3(g), L.a, 0.45) * 0.95; }
+	if (i == 2) { L.a = mix(vec3(g), L.a, 0.45) * 0.84; }
 	else if (i == 6 || i == 7) { L.a = mix(vec3(g), L.a, 0.62) * vec3(0.78, 0.82, 0.7); }
 	else if (i == 8) { L.a = mix(vec3(g), L.a, 0.5) * 0.55; }
-	else if (i == 0) { L.a *= 1.45; }
-	else if (i == 1) { L.a *= 1.2; }
+	// Asphalt: gealterter Stadtasphalt ≈ 6–8 % Albedo (Quelltexturen 2 % bzw. 6 %; vorher 2,4-facher Kontrast = Flecken)
+	else if (i == 0) { L.a *= 2.7; }
+	else if (i == 1) { L.a *= 1.25; }
 	else if (i == 10) { L.a *= 1.35; }
 	else if (i == 4) { L.a = mix(vec3(g), L.a, 0.7); }
 	vec3 n1 = unpack_nrm(texture(normal_arr, vec3(uv1, float(i))));
@@ -216,10 +217,16 @@ void fragment() {
 		alb = mix(alb, W.a, m0.g); nrm = mix(nrm, W.n, m0.g); rgh = mix(rgh, W.r, m0.g);
 	}
 	if (e_road > EPS) {
-		Layer L = layer(nlow > 0.62 ? 1 : 0, wuv, k);
-		// Fahrspuren: etwas dunkler und glatter, Ränder heller/rauer
+		// neuer/abgefahrener Belag weich überblendet (nur im Übergangsband doppelt gelesen)
+		float wsel = smoothstep(0.52, 0.78, nlow);
+		Layer L = layer(wsel > 0.5 ? 1 : 0, wuv, k);
+		if (wsel > 0.02 && wsel < 0.98) {
+			Layer L2b = layer(wsel > 0.5 ? 0 : 1, wuv, k);
+			float f = wsel > 0.5 ? 1.0 - wsel : wsel;
+			L.a = mix(L.a, L2b.a, f); L.n = mix(L.n, L2b.n, f); L.r = mix(L.r, L2b.r, f);
+		}
 		float wear = clamp(nlow * 1.2, 0.0, 1.0);
-		L.a *= mix(0.92, 1.12, wear);
+		L.a *= mix(0.96, 1.04, wear);
 		alb = mix(alb, L.a, m0.r); nrm = mix(nrm, L.n, m0.r); rgh = mix(rgh, L.r, m0.r);
 		// Flicken (ausgebesserter Asphalt) und Randverschmutzung
 		float patch_m = smoothstep(0.4, 0.6, s2.r);

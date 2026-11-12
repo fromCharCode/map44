@@ -480,7 +480,7 @@ func _platforms(plats: Array) -> void:
 					tact.add_vertex(q[k])
 	var mesh := ArrayMesh.new()
 	top.commit(mesh)
-	mesh.surface_set_material(0, TexLib.tri_material("sidewalk", 1.0))
+	mesh.surface_set_material(0, TexLib.tri_material("sidewalk", 0.8))   # wie Gehweg im Gelände-Shader (×0,84)
 	side.commit(mesh)
 	mesh.surface_set_material(1, TexLib.tri_material("paving_sandstone", 0.78))
 	tact.commit(mesh)
