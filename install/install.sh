@@ -76,7 +76,7 @@ chmod +x "$DEST/map44.x86_64"
 [ "${MAP44_KEEP_ZIPS:-0}" = 1 ] || rm -f "$DL/map44-linux-x86_64.zip"
 
 NEED=$(tr -d '[:space:]' < "$DEST/DATA_VERSION")
-HAVE=$(tr -d '[:space:]' < "$DEST/data/VERSION" 2>/dev/null || true)
+HAVE=""; [ -f "$DEST/data/VERSION" ] && HAVE=$(tr -d '[:space:]' < "$DEST/data/VERSION")
 if [ "$NEED" != "$HAVE" ]; then
   say "Lade die Kartendaten $NEED (rund 5 GB, einmalig – das dauert je nach Leitung eine Weile) …"
   DATA_URLS=$(assets "$API/tags/$NEED")
