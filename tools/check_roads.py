@@ -32,6 +32,28 @@ def check_tile(name: str, verbose: bool = True) -> dict:
     min_e, max_n = e_km * 1000.0, (n_km + 2) * 1000.0
     x0l, z0l = min_e - ORIGIN_E, -(max_n - ORIGIN_N)          # lokale Koordinaten der NW-Ecke
 
+    # Tunnel (tools/tunnels.py): im Tunnelband ist die befahrbare Fläche die Fahrbahnplatte, nicht der Hang darüber
+    if city.get("tunnels"):
+        from PIL import Image, ImageDraw
+        ter = ter.copy()
+        for tn in city["tunnels"]:
+            q = tn["pts"]
+            hw = float(tn["w"]) * 0.5 + 1.2
+            for i in range(len(q) - 1):
+                ax, az, bx, bz = q[i][0] - x0l, q[i][1] - z0l, q[i + 1][0] - x0l, q[i + 1][1] - z0l
+                dx, dz = bx - ax, bz - az
+                L = (dx * dx + dz * dz) ** 0.5 or 1.0
+                nx, nz = -dz / L * hw, dx / L * hw
+                c0, c1 = int(max(min(ax, bx) - hw - 2, 0)), int(min(max(ax, bx) + hw + 2, 2000))
+                r0, r1 = int(max(min(az, bz) - hw - 2, 0)), int(min(max(az, bz) + hw + 2, 2000))
+                if c1 <= c0 or r1 <= r0:
+                    continue
+                im = Image.new("L", (c1 - c0, r1 - r0), 0)
+                ImageDraw.Draw(im).polygon([(ax + nx - c0 - 0.5, az + nz - r0 - 0.5), (bx + nx - c0 - 0.5, bz + nz - r0 - 0.5),
+                                            (bx - nx - c0 - 0.5, bz - nz - r0 - 0.5), (ax - nx - c0 - 0.5, az - nz - r0 - 0.5)], fill=255)
+                m = np.asarray(im) > 0
+                ter[r0:r1, c0:c1][m] = 0.5 * (q[i][2] + q[i + 1][2])
+
     def terrain_at(x, z):
         c = np.clip(np.asarray(x) - x0l - 0.5, 0.0, 1998.999)
         r = np.clip(np.asarray(z) - z0l - 0.5, 0.0, 1998.999)
