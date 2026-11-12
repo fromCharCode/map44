@@ -29,6 +29,7 @@ static func prewarm() -> void:
 			"traffic_light", "bench", "bin", "bike_rack"]:
 		d._parts(nm)
 	d._signal_head_parts()
+	far_material()
 	d.free()
 var _light_timer := 0.0
 var night := 0.0
@@ -123,7 +124,16 @@ func _hash01(a: float, b: float) -> float:
 const SPECIES := ["tree_linden", "tree_linden_b", "tree_maple", "tree_maple_b", "tree_plane", "tree_plane_b", "tree_pine", "tree_pine_b", "tree_small", "tree_small_b"]
 var tree_data := {}     # für TreeLOD: pos, sp, xf, mm, mi, grid
 static var _blob_cache := {}
-static var _blob_mat: StandardMaterial3D
+static var _blob_mat: Material
+
+
+static func far_material() -> Material:
+	## Fernkronen: Laubklumpen-Shader (shaders/tree_far.gdshader), im Haupt-Thread vorgewärmt (prewarm)
+	if _blob_mat == null:
+		var m := ShaderMaterial.new()
+		m.shader = load("res://shaders/tree_far.gdshader")
+		_blob_mat = m
+	return _blob_mat
 
 
 func _blob_for(name: String, needle: bool) -> ArrayMesh:
@@ -161,18 +171,28 @@ func _blob_for(name: String, needle: bool) -> ArrayMesh:
 		var sp := SphereMesh.new()
 		sp.radius = 1.0
 		sp.height = 2.0
-		sp.radial_segments = 10
-		sp.rings = 5
+		sp.radial_segments = 12
+		sp.rings = 6
 		cm = sp
 	var arrs: Array = cm.get_mesh_arrays()
 	var pv: PackedVector3Array = arrs[Mesh.ARRAY_VERTEX]
 	var pn: PackedVector3Array = arrs[Mesh.ARRAY_NORMAL]
 	var pi: PackedInt32Array = arrs[Mesh.ARRAY_INDEX]
 	var cy := top * (0.5 if needle else 0.66)
+	# knubbeliger Umriss: Radius je Richtung mit einigen Beulen (Laubballen) und abgeflachter Unterseite;
+	# gleiche Richtung = gleicher Versatz (Nahtstellen der Kugel bleiben geschlossen)
+	var ph := float(name.hash() % 997) * 0.37
 	for i in pv.size():
 		var v := pv[i]
+		var dn := v.normalized() if v.length() > 1e-4 else Vector3.UP
 		if not needle:
-			v = Vector3(v.x * rxz, v.y * top * 0.36, v.z * rxz)
+			var lump := 0.16 * sin(dn.x * 4.1 + ph) * sin(dn.z * 3.7 - ph * 0.6) + 0.1 * sin(dn.y * 5.3 + dn.x * 2.9 + ph * 1.3) \
+				+ 0.07 * sin((dn.x + dn.z) * 7.9 + ph * 2.1)
+			var rr := 1.0 + lump - (0.12 if dn.y < -0.3 else 0.0)
+			v = Vector3(dn.x * rxz * rr, dn.y * top * 0.36 * rr, dn.z * rxz * rr)
+		else:
+			var jag := 1.0 + 0.12 * sin(v.y * 9.0 + atan2(v.z, v.x) * 4.0 + ph)
+			v = Vector3(v.x * jag, v.y, v.z * jag)
 		var noise := 0.85 + 0.3 * fposmod(sin(v.x * 7.3 + v.y * 3.1 + v.z * 5.7) * 43758.5, 1.0)
 		verts.append(v + Vector3(0, cy, 0))
 		norms.append(pn[i])
@@ -193,7 +213,7 @@ func _blob_for(name: String, needle: bool) -> ArrayMesh:
 	for i in tv.size():
 		verts.append(tv[i] + Vector3(0, top * 0.225, 0))
 		norms.append(tn[i])
-		cols.append(Color(0.2, 0.15, 0.1, 1.0))
+		cols.append(Color(0.2, 0.15, 0.1, 0.0))     # Alpha 0 = Stamm (tree_far.gdshader)
 	for i in ti:
 		idx.append(i + k)
 	var arr := []
@@ -202,13 +222,12 @@ func _blob_for(name: String, needle: bool) -> ArrayMesh:
 	arr[Mesh.ARRAY_NORMAL] = norms
 	arr[Mesh.ARRAY_COLOR] = cols
 	arr[Mesh.ARRAY_INDEX] = idx
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
-	if _blob_mat == null:
-		_blob_mat = StandardMaterial3D.new()
-		_blob_mat.vertex_color_use_as_albedo = true
-		_blob_mat.roughness = 0.95
-	mesh.surface_set_material(0, _blob_mat)
+	# Normalen der verbeulten Krone neu berechnen (sonst Beleuchtung wie Kugel)
+	var st := SurfaceTool.new()
+	st.create_from_arrays(arr)
+	st.generate_normals()
+	var mesh := st.commit()
+	mesh.surface_set_material(0, far_material())
 	_blob_cache[name] = mesh
 	return mesh
 
