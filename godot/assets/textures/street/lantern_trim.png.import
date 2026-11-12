@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dr3l8v5p0depe"
 path.s3tc="res://.godot/imported/lantern_trim.png-9032ce79664fb98dcd48d52ab4f7ce0f.s3tc.ctex"
+path.etc2="res://.godot/imported/lantern_trim.png-9032ce79664fb98dcd48d52ab4f7ce0f.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/street/lantern_trim.png"
-dest_files=["res://.godot/imported/lantern_trim.png-9032ce79664fb98dcd48d52ab4f7ce0f.s3tc.ctex"]
+dest_files=["res://.godot/imported/lantern_trim.png-9032ce79664fb98dcd48d52ab4f7ce0f.s3tc.ctex", "res://.godot/imported/lantern_trim.png-9032ce79664fb98dcd48d52ab4f7ce0f.etc2.ctex"]
 
 [params]
 

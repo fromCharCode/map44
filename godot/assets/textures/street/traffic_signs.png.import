@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bsxxbur5w3bih"
 path.bptc="res://.godot/imported/traffic_signs.png-e19f9d481d72652006b2af3f7d0998ec.bptc.ctex"
+path.astc="res://.godot/imported/traffic_signs.png-e19f9d481d72652006b2af3f7d0998ec.astc.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/street/traffic_signs.png"
-dest_files=["res://.godot/imported/traffic_signs.png-e19f9d481d72652006b2af3f7d0998ec.bptc.ctex"]
+dest_files=["res://.godot/imported/traffic_signs.png-e19f9d481d72652006b2af3f7d0998ec.bptc.ctex", "res://.godot/imported/traffic_signs.png-e19f9d481d72652006b2af3f7d0998ec.astc.ctex"]
 
 [params]
 

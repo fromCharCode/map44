@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://ddygqj7r6ujg5"
 path.s3tc="res://.godot/imported/street_sign.png-cc60435a5f74084a593bc22d23c96587.s3tc.ctex"
+path.etc2="res://.godot/imported/street_sign.png-cc60435a5f74084a593bc22d23c96587.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/street/street_sign.png"
-dest_files=["res://.godot/imported/street_sign.png-cc60435a5f74084a593bc22d23c96587.s3tc.ctex"]
+dest_files=["res://.godot/imported/street_sign.png-cc60435a5f74084a593bc22d23c96587.s3tc.ctex", "res://.godot/imported/street_sign.png-cc60435a5f74084a593bc22d23c96587.etc2.ctex"]
 
 [params]
 

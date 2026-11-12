@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://tkqmpkjbua88"
 path.s3tc="res://.godot/imported/lantern_glass.png-4916efb15f1f12b36a338c3ec3add3c1.s3tc.ctex"
+path.etc2="res://.godot/imported/lantern_glass.png-4916efb15f1f12b36a338c3ec3add3c1.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/street/lantern_glass.png"
-dest_files=["res://.godot/imported/lantern_glass.png-4916efb15f1f12b36a338c3ec3add3c1.s3tc.ctex"]
+dest_files=["res://.godot/imported/lantern_glass.png-4916efb15f1f12b36a338c3ec3add3c1.s3tc.ctex", "res://.godot/imported/lantern_glass.png-4916efb15f1f12b36a338c3ec3add3c1.etc2.ctex"]
 
 [params]
 

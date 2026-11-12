@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://ddymvevgqm5jq"
 path.s3tc="res://.godot/imported/billboard_posters.png-7464e4df899cdf140be9fb180c00c9be.s3tc.ctex"
+path.etc2="res://.godot/imported/billboard_posters.png-7464e4df899cdf140be9fb180c00c9be.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/street/billboard_posters.png"
-dest_files=["res://.godot/imported/billboard_posters.png-7464e4df899cdf140be9fb180c00c9be.s3tc.ctex"]
+dest_files=["res://.godot/imported/billboard_posters.png-7464e4df899cdf140be9fb180c00c9be.s3tc.ctex", "res://.godot/imported/billboard_posters.png-7464e4df899cdf140be9fb180c00c9be.etc2.ctex"]
 
 [params]
 

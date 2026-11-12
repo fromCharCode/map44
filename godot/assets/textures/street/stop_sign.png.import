@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cu2w5gcy4vvq2"
 path.s3tc="res://.godot/imported/stop_sign.png-37aa580f52ecbdbca4ba745433d5f53c.s3tc.ctex"
+path.etc2="res://.godot/imported/stop_sign.png-37aa580f52ecbdbca4ba745433d5f53c.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/street/stop_sign.png"
-dest_files=["res://.godot/imported/stop_sign.png-37aa580f52ecbdbca4ba745433d5f53c.s3tc.ctex"]
+dest_files=["res://.godot/imported/stop_sign.png-37aa580f52ecbdbca4ba745433d5f53c.s3tc.ctex", "res://.godot/imported/stop_sign.png-37aa580f52ecbdbca4ba745433d5f53c.etc2.ctex"]
 
 [params]
 
