@@ -914,8 +914,10 @@ func _apply_transform() -> void:
 	# Fahrbahnprofil (Route) und Gelände stimmen abseits von Brücken überein (build_city: Längsprofil + conform).
 	# Auf Brücken liegt die Route über dem Gelände -> immer die höhere Fläche nehmen.
 	var ry := _route_y()
-	var on_deck := ry > gy + 0.08
-	var y := maxf(gy, ry)
+	# im Tunnel liegt die Route tief unter dem Gelände -> Routenhöhe (Vorprüfung billig, inside() nur dann)
+	var in_tunnel := ry < gy - 2.0 and Tunnels.inside(Vector3(pos.x, ry, pos.z))
+	var on_deck := in_tunnel or ry > gy + 0.08
+	var y := ry if in_tunnel else maxf(gy, ry)
 	pos.y = y
 	var fwd := Vector3(-sin(heading), 0, -cos(heading))
 	var front_y: float

@@ -227,6 +227,12 @@ func cover_at(x: float, z: float) -> Color:
 	return cover.get_pixel(px, py)
 
 
+func set_tunnel_mask(img: Image) -> void:
+	## Tunnelband (scripts/tunnels.gd): der Shader blendet Gelände im Lichtraum der Röhre aus
+	material.set_shader_parameter("tunnel_tex", ImageTexture.create_from_image(img))
+	material.set_shader_parameter("has_tunnel", true)
+
+
 func height_at(x: float, z: float) -> float:
 	## Bilinear aus dem Raster; x/z in Spielkoordinaten.
 	var half := world_size * 0.5

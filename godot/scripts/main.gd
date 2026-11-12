@@ -10,6 +10,7 @@ extends Node3D
 ##   --time=<h>               Tageszeit, --quality=<0..2>, --traffic=<n>
 ##   --drivebench=<s>         Fahr-Leistungstest (scripts/dev/drive_bench.gd; --benchspeed, --benchabl, --attachtrace,
 ##                            --nostream, --nosdfgi), z. B. mit --resolution 3840x2160
+##   --tunneltest=<kachel>:<i> Durchfahrt Tunnelkette i (scripts/dev/tunnel_test.gd; --tunnelgas)
 ##   --vehshot=<ordner>      Nahaufnahmen von Bussen/Bahnen (scripts/dev/veh_shot.gd; --vehkind=bus|tram)
 ##   --skidtest               Reifenspuren-Test (Vollgas, dann Handbremse + Einschlag), mit --shot/--street
 ##   --scale=<0.5..1>         3D-Auflösung (FSR2); ohne Angabe automatisch nach Bildschirmgröße
@@ -497,6 +498,12 @@ func _setup_game() -> void:
 		add_child(db)
 		db.start(self, player, traffic, world, args)
 		AudioServer.set_bus_mute(0, true)
+	if args.has("tunneltest"):
+		var tt := TunnelTest.new()
+		tt.name = "TunnelTest"
+		add_child(tt)
+		tt.start(self, args)
+		AudioServer.set_bus_mute(0, true)
 	if args.has("vehshot"):
 		var vs := VehShot.new()
 		vs.name = "VehShot"
@@ -914,7 +921,7 @@ func _check_player_bounds() -> void:
 		return
 	var p := player.global_position
 	var has := world.has_ground(p.x, p.z)
-	if has and p.y > world.height_at(p.x, p.z) - 6.0 and p.y < 600.0:
+	if has and (p.y > world.height_at(p.x, p.z) - 6.0 or Tunnels.inside(p)) and p.y < 600.0:
 		last_safe = p
 		return
 	var target := last_safe if last_safe != Vector3.ZERO else p
@@ -975,3 +982,4 @@ static func _release_statics() -> void:
 	Stops._scenes.clear()
 	Stops._mats.clear()
 	Stops._rail_parts.clear()
+	Tunnels._mats.clear()

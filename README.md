@@ -79,8 +79,11 @@ wenn sich ihre Version ändert). Deinstallieren unter Linux: `… install.sh | b
   nach Tageszeit, echte Bahnen live)
 - Fahrphysik mit Reifenmodell, Federung, ABS/ESP, Schaden, Reifenspuren
 
-Noch nicht drin: Tunnel (A17, Wiener Platz, Waldschlößchen-Nordseite – die Straße endet am Portal), Fahrplan nach
-echtem DVB-Fahrplan (bisher Takt nach Tageszeit).
+- Befahrbare Straßentunnel (Coschütz und Dölzschen auf der A17, Bramschstraße, Wiener Platz, Waldschlößchen,
+  Altfranken …) mit Portalbauwerken, Beleuchtung und Markierungen
+
+Noch nicht drin: Verkehr durch die Tunnel (nur der Spieler fährt hindurch), Fahrplan nach echtem DVB-Fahrplan
+(bisher Takt nach Tageszeit).
 
 ## Aus dem Quellcode starten (Entwickler)
 
@@ -91,7 +94,8 @@ echtem DVB-Fahrplan (bisher Takt nach Tageszeit).
 
 Pipeline (Python 3 mit `.venv`, siehe `tools/`): `tools/run_tile.sh E,N` baut eine Kachel (Luftbild, Gelände, Stadt),
 `tools/rebuild_city.sh E,N` nur Stadt + Vegetation; alle Kacheln: `xargs -P 6 -I{} bash tools/rebuild_city.sh {} <
-data/raw/tile_order.txt`. Release-Pakete: `tools/package_release.sh <version> <datenversion>`.
+data/raw/tile_order.txt`, danach einmal `tools/tunnels.py` (Tunnel über Kachelgrenzen). Release-Pakete:
+`tools/package_release.sh <version> <datenversion>`.
 
 ## Daten und Lizenzen
 
