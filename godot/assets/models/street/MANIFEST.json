@@ -1,0 +1,376 @@
+[
+  {
+    "file": "billboard.glb",
+    "height": 3.87,
+    "bbox_min": [
+      -1.86,
+      -0.15,
+      -0.72
+    ],
+    "bbox_max": [
+      1.86,
+      3.87,
+      0.2
+    ],
+    "tris": 108,
+    "materials": [
+      "Poster",
+      "Frame",
+      "BillboardBack",
+      "MetalDark",
+      "LampEmit"
+    ],
+    "notes": "Großfläche 18/1: Bildfläche 3,56 x 2,52 m (Material Poster, UV 0..1, Godot-UV.y=0 Oberkante / 1 Unterkante, UV.x=0 links von vorn gesehen -> aufrecht und seitenrichtig; zeigt +Y Blender = -Z Godot, Unterkante 1,20 m, Oberkante 3,72 m), 8-cm-Rahmen (Frame, dunkelgrün-grau), Rückwand (BillboardBack), zwei Vierkantstützen 0,14 m (MetalDark, +0,15 m im Boden) hinter der Tafel, zwei Aufsatzleuchten mit Material LampEmit (Unterseite, Emission 0 – nachts einschalten). Bildfläche ist quer (√2:1) -> Atlas billboard_posters.png (Raster 3x3) verwenden, nicht posters.png (hochkant).",
+    "size_bytes": 12260
+  },
+  {
+    "file": "litfass.glb",
+    "height": 3.4,
+    "bbox_min": [
+      -0.695,
+      0.0,
+      -0.695
+    ],
+    "bbox_max": [
+      0.695,
+      3.4,
+      0.695
+    ],
+    "tris": 1320,
+    "materials": [
+      "MetalGreen",
+      "Poster"
+    ],
+    "notes": "Litfaßsäule Ø 1,20 m (Sockel Ø 1,32), Höhe 3,40 m inkl. Kuppel und Knauf, dunkelgrün (MetalGreen). Material Poster = Mantel von y=0.250 bis 2.9157 m. GODOT-UV (gemessen): UV.y = 0 an der OBERKANTE der Plakatfläche (y=2.916), UV.y = 1 an der UNTERKANTE (y=0.250) -> Textur direkt gesampelt steht aufrecht. UV.x = Umfang 0..1 (Naht bei Godot +X, wächst von +X Richtung -Z, von außen gesehen nach rechts -> Schrift seitenrichtig). Maße so gewählt, dass im Shader exakt A-Format entsteht: untere Reihe (UV.y > 1/3) Höhe 1.7772 m, UV.x*3 kacheln; obere Reihe (UV.y <= 1/3) Höhe 0.8886 m, UV.x*6 kacheln; Feld-UV unten: (fract(UV.x*3), (UV.y-1/3)*1.5), oben: (fract(UV.x*6), UV.y*3). Kollision: Zylinder r 0,66 m.",
+    "size_bytes": 54768
+  },
+  {
+    "file": "litfass_dresden.glb",
+    "height": 5.024,
+    "bbox_min": [
+      -0.67,
+      0.0,
+      -0.67
+    ],
+    "bbox_max": [
+      0.67,
+      5.024,
+      0.67
+    ],
+    "tris": 1592,
+    "materials": [
+      "MetalGreen",
+      "Poster",
+      "LanternTrim",
+      "LanternGlass"
+    ],
+    "notes": "Dresdner Litfaßsäule (Gestaltung wie Güntzplatz/Sachsenplatz): Plakatsäule Ø 1,10 m, Zackenfries (LanternTrim), Glaslaterne + Glaskuppel + Glaskugel (LanternGlass, Textur mit Sprossen, Emission-Farbe gesetzt, Stärke 0 -> nachts einschalten), Rest MetalGreen. Höhe 5.02 m. Poster-Mantel y=0.250..2.6936 m, UV wie litfass.glb: GODOT-UV.y = 0 an der OBERKANTE (y=2.694), 1 an der UNTERKANTE (y=0.250); UV.x = Umfang; untere Reihe UV.y > 1/3 (UV.x*3), obere UV.y <= 1/3 (UV.x*6) ergeben exakt A-Format. Kollision Zylinder r 0,62 m.",
+    "size_bytes": 75916
+  },
+  {
+    "file": "plate_diamond.glb",
+    "height": 0.828,
+    "bbox_min": [
+      -0.414,
+      -0.414,
+      -0.01
+    ],
+    "bbox_max": [
+      0.414,
+      0.414,
+      0.095
+    ],
+    "tris": 286,
+    "materials": [
+      "SignFace",
+      "SignBack",
+      "Clamp"
+    ],
+    "notes": "Verkehrszeichen-Platte Raute, Seitenlänge 0,60 m (Diagonale 0,85 m) wie Zeichen 306, Dicke 2 cm (Kantung), Ursprung = Mitte der Umrissbox (0.849 x 0.849 m). Material SignFace = Vorderseite (+Y Blender / -Z Godot) mit UV 0..1 über die Umrissbox (Godot-UV.y=0 oben) -> Atlaszelle traffic_signs.png. SignBack = Rückseite/Kante/Schiene (Alu grau). Clamp = 2 Rohrschellen bei Höhe -0.220/+0.220 m um einen Ø-60-mm-Pfosten, dessen Achse 0,06 m hinter der Plattenmitte liegt (Godot z=+0.06). Ohne Pfosten Clamp ausblenden.",
+    "size_bytes": 17388
+  },
+  {
+    "file": "plate_octagon.glb",
+    "height": 0.6,
+    "bbox_min": [
+      -0.3,
+      -0.3,
+      -0.01
+    ],
+    "bbox_max": [
+      0.3,
+      0.3,
+      0.095
+    ],
+    "tris": 302,
+    "materials": [
+      "SignFace",
+      "SignBack",
+      "Clamp"
+    ],
+    "notes": "Verkehrszeichen-Platte Achteck 0,60 m (Schlüsselweite), Dicke 2 cm (Kantung), Ursprung = Mitte der Umrissbox (0.600 x 0.600 m). Material SignFace = Vorderseite (+Y Blender / -Z Godot) mit UV 0..1 über die Umrissbox (Godot-UV.y=0 oben) -> Atlaszelle traffic_signs.png. SignBack = Rückseite/Kante/Schiene (Alu grau). Clamp = 2 Rohrschellen bei Höhe -0.170/+0.170 m um einen Ø-60-mm-Pfosten, dessen Achse 0,06 m hinter der Plattenmitte liegt (Godot z=+0.06). Ohne Pfosten Clamp ausblenden.",
+    "size_bytes": 18252
+  },
+  {
+    "file": "plate_oneway.glb",
+    "height": 0.3,
+    "bbox_min": [
+      -0.45,
+      -0.15,
+      -0.01
+    ],
+    "bbox_max": [
+      0.45,
+      0.15,
+      0.095
+    ],
+    "tris": 286,
+    "materials": [
+      "SignFace",
+      "SignBack",
+      "Clamp"
+    ],
+    "notes": "Verkehrszeichen-Platte Rechteck 0,90 x 0,30 m quer (Zeichen 220), Dicke 2 cm (Kantung), Ursprung = Mitte der Umrissbox (0.900 x 0.300 m). Material SignFace = Vorderseite (+Y Blender / -Z Godot) mit UV 0..1 über die Umrissbox (Godot-UV.y=0 oben) -> Atlaszelle traffic_signs.png. SignBack = Rückseite/Kante/Schiene (Alu grau). Clamp = 2 Rohrschellen bei Höhe -0.075/+0.075 m um einen Ø-60-mm-Pfosten, dessen Achse 0,06 m hinter der Plattenmitte liegt (Godot z=+0.06). Ohne Pfosten Clamp ausblenden.",
+    "size_bytes": 17384
+  },
+  {
+    "file": "plate_rect.glb",
+    "height": 0.9,
+    "bbox_min": [
+      -0.3,
+      -0.45,
+      -0.01
+    ],
+    "bbox_max": [
+      0.3,
+      0.45,
+      0.095
+    ],
+    "tris": 286,
+    "materials": [
+      "SignFace",
+      "SignBack",
+      "Clamp"
+    ],
+    "notes": "Verkehrszeichen-Platte Rechteck 0,60 x 0,90 m hochkant, Dicke 2 cm (Kantung), Ursprung = Mitte der Umrissbox (0.600 x 0.900 m). Material SignFace = Vorderseite (+Y Blender / -Z Godot) mit UV 0..1 über die Umrissbox (Godot-UV.y=0 oben) -> Atlaszelle traffic_signs.png. SignBack = Rückseite/Kante/Schiene (Alu grau). Clamp = 2 Rohrschellen bei Höhe -0.300/+0.300 m um einen Ø-60-mm-Pfosten, dessen Achse 0,06 m hinter der Plattenmitte liegt (Godot z=+0.06). Ohne Pfosten Clamp ausblenden.",
+    "size_bytes": 17380
+  },
+  {
+    "file": "plate_rect_wide.glb",
+    "height": 0.6,
+    "bbox_min": [
+      -0.45,
+      -0.3,
+      -0.01
+    ],
+    "bbox_max": [
+      0.45,
+      0.3,
+      0.095
+    ],
+    "tris": 286,
+    "materials": [
+      "SignFace",
+      "SignBack",
+      "Clamp"
+    ],
+    "notes": "Verkehrszeichen-Platte Rechteck 0,90 x 0,60 m quer (Zeichen 325.1/325.2), Dicke 2 cm (Kantung), Ursprung = Mitte der Umrissbox (0.900 x 0.600 m). Material SignFace = Vorderseite (+Y Blender / -Z Godot) mit UV 0..1 über die Umrissbox (Godot-UV.y=0 oben) -> Atlaszelle traffic_signs.png. SignBack = Rückseite/Kante/Schiene (Alu grau). Clamp = 2 Rohrschellen bei Höhe -0.170/+0.170 m um einen Ø-60-mm-Pfosten, dessen Achse 0,06 m hinter der Plattenmitte liegt (Godot z=+0.06). Ohne Pfosten Clamp ausblenden.",
+    "size_bytes": 17392
+  },
+  {
+    "file": "plate_round.glb",
+    "height": 0.6,
+    "bbox_min": [
+      -0.3,
+      -0.3,
+      -0.01
+    ],
+    "bbox_max": [
+      0.3,
+      0.3,
+      0.095
+    ],
+    "tris": 334,
+    "materials": [
+      "SignFace",
+      "SignBack",
+      "Clamp"
+    ],
+    "notes": "Verkehrszeichen-Platte rund Ø 0,60 m, Dicke 2 cm (Kantung), Ursprung = Mitte der Umrissbox (0.600 x 0.600 m). Material SignFace = Vorderseite (+Y Blender / -Z Godot) mit UV 0..1 über die Umrissbox (Godot-UV.y=0 oben) -> Atlaszelle traffic_signs.png. SignBack = Rückseite/Kante/Schiene (Alu grau). Clamp = 2 Rohrschellen bei Höhe -0.170/+0.170 m um einen Ø-60-mm-Pfosten, dessen Achse 0,06 m hinter der Plattenmitte liegt (Godot z=+0.06). Ohne Pfosten Clamp ausblenden.",
+    "size_bytes": 19976
+  },
+  {
+    "file": "plate_square.glb",
+    "height": 0.6,
+    "bbox_min": [
+      -0.3,
+      -0.3,
+      -0.01
+    ],
+    "bbox_max": [
+      0.3,
+      0.3,
+      0.095
+    ],
+    "tris": 286,
+    "materials": [
+      "SignFace",
+      "SignBack",
+      "Clamp"
+    ],
+    "notes": "Verkehrszeichen-Platte Quadrat 0,60 m, Dicke 2 cm (Kantung), Ursprung = Mitte der Umrissbox (0.600 x 0.600 m). Material SignFace = Vorderseite (+Y Blender / -Z Godot) mit UV 0..1 über die Umrissbox (Godot-UV.y=0 oben) -> Atlaszelle traffic_signs.png. SignBack = Rückseite/Kante/Schiene (Alu grau). Clamp = 2 Rohrschellen bei Höhe -0.170/+0.170 m um einen Ø-60-mm-Pfosten, dessen Achse 0,06 m hinter der Plattenmitte liegt (Godot z=+0.06). Ohne Pfosten Clamp ausblenden.",
+    "size_bytes": 17384
+  },
+  {
+    "file": "plate_triangle.glb",
+    "height": 0.744,
+    "bbox_min": [
+      -0.423,
+      -0.39,
+      -0.01
+    ],
+    "bbox_max": [
+      0.423,
+      0.354,
+      0.095
+    ],
+    "tris": 258,
+    "materials": [
+      "SignFace",
+      "SignBack",
+      "Clamp"
+    ],
+    "notes": "Verkehrszeichen-Platte Dreieck Seitenlänge 0,90 m, Spitze oben, Dicke 2 cm (Kantung), Ursprung = Mitte der Umrissbox (0.900 x 0.779 m). Material SignFace = Vorderseite (+Y Blender / -Z Godot) mit UV 0..1 über die Umrissbox (Godot-UV.y=0 oben) -> Atlaszelle traffic_signs.png. SignBack = Rückseite/Kante/Schiene (Alu grau). Clamp = 2 Rohrschellen bei Höhe -0.220/+0.160 m um einen Ø-60-mm-Pfosten, dessen Achse 0,06 m hinter der Plattenmitte liegt (Godot z=+0.06). Ohne Pfosten Clamp ausblenden.",
+    "size_bytes": 15880
+  },
+  {
+    "file": "plate_triangle_down.glb",
+    "height": 0.744,
+    "bbox_min": [
+      -0.423,
+      -0.354,
+      -0.01
+    ],
+    "bbox_max": [
+      0.423,
+      0.39,
+      0.095
+    ],
+    "tris": 258,
+    "materials": [
+      "SignFace",
+      "SignBack",
+      "Clamp"
+    ],
+    "notes": "Verkehrszeichen-Platte Dreieck 0,90 m, Spitze unten (Zeichen 205), Dicke 2 cm (Kantung), Ursprung = Mitte der Umrissbox (0.900 x 0.779 m). Material SignFace = Vorderseite (+Y Blender / -Z Godot) mit UV 0..1 über die Umrissbox (Godot-UV.y=0 oben) -> Atlaszelle traffic_signs.png. SignBack = Rückseite/Kante/Schiene (Alu grau). Clamp = 2 Rohrschellen bei Höhe -0.160/+0.220 m um einen Ø-60-mm-Pfosten, dessen Achse 0,06 m hinter der Plattenmitte liegt (Godot z=+0.06). Ohne Pfosten Clamp ausblenden.",
+    "size_bytes": 15888
+  },
+  {
+    "file": "sign_post.glb",
+    "height": 3.025,
+    "bbox_min": [
+      -0.033,
+      -0.15,
+      -0.033
+    ],
+    "bbox_max": [
+      0.033,
+      3.025,
+      0.033
+    ],
+    "tris": 128,
+    "materials": [
+      "MetalGalv",
+      "Cap"
+    ],
+    "notes": "Verzinkter Rohrpfosten Ø 60,3 mm, 3,0 m über Boden (+0,15 m im Boden, bbox_min.y=-0.15) mit Kunststoffkappe. Achse = Ursprung. Materialien MetalGalv, Cap. Platten (plate_*.glb) 6 cm vor der Achse montieren (Platte +Y Blender / -Z Godot).",
+    "size_bytes": 7216
+  },
+  {
+    "file": "stop_pole.glb",
+    "height": 3.435,
+    "bbox_min": [
+      -0.043,
+      -0.15,
+      -0.546
+    ],
+    "bbox_max": [
+      0.088,
+      3.435,
+      0.165
+    ],
+    "tris": 688,
+    "materials": [
+      "MetalDark",
+      "StopSign",
+      "FrameAlu",
+      "Timetable"
+    ],
+    "notes": "DVB-artiger Haltestellenmast Ø 76 mm anthrazit (MetalDark, RAL 7016) 3,4 m (+0,15 m im Boden). Fahne 0,45 x 1,08 m (Unterkante 2,25 m, Oberkante 3,33 m) mit Alu-Rahmen (FrameAlu) seitlich am Mast, steht senkrecht zur Fahrbahn: sie ragt von y=0,08 bis 0,53 m nach +Y Blender (= -Z Godot = zur Fahrbahn, passend zu facing_road_yaw) und ist beidseitig (Flächen zeigen +-X) mit Material StopSign (stop_sign.png: Zeichen 224 grün/gelb, leeres Namensfeld, 4 Linienfelder, ohne Logos) belegt. Namensfeld für Label3D: Mitte Godot (±0.011, 2.835, -0.305), Breite 0,40 m, Höhe 0,15 m, Schrift schwarz. Fahrplankasten (Timetable, 0,30 x 0,43 m) bei 1,22–1,68 m auf der +X-Seite des Masts, zeigt +X.",
+    "size_bytes": 147200
+  },
+  {
+    "file": "street_name_plate.glb",
+    "height": 0.11,
+    "bbox_min": [
+      -0.45,
+      -0.142,
+      -0.02
+    ],
+    "bbox_max": [
+      0.45,
+      0.11,
+      0.02
+    ],
+    "tris": 136,
+    "materials": [
+      "Clamp",
+      "StreetSign"
+    ],
+    "notes": "Nur die doppelseitige Straßennamenstafel 0,90 x 0,22 m (StreetSign wie street_name_sign) mit kurzem Verbinder nach unten (Clamp, bis -0,142 m). Ursprung = Tafelmitte. Zum Stapeln auf street_name_sign: Mitte auf 2,950 m, um 90° gedreht. Für längere Namen in X skalierbar (bis ca. 1,4-fach, die weiße Zierlinie wird an den Schmalseiten etwas breiter).",
+    "size_bytes": 36432
+  },
+  {
+    "file": "street_name_post.glb",
+    "height": 2.59,
+    "bbox_min": [
+      -0.15,
+      -0.15,
+      -0.034
+    ],
+    "bbox_max": [
+      0.15,
+      2.59,
+      0.034
+    ],
+    "tris": 108,
+    "materials": [
+      "MetalGalv",
+      "Clamp"
+    ],
+    "notes": "Pfosten Ø 60 mm (MetalGalv) mit Aufsteckhalter/Sattel (Clamp), Oberkante Sattel 2,59 m, ohne Tafel. Für variable Tafelbreiten: street_name_plate.glb mit Mitte auf 2,700 m (in X skalieren), zweite Tafel 90° gedreht auf 2,950 m.",
+    "size_bytes": 7888
+  },
+  {
+    "file": "street_name_sign.glb",
+    "height": 2.81,
+    "bbox_min": [
+      -0.45,
+      -0.15,
+      -0.034
+    ],
+    "bbox_max": [
+      0.45,
+      2.81,
+      0.034
+    ],
+    "tris": 204,
+    "materials": [
+      "MetalGalv",
+      "Clamp",
+      "StreetSign"
+    ],
+    "notes": "Pfosten Ø 60 mm (MetalGalv) mit Aufsteckhalter (Clamp) und leerer, doppelseitiger Dresdner Straßennamenstafel 0,90 x 0,22 m, 2,5 cm dick, dunkelblau emailliert mit weißer Zierlinie (Material StreetSign, Textur street_sign.png, Vorder- und Rückseite je UV 0..1, Kante UV=(0.5,0.5)). Mitte der Schildfläche: Höhe y=2.700 m, Vorderseite z=-0.0125 (Godot, zeigt -Z), Rückseite z=+0.0125 (zeigt +Z); Label3D ~2 mm davor. Schrift weiß #F2F2EE, Antiqua/Serifen (z. B. NotoSerif-SemiBold), Versalhöhe ca. 0,075 m, nutzbare Textbreite ca. 0,80 m. Zweite Tafel (Kreuzung): street_name_plate.glb 90° gedreht mit Mitte auf y=2.950 stapeln.",
+    "size_bytes": 40900
+  }
+]

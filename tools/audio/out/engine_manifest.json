@@ -1,0 +1,600 @@
+[
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 1291,
+    "firing_hz": 43.05,
+    "load": "on",
+    "load_detail": "full_load_dyno",
+    "rpm_range_in_source": [
+      1281,
+      1307
+    ],
+    "method": "konstant aufgenommen; ruhigster Abschnitt 0.06-1.80 s (Drehzahlschwankung 0.45 % rms) auf mittlere Zuendfrequenz geglaettet, Loop aus ganzen Arbeitsspielen, Kreuzblende 0,15 s",
+    "file": "engine/player_on_1290.ogg",
+    "loop": true,
+    "duration": 1.5795,
+    "lufs": -16.0,
+    "peak_dbfs": -4.54,
+    "source_lufs": -17.8,
+    "sources": [
+      {
+        "freesound_id": 162506,
+        "title": "19_500_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162506/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.71,
+      "level": 0.41
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 2556,
+    "firing_hz": 85.19,
+    "load": "on",
+    "load_detail": "full_load_dyno",
+    "rpm_range_in_source": [
+      2538,
+      2574
+    ],
+    "method": "konstant aufgenommen; ruhigster Abschnitt 0.21-2.81 s (Drehzahlschwankung 0.27 % rms) auf mittlere Zuendfrequenz geglaettet, Loop aus ganzen Arbeitsspielen, Kreuzblende 0,15 s",
+    "file": "engine/player_on_2560.ogg",
+    "loop": true,
+    "duration": 2.0193,
+    "lufs": -16.0,
+    "peak_dbfs": -5.71,
+    "source_lufs": -16.3,
+    "sources": [
+      {
+        "freesound_id": 162509,
+        "title": "19_2500_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162509/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.8,
+      "level": 0.38
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 6208,
+    "firing_hz": 206.94,
+    "load": "on",
+    "load_detail": "full_load_dyno",
+    "rpm_range_in_source": [
+      6176,
+      6245
+    ],
+    "method": "konstant aufgenommen; ruhigster Abschnitt 0.05-1.57 s (Drehzahlschwankung 0.32 % rms) auf mittlere Zuendfrequenz geglaettet, Loop aus ganzen Arbeitsspielen, Kreuzblende 0,15 s",
+    "file": "engine/player_on_6210.ogg",
+    "loop": true,
+    "duration": 1.3529,
+    "lufs": -16.0,
+    "peak_dbfs": -4.41,
+    "source_lufs": -17.1,
+    "sources": [
+      {
+        "freesound_id": 162512,
+        "title": "20_6500_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162512/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.87,
+      "level": 0.39
+    }
+  },
+  {
+    "kind": "engine_idle",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 1064,
+    "firing_hz": 35.47,
+    "load": "off",
+    "load_detail": "idle_neutral",
+    "rpm_range_in_source": [
+      1034,
+      1102
+    ],
+    "method": "konstant aufgenommen; ruhigster Abschnitt 5.21-7.81 s (Drehzahlschwankung 1.27 % rms) auf mittlere Zuendfrequenz geglaettet, Loop aus ganzen Arbeitsspielen, Kreuzblende 0,15 s",
+    "file": "engine/player_idle.ogg",
+    "loop": true,
+    "duration": 2.0287,
+    "lufs": -16.0,
+    "peak_dbfs": -3.73,
+    "source_lufs": -53.4,
+    "sources": [
+      {
+        "freesound_id": 162515,
+        "title": "21_500_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162515/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.44,
+      "level": 0.45
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 2428,
+    "firing_hz": 80.94,
+    "load": "off",
+    "load_detail": "no_load_neutral",
+    "rpm_range_in_source": [
+      2371,
+      2524
+    ],
+    "method": "konstant aufgenommen; ruhigster Abschnitt 0.86-3.46 s (Drehzahlschwankung 0.95 % rms) auf mittlere Zuendfrequenz geglaettet, Loop aus ganzen Arbeitsspielen, Kreuzblende 0,15 s",
+    "file": "engine/player_neutral_2430.ogg",
+    "loop": true,
+    "duration": 1.9755,
+    "lufs": -16.0,
+    "peak_dbfs": -3.45,
+    "source_lufs": -49.6,
+    "sources": [
+      {
+        "freesound_id": 162518,
+        "title": "21_2500_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162518/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 1.11,
+      "level": 0.92
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 6295,
+    "firing_hz": 209.84,
+    "load": "off",
+    "load_detail": "no_load_neutral",
+    "rpm_range_in_source": [
+      6278,
+      6315
+    ],
+    "method": "konstant aufgenommen; ruhigster Abschnitt 0.06-1.86 s (Drehzahlschwankung 0.15 % rms) auf mittlere Zuendfrequenz geglaettet, Loop aus ganzen Arbeitsspielen, Kreuzblende 0,15 s",
+    "file": "engine/player_neutral_6300.ogg",
+    "loop": true,
+    "duration": 1.6391,
+    "lufs": -16.0,
+    "peak_dbfs": -5.7,
+    "source_lufs": -32.5,
+    "sources": [
+      {
+        "freesound_id": 162521,
+        "title": "21_6500_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162521/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.96,
+      "level": 0.95
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 3500,
+    "firing_hz": 116.67,
+    "load": "on",
+    "load_detail": "full_load_dyno_sweep",
+    "method": "aus Sweep geschnitten: Fenster 0.70-1.04 s (+-12 % Drehzahl) auf konstante Zuendfrequenz umgerechnet, 9 Arbeitsspiele in zufaelliger Nachbar-Abfolge zirkulaer ueberblendet",
+    "file": "engine/player_on_3500.ogg",
+    "loop": true,
+    "duration": 1.9886,
+    "lufs": -16.0,
+    "peak_dbfs": -6.8,
+    "source_lufs": -14.1,
+    "sources": [
+      {
+        "freesound_id": 162501,
+        "title": "17_ShortSweep_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162501/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.81,
+      "level": 0.87
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 4500,
+    "firing_hz": 150.01,
+    "load": "on",
+    "load_detail": "full_load_dyno_sweep",
+    "method": "aus Sweep geschnitten: Fenster 1.06-1.43 s (+-12 % Drehzahl) auf konstante Zuendfrequenz umgerechnet, 13 Arbeitsspiele in zufaelliger Nachbar-Abfolge zirkulaer ueberblendet",
+    "file": "engine/player_on_4500.ogg",
+    "loop": true,
+    "duration": 1.9733,
+    "lufs": -16.0,
+    "peak_dbfs": -5.25,
+    "source_lufs": -15.3,
+    "sources": [
+      {
+        "freesound_id": 162501,
+        "title": "17_ShortSweep_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162501/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.94,
+      "level": 0.27
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 5501,
+    "firing_hz": 183.37,
+    "load": "on",
+    "load_detail": "full_load_dyno_sweep",
+    "method": "aus Sweep geschnitten: Fenster 1.33-1.85 s (+-12 % Drehzahl) auf konstante Zuendfrequenz umgerechnet, 23 Arbeitsspiele in zufaelliger Nachbar-Abfolge zirkulaer ueberblendet",
+    "file": "engine/player_on_5500.ogg",
+    "loop": true,
+    "duration": 2.0069,
+    "lufs": -16.0,
+    "peak_dbfs": -5.48,
+    "source_lufs": -13.4,
+    "sources": [
+      {
+        "freesound_id": 162501,
+        "title": "17_ShortSweep_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162501/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.93,
+      "level": 0.16
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 1500,
+    "firing_hz": 50.0,
+    "load": "off",
+    "load_detail": "overrun_dyno_sweep",
+    "method": "aus Sweep geschnitten: Fenster 7.04-7.56 s (+-10 % Drehzahl) auf konstante Zuendfrequenz umgerechnet, 6 Arbeitsspiele in zufaelliger Nachbar-Abfolge zirkulaer ueberblendet",
+    "file": "engine/player_off_1500.ogg",
+    "loop": true,
+    "duration": 1.92,
+    "lufs": -16.0,
+    "peak_dbfs": -5.91,
+    "source_lufs": -22.3,
+    "sources": [
+      {
+        "freesound_id": 162504,
+        "title": "17_MedSweep_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162504/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.7,
+      "level": 0.13
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 2500,
+    "firing_hz": 83.32,
+    "load": "off",
+    "load_detail": "overrun_dyno_sweep",
+    "method": "aus Sweep geschnitten: Fenster 5.30-5.83 s (+-7 % Drehzahl) auf konstante Zuendfrequenz umgerechnet, 11 Arbeitsspiele in zufaelliger Nachbar-Abfolge zirkulaer ueberblendet",
+    "file": "engine/player_off_2500.ogg",
+    "loop": true,
+    "duration": 2.0162,
+    "lufs": -16.0,
+    "peak_dbfs": -7.08,
+    "source_lufs": -20.6,
+    "sources": [
+      {
+        "freesound_id": 162504,
+        "title": "17_MedSweep_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162504/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.9,
+      "level": 1.09
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 3500,
+    "firing_hz": 116.67,
+    "load": "off",
+    "load_detail": "overrun_dyno_sweep",
+    "method": "aus Sweep geschnitten: Fenster 3.76-4.37 s (+-6 % Drehzahl) auf konstante Zuendfrequenz umgerechnet, 17 Arbeitsspiele in zufaelliger Nachbar-Abfolge zirkulaer ueberblendet",
+    "file": "engine/player_off_3500.ogg",
+    "loop": true,
+    "duration": 1.9886,
+    "lufs": -16.0,
+    "peak_dbfs": -5.89,
+    "source_lufs": -17.8,
+    "sources": [
+      {
+        "freesound_id": 162504,
+        "title": "17_MedSweep_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162504/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.91,
+      "level": 0.67
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 4500,
+    "firing_hz": 150.02,
+    "load": "off",
+    "load_detail": "overrun_dyno_sweep",
+    "method": "aus Sweep geschnitten: Fenster 2.45-3.03 s (+-6 % Drehzahl) auf konstante Zuendfrequenz umgerechnet, 21 Arbeitsspiele in zufaelliger Nachbar-Abfolge zirkulaer ueberblendet",
+    "file": "engine/player_off_4500.ogg",
+    "loop": true,
+    "duration": 1.9733,
+    "lufs": -16.0,
+    "peak_dbfs": -6.12,
+    "source_lufs": -18.7,
+    "sources": [
+      {
+        "freesound_id": 162504,
+        "title": "17_MedSweep_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162504/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 1.04,
+      "level": 1.2
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "player",
+    "engine": "Mercedes-Benz 190E-16V (R4, Benzin)",
+    "mic": "Audix D6, ca. 30 cm hinter Auspuff",
+    "rpm": 5501,
+    "firing_hz": 183.37,
+    "load": "off",
+    "load_detail": "overrun_dyno_sweep",
+    "method": "aus Sweep geschnitten: Fenster 1.32-2.01 s (+-6 % Drehzahl) auf konstante Zuendfrequenz umgerechnet, 31 Arbeitsspiele in zufaelliger Nachbar-Abfolge zirkulaer ueberblendet",
+    "file": "engine/player_off_5500.ogg",
+    "loop": true,
+    "duration": 2.0069,
+    "lufs": -16.0,
+    "peak_dbfs": -6.92,
+    "source_lufs": -14.0,
+    "sources": [
+      {
+        "freesound_id": 162504,
+        "title": "17_MedSweep_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162504/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.99,
+      "level": 0.52
+    }
+  },
+  {
+    "kind": "engine_idle",
+    "vehicle": "ai",
+    "engine": "BMW 120d (R4, Diesel)",
+    "mic": "Earthworks QTC30 + Rode NT4, aussen (Stereo -> Mono)",
+    "rpm": 837,
+    "firing_hz": 27.91,
+    "load": "off",
+    "load_detail": "idle_neutral",
+    "rpm_range_in_source": [
+      811,
+      863
+    ],
+    "method": "Standgas/Konstantdrehzahl im Stand; Abschnitt 0.11-2.71 s geglaettet (Schwankung 1.29 % rms), Loop aus ganzen Arbeitsspielen, Kreuzblende 0,15 s, Hochpass 20 Hz",
+    "file": "engine/ai_idle.ogg",
+    "loop": true,
+    "duration": 2.0075,
+    "lufs": -16.0,
+    "peak_dbfs": -2.93,
+    "source_lufs": -25.9,
+    "sources": [
+      {
+        "freesound_id": 401552,
+        "title": "SFX_Car_Engine_Outside_Idle.wav",
+        "author": "GiocoSound",
+        "source_url": "https://freesound.org/people/GiocoSound/sounds/401552/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.85,
+      "level": 0.74
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "ai",
+    "engine": "BMW 120d (R4, Diesel)",
+    "mic": "Earthworks QTC30 + Rode NT4, aussen (Stereo -> Mono)",
+    "rpm": 1477,
+    "firing_hz": 49.23,
+    "load": "off",
+    "load_detail": "no_load_neutral",
+    "rpm_range_in_source": [
+      1460,
+      1491
+    ],
+    "method": "Standgas/Konstantdrehzahl im Stand; Abschnitt 0.06-1.87 s geglaettet (Schwankung 0.46 % rms), Loop aus ganzen Arbeitsspielen, Kreuzblende 0,15 s, Hochpass 22 Hz",
+    "file": "engine/ai_1480.ogg",
+    "loop": true,
+    "duration": 1.6254,
+    "lufs": -16.0,
+    "peak_dbfs": -3.41,
+    "source_lufs": -19.7,
+    "sources": [
+      {
+        "freesound_id": 401556,
+        "title": "SFX_Car_Engine_Outside_RPMLow.wav",
+        "author": "GiocoSound",
+        "source_url": "https://freesound.org/people/GiocoSound/sounds/401556/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.8,
+      "level": 0.99
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "ai",
+    "engine": "BMW 120d (R4, Diesel)",
+    "mic": "Earthworks QTC30 + Rode NT4, aussen (Stereo -> Mono)",
+    "rpm": 2009,
+    "firing_hz": 66.98,
+    "load": "off",
+    "load_detail": "no_load_neutral",
+    "rpm_range_in_source": [
+      1996,
+      2026
+    ],
+    "method": "Standgas/Konstantdrehzahl im Stand; Abschnitt 0.20-2.71 s geglaettet (Schwankung 0.33 % rms), Loop aus ganzen Arbeitsspielen, Kreuzblende 0,15 s, Hochpass 22 Hz",
+    "file": "engine/ai_2010.ogg",
+    "loop": true,
+    "duration": 1.9707,
+    "lufs": -16.0,
+    "peak_dbfs": -5.46,
+    "source_lufs": -20.1,
+    "sources": [
+      {
+        "freesound_id": 401555,
+        "title": "SFX_Car_Engine_Outside_RPMMed.wav",
+        "author": "GiocoSound",
+        "source_url": "https://freesound.org/people/GiocoSound/sounds/401555/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.98,
+      "level": 0.53
+    }
+  },
+  {
+    "kind": "engine_loop",
+    "vehicle": "ai",
+    "engine": "BMW 120d (R4, Diesel)",
+    "mic": "Earthworks QTC30 + Rode NT4, aussen (Stereo -> Mono)",
+    "rpm": 2545,
+    "firing_hz": 84.84,
+    "load": "off",
+    "load_detail": "no_load_neutral",
+    "rpm_range_in_source": [
+      2404,
+      2645
+    ],
+    "method": "Standgas/Konstantdrehzahl im Stand; Abschnitt 0.06-1.79 s geglaettet (Schwankung 1.69 % rms), Loop aus ganzen Arbeitsspielen, Kreuzblende 0,15 s, Hochpass 45 Hz",
+    "file": "engine/ai_2550.ogg",
+    "loop": true,
+    "duration": 1.5551,
+    "lufs": -16.0,
+    "peak_dbfs": -2.49,
+    "source_lufs": -20.0,
+    "sources": [
+      {
+        "freesound_id": 401551,
+        "title": "SFX_Car_Engine_Outside_RPMHigh.wav",
+        "author": "GiocoSound",
+        "source_url": "https://freesound.org/people/GiocoSound/sounds/401551/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "seam_check": {
+      "flux": 0.79,
+      "level": 0.55
+    }
+  }
+]

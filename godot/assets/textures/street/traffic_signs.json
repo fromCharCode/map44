@@ -1,0 +1,396 @@
+{
+ "texture": "res://assets/textures/street/traffic_signs.png",
+ "grid": [
+  8,
+  4
+ ],
+ "cell_px": 256,
+ "layout": "Zellindex i: Spalte i % 8, Zeile i // 8, Zeile 0 oben. UV 0..1 der Schildfläche = ganze Zelle (Godot-UV.y=0 oben). Inhalt ist auf das Seitenverhältnis der Platte vorverzerrt. Alpha = Umriss (Kante weich, RGB außerhalb = Randfarbe).",
+ "source": "selbst gezeichnet nach amtlicher Gestaltung (VzKat/StVO, amtliche Werke § 5 UrhG); Schrift Noto Sans SemiCondensed (OFL)",
+ "cells": {
+  "205": {
+   "index": 0,
+   "col": 0,
+   "row": 0,
+   "plate": "plate_triangle_down",
+   "shape": "triangle_down",
+   "size_m": [
+    0.9,
+    0.7794
+   ],
+   "desc": "Vorfahrt gewähren"
+  },
+  "206": {
+   "index": 1,
+   "col": 1,
+   "row": 0,
+   "plate": "plate_octagon",
+   "shape": "octagon",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Halt! Vorfahrt gewähren (STOP)"
+  },
+  "306": {
+   "index": 2,
+   "col": 2,
+   "row": 0,
+   "plate": "plate_diamond",
+   "shape": "diamond",
+   "size_m": [
+    0.8485,
+    0.8485
+   ],
+   "desc": "Vorfahrtstraße"
+  },
+  "307": {
+   "index": 3,
+   "col": 3,
+   "row": 0,
+   "plate": "plate_diamond",
+   "shape": "diamond",
+   "size_m": [
+    0.8485,
+    0.8485
+   ],
+   "desc": "Ende der Vorfahrtstraße"
+  },
+  "301": {
+   "index": 4,
+   "col": 4,
+   "row": 0,
+   "plate": "plate_triangle",
+   "shape": "triangle",
+   "size_m": [
+    0.9,
+    0.7794
+   ],
+   "desc": "Vorfahrt an der nächsten Kreuzung"
+  },
+  "101": {
+   "index": 5,
+   "col": 5,
+   "row": 0,
+   "plate": "plate_triangle",
+   "shape": "triangle",
+   "size_m": [
+    0.9,
+    0.7794
+   ],
+   "desc": "Gefahrstelle"
+  },
+  "123": {
+   "index": 6,
+   "col": 6,
+   "row": 0,
+   "plate": "plate_triangle",
+   "shape": "triangle",
+   "size_m": [
+    0.9,
+    0.7794
+   ],
+   "desc": "Arbeitsstelle (Baustelle)"
+  },
+  "138": {
+   "index": 7,
+   "col": 7,
+   "row": 0,
+   "plate": "plate_triangle",
+   "shape": "triangle",
+   "size_m": [
+    0.9,
+    0.7794
+   ],
+   "desc": "Radverkehr"
+  },
+  "131": {
+   "index": 8,
+   "col": 0,
+   "row": 1,
+   "plate": "plate_triangle",
+   "shape": "triangle",
+   "size_m": [
+    0.9,
+    0.7794
+   ],
+   "desc": "Lichtzeichenanlage"
+  },
+  "274_30": {
+   "index": 9,
+   "col": 1,
+   "row": 1,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Zulässige Höchstgeschwindigkeit 30"
+  },
+  "274_50": {
+   "index": 10,
+   "col": 2,
+   "row": 1,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Zulässige Höchstgeschwindigkeit 50"
+  },
+  "267": {
+   "index": 11,
+   "col": 3,
+   "row": 1,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Verbot der Einfahrt"
+  },
+  "250": {
+   "index": 12,
+   "col": 4,
+   "row": 1,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Verbot für Fahrzeuge aller Art"
+  },
+  "283": {
+   "index": 13,
+   "col": 5,
+   "row": 1,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Absolutes Haltverbot"
+  },
+  "286": {
+   "index": 14,
+   "col": 6,
+   "row": 1,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Eingeschränktes Haltverbot"
+  },
+  "237": {
+   "index": 15,
+   "col": 7,
+   "row": 1,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Radweg"
+  },
+  "240": {
+   "index": 16,
+   "col": 0,
+   "row": 2,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Gemeinsamer Geh- und Radweg"
+  },
+  "239": {
+   "index": 17,
+   "col": 1,
+   "row": 2,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Gehweg"
+  },
+  "224": {
+   "index": 18,
+   "col": 2,
+   "row": 2,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Haltestelle"
+  },
+  "274.1": {
+   "index": 19,
+   "col": 3,
+   "row": 2,
+   "plate": "plate_square",
+   "shape": "square",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Beginn Tempo-30-Zone"
+  },
+  "274.2": {
+   "index": 20,
+   "col": 4,
+   "row": 2,
+   "plate": "plate_square",
+   "shape": "square",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Ende Tempo-30-Zone"
+  },
+  "242.1": {
+   "index": 21,
+   "col": 5,
+   "row": 2,
+   "plate": "plate_square",
+   "shape": "square",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Beginn Fußgängerzone"
+  },
+  "242.2": {
+   "index": 22,
+   "col": 6,
+   "row": 2,
+   "plate": "plate_square",
+   "shape": "square",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Ende Fußgängerzone"
+  },
+  "350": {
+   "index": 23,
+   "col": 7,
+   "row": 2,
+   "plate": "plate_square",
+   "shape": "square",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Fußgängerüberweg"
+  },
+  "314": {
+   "index": 24,
+   "col": 0,
+   "row": 3,
+   "plate": "plate_square",
+   "shape": "square",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Parken"
+  },
+  "357": {
+   "index": 25,
+   "col": 1,
+   "row": 3,
+   "plate": "plate_square",
+   "shape": "square",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Sackgasse"
+  },
+  "220": {
+   "index": 26,
+   "col": 2,
+   "row": 3,
+   "plate": "plate_oneway",
+   "shape": "rect_oneway",
+   "size_m": [
+    0.9,
+    0.3
+   ],
+   "desc": "Einbahnstraße, rechtsweisend"
+  },
+  "220_links": {
+   "index": 27,
+   "col": 3,
+   "row": 3,
+   "plate": "plate_oneway",
+   "shape": "rect_oneway",
+   "size_m": [
+    0.9,
+    0.3
+   ],
+   "desc": "Einbahnstraße, linksweisend"
+  },
+  "325.1": {
+   "index": 28,
+   "col": 4,
+   "row": 3,
+   "plate": "plate_rect_wide",
+   "shape": "rect_wide",
+   "size_m": [
+    0.9,
+    0.6
+   ],
+   "desc": "Beginn verkehrsberuhigter Bereich"
+  },
+  "325.2": {
+   "index": 29,
+   "col": 5,
+   "row": 3,
+   "plate": "plate_rect_wide",
+   "shape": "rect_wide",
+   "size_m": [
+    0.9,
+    0.6
+   ],
+   "desc": "Ende verkehrsberuhigter Bereich"
+  },
+  "209": {
+   "index": 30,
+   "col": 6,
+   "row": 3,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Vorgeschriebene Fahrtrichtung rechts"
+  },
+  "222": {
+   "index": 31,
+   "col": 7,
+   "row": 3,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Vorgeschriebene Vorbeifahrt rechts vorbei"
+  }
+ }
+}

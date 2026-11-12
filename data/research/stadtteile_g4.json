@@ -1,0 +1,3642 @@
+{
+ "stadtteile": {
+  "Prohlis-Nord": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     5.5,
+     7.0
+    ],
+    "spuren": "2 (Wohnstrassen mit Strichmittellinie, Prohliser Allee 2 Spuren + Tram)",
+    "parken": "Senkrecht-/Laengsparken beidseitig auf der Fahrbahn bzw. in Buchten; Findlinge (Granit ca. 0,8 m) als Parkbarriere",
+    "tram": "seitlich",
+    "radweg": "meist kein eigener; Prohliser Allee gemeinsamer Geh-/Radweg bzw. Radstreifen"
+   },
+   "bordstein": {
+    "material": "Beton (Wohnstrassen) bzw. Granit grau (Hauptstrasse)",
+    "hoehe_cm": 15,
+    "farbe": "#A9A9A5"
+   },
+   "gehweg": {
+    "material": [
+     "Betonplatten 40x40 grau",
+     "Asphalt",
+     "Betonverbundpflaster"
+    ],
+    "breite_m": [
+     1.5,
+     2.5
+    ],
+    "muster": "Plattenraster 40x40 im Verband, kein Rinnstein-Pflaster; Rasenstreifen 3-10 m zwischen Weg und Block; Trampelpfade (Sand)"
+   },
+   "fassaden": [
+    {
+     "stil": "Plattenbau WBS 70 / 5-6 Geschosse Zeile (Fugenraster 6,0 m, Loggien-/Balkonreihen mit Betonbruestung, Flachdach mit Zink-Attika, Treppenhaus-Glasturm nach 1990)",
+     "anteil": 0.55,
+     "geschosse": [
+      5,
+      6
+     ],
+     "farben": [
+      "#EBE3C8",
+      "#E2C860",
+      "#D8D4CC",
+      "#A8B0B4"
+     ],
+     "dach": "Flachdach, Attika #8A8F94",
+     "merkmale": [
+      "Durchgehende Balkonreihen",
+      "Bruestungen farbig gefasst (gelb/ocker/rosa/mint)",
+      "WDVS saniert, Sockel braungrau #8A7A6A",
+      "Aufzugs-Glasturm",
+      "Giebel teils graue Betonplatten #B5B0A5"
+     ],
+     "baujahre": "1976-1989 (WBS 70), 1990-2010 saniert"
+    },
+    {
+     "stil": "Plattenbau 11/16-geschossig (Scheibe/Punkthochhaus, Albert-Wolf-Platz)",
+     "anteil": 0.15,
+     "geschosse": [
+      11,
+      16
+     ],
+     "farben": [
+      "#A5582F",
+      "#A8B0B4",
+      "#EFEFEA"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "16-Geschosser: rotbrauner Keramik-/Riemchenbelag #A5582F, graue Giebel",
+      "11-Geschosser weiss-grau mit Balkonbaendern",
+      "Eckbalkone"
+     ],
+     "baujahre": "1978-1986"
+    },
+    {
+     "stil": "Siedlungshaus/Genossenschaftsbau 1930er",
+     "anteil": 0.2,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#EAD9A0",
+      "#D8CFA0",
+      "#C8472B"
+     ],
+     "dach": "Satteldach/Walmdach Biberschwanz rot #C8472B, Gauben",
+     "merkmale": [
+      "Putz creme/ocker",
+      "Jägerzaun braun auf Sandsteinpfosten",
+      "Liguster-Hecke 1,5 m",
+      "Vorgarten"
+     ],
+     "baujahre": "1930-1940"
+    },
+    {
+     "stil": "Schule/Kita Typenbau 1970er saniert (SBS)",
+     "anteil": 0.1,
+     "geschosse": [
+      3,
+      4
+     ],
+     "farben": [
+      "#E8D880",
+      "#D8782A"
+     ],
+     "dach": "Flachdach/Pultdach",
+     "merkmale": [
+      "Fensterbaender",
+      "orange Streifen",
+      "Freitreppe Beton"
+     ],
+     "baujahre": "1975-1985, saniert 2000-2015"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Stahl-Mastleuchte einarmig grau/silber (LED)",
+     "hoehe_m": 8,
+     "abstand_m": 30
+    },
+    {
+     "typ": "Pilzleuchte in Wohnhoefen",
+     "hoehe_m": 4,
+     "abstand_m": 25
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Supermarkt-/Apotheken-Pylon (EDEKA)",
+     "ort": "Albert-Wolf-Platz / Prohliser Allee",
+     "haeufigkeit": "mittel"
+    },
+    {
+     "typ": "City-Light-Vitrine",
+     "ort": "Tramhaltestellen",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Litfasssaeule",
+     "ort": "Albert-Wolf-Platz",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Historische Fototafeln/Infotafeln (Quartiersmanagement)",
+     "ort": "Wohnumfeld, Giebelwand",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Spitzahorn",
+     "Linde",
+     "Birke",
+     "Pappel",
+     "Kiefer",
+     "Fichte"
+    ],
+    "baumabstand_m": 10,
+    "vorgaerten": "selten, Mietergaerten/Rasen direkt am Block; Siedlungshaeuser mit Hecke 1,5 m",
+    "gruen": "grosse Rasenflaechen, Wiesen, Gruenzug Geberbach, Findlinge, Trampelpfade"
+   },
+   "nichtwohn": [
+    "Schulen/Kitas Typenbau 3-4 Geschosse gelb-orange",
+    "Kaufhalle/Supermarkt Flachbau",
+    "Hotel Azimut (4 Geschosse lachsrot)",
+    "Kirche Prohlis (gruener Glasturm)",
+    "Kombibad Prohlis",
+    "Strassenbahn-Wendeschleife"
+   ]
+  },
+  "Prohlis-Süd": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     5.5,
+     6.5
+    ],
+    "spuren": "2 (Wohnstrassen/Sackgassen), Georg-Palitzsch-Str. 2 Spuren + Parken + Mittelinsel",
+    "parken": "beidseitig Laengs-/Senkrechtparken, Granit-Kleinpflaster in Parkbuchten (2,5 m)",
+    "tram": "keine",
+    "radweg": "kein eigener; gemeinsame Wege durch Gruenanlagen"
+   },
+   "bordstein": {
+    "material": "Beton (Wohnstrasse), Granit an Hauptstrasse",
+    "hoehe_cm": 15,
+    "farbe": "#A9A9A5"
+   },
+   "gehweg": {
+    "material": [
+     "Betonplatten 40x40",
+     "Asphalt",
+     "Verbundpflaster rotbraun"
+    ],
+    "breite_m": [
+     1.5,
+     2.0
+    ],
+    "muster": "Platten im Verband, Rasenstreifen und Spielflaechen daneben, Sandwege (Trampelpfade) quer"
+   },
+   "fassaden": [
+    {
+     "stil": "Plattenbau WBS 70, 6 Geschosse (Zeilen 100-180 m)",
+     "anteil": 0.6,
+     "geschosse": [
+      6,
+      6
+     ],
+     "farben": [
+      "#E8D88A",
+      "#D8A878",
+      "#E6C8C0",
+      "#C8DCC8",
+      "#F0EBD8"
+     ],
+     "dach": "Flachdach mit Attika (Zink grau)",
+     "merkmale": [
+      "Fugenraster 6,0 m Achse",
+      "Geschosshoehe 2,8 m, Traufe ca. 17 m",
+      "Loggien/Balkone mit Betonbruestung farbig gefasst",
+      "Treppenhaus-Risalit mit Aufzugsglasturm hellblau-gruen",
+      "WDVS-Farbbaender, teils unsanierte graue Giebel"
+     ],
+     "baujahre": "1978-1988"
+    },
+    {
+     "stil": "Plattenbau 5-geschossig QX/Q6 unsaniert/saniert (Ziegelplatten braun)",
+     "anteil": 0.15,
+     "geschosse": [
+      5,
+      5
+     ],
+     "farben": [
+      "#A8967A",
+      "#D8D0B8"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "braune Keramikplatten",
+      "Lochfassade ohne Balkone"
+     ],
+     "baujahre": "1976-1982"
+    },
+    {
+     "stil": "11-16-geschossige Scheiben/Punkthaeuser",
+     "anteil": 0.1,
+     "geschosse": [
+      11,
+      16
+     ],
+     "farben": [
+      "#F0EFE8",
+      "#7AA0D8",
+      "#D89888"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "blau/gelbe Balkonbaender",
+      "lachsfarbene Punkthaeuser"
+     ],
+     "baujahre": "1980-1986"
+    },
+    {
+     "stil": "Schule/Kita/Jugendhaus Typenbau",
+     "anteil": 0.15,
+     "geschosse": [
+      1,
+      3
+     ],
+     "farben": [
+      "#E0B84A",
+      "#8A6A50"
+     ],
+     "dach": "Flachdach/Pultdach",
+     "merkmale": [
+      "Fensterbaender",
+      "Graffiti-Wand",
+      "Klinker-Riemchen Jugendhaus",
+      "Freitreppe Granitsplitt-Beton"
+     ],
+     "baujahre": "1975-1985, Neubauten 2015+"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Einarmige Stahl-Mastleuchte grau/silber",
+     "hoehe_m": 7,
+     "abstand_m": 30
+    },
+    {
+     "typ": "Pilz-/Aufsatzleuchte Wohnhof",
+     "hoehe_m": 4,
+     "abstand_m": 22
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Megaposter/Fahnen am Autohaus (Mercedes, 4x3 m)",
+     "ort": "Fritz-Meinhardt-Str.",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Bauzaun-/Hinweisschilder",
+     "ort": "Wohngebiet",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Spitzahorn",
+     "Linde",
+     "Pyramidenpappel (25 m)",
+     "Eiche",
+     "Birke",
+     "Kiefer"
+    ],
+    "baumabstand_m": 12,
+    "vorgaerten": "Hecken 1 m (Liguster/Hainbuche), Mietervorgaerten klein",
+    "gruen": "Rasenflaechen, Trampelpfade, Palitzsch-Park, Baumgruppen"
+   },
+   "nichtwohn": [
+    "Schulen/Kitas (3 Geschosse, gelb/ocker, Graffiti)",
+    "Kombibad Prohlis (Glas-Stahl 1990er)",
+    "Autohaus Glasfassade",
+    "Seniorenheim/Aerztehaus Flachbau",
+    "Kirche (Glasturm)"
+   ]
+  },
+  "Niedersedlitz": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     4.5,
+     7.5
+    ],
+    "spuren": "2 (Strasse des 17. Juni mit Strichmittellinie), Siedlungsstrassen ohne Markierung",
+    "parken": "Laengsparken einseitig, Zone 30",
+    "tram": "keine",
+    "radweg": "Radstreifen/gemeinsam, gelbe Absperrbaken an Baustellen"
+   },
+   "bordstein": {
+    "material": "Granit grau, Randpflaster Granit 1 Reihe",
+    "hoehe_cm": 12,
+    "farbe": "#8E8E8A"
+   },
+   "gehweg": {
+    "material": [
+     "Betonpflaster grau",
+     "Betonplatten",
+     "Asphalt",
+     "Granit-Kleinpflaster (Dorfkern)"
+    ],
+    "breite_m": [
+     1.0,
+     2.0
+    ],
+    "muster": "in Siedlungen oft nur 1 m oder kein Gehweg; Hauptstrasse 2 m Plattenreihen"
+   },
+   "fassaden": [
+    {
+     "stil": "Siedlerhaus/Reformstil 1920-35",
+     "anteil": 0.4,
+     "geschosse": [
+      1,
+      2
+     ],
+     "farben": [
+      "#EAE0B0",
+      "#FFFFFF",
+      "#5A5A5A",
+      "#B84A2D"
+     ],
+     "dach": "Satteldach/Krueppelwalm, Biberschwanz rot oder Schiefer-grau",
+     "merkmale": [
+      "Hecken Eibe/Liguster 1,5-2 m geschnitten",
+      "Staketenzaun braun",
+      "Sprossenfenster",
+      "Gauben"
+     ],
+     "baujahre": "1920-1935"
+    },
+    {
+     "stil": "Jugendstil-Mietshaus/Gruenderzeitvilla",
+     "anteil": 0.2,
+     "geschosse": [
+      3,
+      4
+     ],
+     "farben": [
+      "#EBDDA0",
+      "#C0583A",
+      "#FFFFFF",
+      "#D5C9A5"
+     ],
+     "dach": "Walm-/Mansarddach rot oder Schiefer",
+     "merkmale": [
+      "Erker, Holzbalkon braun",
+      "Sandsteingewaende",
+      "Schmiedeeisenzaun gruen-grau auf Sandsteinsockel"
+     ],
+     "baujahre": "1890-1914"
+    },
+    {
+     "stil": "Dorfkern: Bauernhaus 18./19. Jh.",
+     "anteil": 0.1,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#E89888",
+      "#D8D8D8"
+     ],
+     "dach": "Satteldach 55 Grad Biberschwanz rot",
+     "merkmale": [
+      "Fachwerk-Nebengebaeude",
+      "Granit-Kopfsteinpflaster"
+     ],
+     "baujahre": "1750-1850"
+    },
+    {
+     "stil": "Industrie-/Verwaltungsbau 1950-60er (Sachsenwerk)",
+     "anteil": 0.2,
+     "geschosse": [
+      4,
+      5
+     ],
+     "farben": [
+      "#D8D8D4",
+      "#4A7AA8"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "Fensterbaender",
+      "Dachbeschriftung 'Sachsenwerk'",
+      "Torbogen Putz #D8C9B0 mit blauem Schmiedeeisentor",
+      "blauer Stahl-Industriezaun 2,5 m"
+     ],
+     "baujahre": "1950-1965"
+    },
+    {
+     "stil": "Schule Eckbau gelb",
+     "anteil": 0.1,
+     "geschosse": [
+      4,
+      4
+     ],
+     "farben": [
+      "#E8D030"
+     ],
+     "dach": "Walmdach flach",
+     "merkmale": [
+      "Putz mit Erker",
+      "blaue Tueren"
+     ],
+     "baujahre": "1910-1925"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Stahlmast Einarm grau",
+     "hoehe_m": 7,
+     "abstand_m": 35
+    },
+    {
+     "typ": "Holz-/Betonmast mit Freileitung + Aufsatz-/Peitschenleuchte",
+     "hoehe_m": 8,
+     "abstand_m": 40
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Grossflaeche/Plakatwand 3x2 m",
+     "ort": "Gewerbegebiet / Strasse des 17. Juni",
+     "haeufigkeit": "mittel"
+    },
+    {
+     "typ": "Roter Banner-Zaun (Recyclinghof, Schrift)",
+     "ort": "Gewerbe",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Leuchtschrift auf Dach",
+     "ort": "Sachsenwerk",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Linde",
+     "Spitzahorn",
+     "Birke",
+     "Robinie"
+    ],
+    "baumabstand_m": 12,
+    "vorgaerten": "Hecken 1,5-2 m (Eibe, Liguster) vor Siedlerhaeusern",
+    "gruen": "Hochspannungsmasten und Felder am Ortsrand; Allee an der Hauptstrasse"
+   },
+   "nichtwohn": [
+    "Sachsenwerk / sachs.ona Geschaeftspark (Torbogen, 4-5 Geschosse)",
+    "Rathaus Niedersedlitz (Jugendstil-Portal Sandstein, rote Tuer)",
+    "Schule (gelb, 4 Geschosse)",
+    "S-Bahn-Haltepunkt",
+    "Recyclinghof"
+   ]
+  },
+  "Lockwitz": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     4.5,
+     6.0
+    ],
+    "spuren": "2 (meist ohne Markierung; Strichlinie nur Dohnaer Str.)",
+    "parken": "Laengsparken einseitig/auf Rinne",
+    "tram": "keine",
+    "radweg": "kein eigener"
+   },
+   "bordstein": {
+    "material": "Granit/Sandstein, Rinne Granit-Kleinpflaster 0,3 m",
+    "hoehe_cm": 12,
+    "farbe": "#8E8E8A"
+   },
+   "gehweg": {
+    "material": [
+     "Betonplatten",
+     "Asphalt",
+     "Granit-Mosaik",
+     "Fischgrat-Betonpflaster grau (Hof)"
+    ],
+    "breite_m": [
+     1.2,
+     1.5
+    ],
+    "muster": "einseitig; Haltestelle Granit/Betonpflaster 2 m"
+   },
+   "fassaden": [
+    {
+     "stil": "Bauern-/Zweiseitenhof 18./19. Jh.",
+     "anteil": 0.3,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#E8E4D8",
+      "#C0553A",
+      "#A8D0BC",
+      "#7A4A30"
+     ],
+     "dach": "steiles Krueppelwalm-/Mansarddach Biberschwanz #7A4A30",
+     "merkmale": [
+      "Sandsteinfaschen #C8B898",
+      "Holzverschalter Giebel dunkel #5A3A30",
+      "Sandsteinmauer 1,5 m",
+      "Putz-Erker"
+     ],
+     "baujahre": "1750-1860"
+    },
+    {
+     "stil": "Gruenderzeit-Mietshaus/Jugendstil",
+     "anteil": 0.25,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#D9B870",
+      "#F2F0EA",
+      "#7A2A2A",
+      "#4A4A52"
+     ],
+     "dach": "Mansard Schiefer, Zwerchgiebel",
+     "merkmale": [
+      "Klinker gelb mit Sandstein-Rustika-Sockel",
+      "Holzerker rotbraun",
+      "Balkon"
+     ],
+     "baujahre": "1890-1914"
+    },
+    {
+     "stil": "Siedlerhaeuser 1930er",
+     "anteil": 0.35,
+     "geschosse": [
+      1,
+      2
+     ],
+     "farben": [
+      "#D8B0C8",
+      "#E8D880",
+      "#FFFFFF"
+     ],
+     "dach": "Satteldach/Walm rot oder Schiefer-dunkel",
+     "merkmale": [
+      "Hecken Liguster/Thuja 2 m (meterdick)",
+      "Holz-Lattenzaun braun"
+     ],
+     "baujahre": "1930-1938"
+    },
+    {
+     "stil": "Rathaus/Schloss/Altenheim",
+     "anteil": 0.1,
+     "geschosse": [
+      3,
+      4
+     ],
+     "farben": [
+      "#E8E2D0",
+      "#FFFFFF"
+     ],
+     "dach": "Walmdach rot, Uhrturm Schiefer",
+     "merkmale": [
+      "Balkon-Anbau Stahl/Holz",
+      "weisses Neobarock-Palais"
+     ],
+     "baujahre": "1700-1910, saniert 2010+"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Zierlaterne Kugel/Schwanenhals schwarz",
+     "hoehe_m": 4,
+     "abstand_m": 25
+    },
+    {
+     "typ": "Holz-/Betonmast mit Freileitung und Aufsatzleuchte",
+     "hoehe_m": 7,
+     "abstand_m": 40
+    },
+    {
+     "typ": "Stahlmast 8 m (Dohnaer Str.)",
+     "hoehe_m": 8,
+     "abstand_m": 35
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Ladenschild/vertikaler Ausleger ('UGL')",
+     "ort": "Eckgasthof Dohnaer Str.",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Litfasssaeule",
+     "ort": "Kreuzung Dohnaer Str.",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Aufsteller/Fahnen",
+     "ort": "Gaststaette",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Linde (25 m)",
+     "Rosskastanie",
+     "Spitzahorn",
+     "Haselnuss",
+     "Fichte",
+     "Eibe"
+    ],
+    "baumabstand_m": 12,
+    "vorgaerten": "Hecken 1,5-2 m, Staketenzaun",
+    "gruen": "Lindenwiese Lochnerstr., Lockwitzbach, Waldstrasse im Lockwitzgrund"
+   },
+   "nichtwohn": [
+    "Rathaus Lockwitz (weisses Palais)",
+    "Schloss + Schlosskirche",
+    "Kakaomuehle/Muehlenhof",
+    "Schule Urnenstr. (Jugendstil)",
+    "Gasthof 3 Geschosse ocker"
+   ]
+  },
+  "Leubnitz-Neuostra": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     5.0,
+     8.0
+    ],
+    "spuren": "2 (Hauptstr. Dohnaer/Kauschaer Str. 7-8 m mit Strichlinie)",
+    "parken": "Laengsparken beidseitig auf Fahrbahn, rotweisse Baken",
+    "tram": "keine",
+    "radweg": "kein eigener"
+   },
+   "bordstein": {
+    "material": "Granit grau",
+    "hoehe_cm": 12,
+    "farbe": "#8E8E8A"
+   },
+   "gehweg": {
+    "material": [
+     "Betonpflaster rot-grau",
+     "Granit-Kopfsteinpflaster (Kirchweg)",
+     "Asphalt"
+    ],
+    "breite_m": [
+     1.5,
+     2.0
+    ],
+    "muster": "Hauptstrasse Betonpflaster 2 m; Rundplatz/Kirchweg Granit-Kleinpflaster; Asphaltflicken haeufig"
+   },
+   "fassaden": [
+    {
+     "stil": "Villa/Landhaus Reformstil 1900-1920",
+     "anteil": 0.35,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#E8D8B0",
+      "#E5DCC8",
+      "#2E8B57",
+      "#B4502F"
+     ],
+     "dach": "Satteldach/Walm Biberschwanz rot, Rundturm mit Schieferhaube",
+     "merkmale": [
+      "Fachwerkgiebel schwarz-weiss",
+      "gruene Holzveranda #2E8B57",
+      "Schmiedeeisenzaun mit Ziegelpfosten"
+     ],
+     "baujahre": "1900-1920"
+    },
+    {
+     "stil": "Gruenderzeit-Mietvilla",
+     "anteil": 0.2,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#C9B590",
+      "#D8B070"
+     ],
+     "dach": "Mansarddach Schiefer",
+     "merkmale": [
+      "Erker/Balkone",
+      "Sandsteingliederung"
+     ],
+     "baujahre": "1890-1910"
+    },
+    {
+     "stil": "Genossenschaftsbau 1920-30er / Neubau 2000er",
+     "anteil": 0.3,
+     "geschosse": [
+      3,
+      4
+     ],
+     "farben": [
+      "#E2B84A",
+      "#D98A4A",
+      "#E8D8B0",
+      "#7080A0"
+     ],
+     "dach": "Walm-/Mansarddach, Gauben",
+     "merkmale": [
+      "Stahlbalkone grau-blau",
+      "Putz gelb/orange"
+     ],
+     "baujahre": "1925-1935, 2000-2020"
+    },
+    {
+     "stil": "Dorfkern: Bauernhaus/Kirche",
+     "anteil": 0.15,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#E8E4D8",
+      "#D5C9A5"
+     ],
+     "dach": "Satteldach Biberschwanz rot; Kirchturm kupfergruen",
+     "merkmale": [
+      "Sandsteinmauer 2 m",
+      "Fensterfaschen Sandstein",
+      "Spitz-/Chorturm"
+     ],
+     "baujahre": "1600-1850"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Stahl-Mastleuchte zweiarmig (Rundplatz)",
+     "hoehe_m": 8,
+     "abstand_m": 35
+    },
+    {
+     "typ": "Holz-/Betonmast + Freileitung",
+     "hoehe_m": 7,
+     "abstand_m": 40
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Ladenschild/Aufsteller/Fahnen",
+     "ort": "Rundplatz Leubnitz",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Bus-Haltestellenmast gelb mit H",
+     "ort": "Dohnaer Str.",
+     "haeufigkeit": "mittel"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Spitzahorn",
+     "Blutpflaume",
+     "Linde",
+     "Platane",
+     "Kiefer",
+     "Fichte"
+    ],
+    "baumabstand_m": 10,
+    "vorgaerten": "3-6 m tief mit Eisenzaun oder Hecke Liguster",
+    "gruen": "Bruchsteinmauern, Streuobst, Blaufichten"
+   },
+   "nichtwohn": [
+    "Kirche Leubnitz (Sandsteinturm, kupfergruene Haube)",
+    "Rathaus Leubnitz-Neuostra",
+    "Friedhof",
+    "Schule/Verwaltungsbau 3 Geschosse hell"
+   ]
+  },
+  "Strehlen": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     5.0,
+     7.0
+    ],
+    "spuren": "2 (Dohnaer Str. mit Radstreifen, Tram in Fahrbahn)",
+    "parken": "Laengsparken einseitig/beidseitig",
+    "tram": "mittig",
+    "radweg": "Radstreifen markiert (Dohnaer Str.)"
+   },
+   "bordstein": {
+    "material": "Granit grau",
+    "hoehe_cm": 12,
+    "farbe": "#8C8C88"
+   },
+   "gehweg": {
+    "material": [
+     "Betonplatten 40x40",
+     "Betonpflaster",
+     "Granit-Mosaik",
+     "Beton-Treppen"
+    ],
+    "breite_m": [
+     1.5,
+     2.5
+    ],
+    "muster": "Platten im Verband, Rasenstreifen mit Linden/Birken, Granit-Kleinpflaster in Auffahrten"
+   },
+   "fassaden": [
+    {
+     "stil": "Gruenderzeit/Neorenaissance Villa/Mietshaus",
+     "anteil": 0.3,
+     "geschosse": [
+      3,
+      4
+     ],
+     "farben": [
+      "#EDE6D0",
+      "#8A7A6A",
+      "#D08A5A",
+      "#4A4A52"
+     ],
+     "dach": "Walm/Mansard Schiefer grau",
+     "merkmale": [
+      "Sandstein-Quadersockel",
+      "Balkon Balustrade",
+      "Rundturm-Erker",
+      "Klinker-Putz-Mix orange mit weissen Faschen"
+     ],
+     "baujahre": "1880-1905"
+    },
+    {
+     "stil": "Jugendstil/Reformstil Villa",
+     "anteil": 0.25,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#E4E0A0",
+      "#E8D880",
+      "#B04A30"
+     ],
+     "dach": "Biberschwanz rot, Turmhaube",
+     "merkmale": [
+      "Zwerchgiebel",
+      "Rundbogenfenster",
+      "Sandstein-Zaunsaeulen + Eisenzaun"
+     ],
+     "baujahre": "1900-1915"
+    },
+    {
+     "stil": "Siedlungshaus 1930/50er",
+     "anteil": 0.25,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#A8A090",
+      "#9A9A98",
+      "#D8D4C4",
+      "#2A3A8A"
+     ],
+     "dach": "Satteldach braun/rot",
+     "merkmale": [
+      "Rauhputz grau",
+      "blaue Klappladen",
+      "Efeu",
+      "Hecke 1,5 m",
+      "Zaun Stahlstab schwarz/blau"
+     ],
+     "baujahre": "1930-1955"
+    },
+    {
+     "stil": "Plattenbau 6 Geschosse saniert (Conrad-Felixmueller-Str.)",
+     "anteil": 0.15,
+     "geschosse": [
+      6,
+      6
+     ],
+     "farben": [
+      "#C85A3A",
+      "#E08A50",
+      "#8C95C0",
+      "#C8B898"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "farbige Paneele rot/orange/blaugrau",
+      "Betonplatten-Giebel beige"
+     ],
+     "baujahre": "1975-1985, saniert"
+    },
+    {
+     "stil": "Gewerbe/Industrie Backstein",
+     "anteil": 0.05,
+     "geschosse": [
+      1,
+      2
+     ],
+     "farben": [
+      "#8A4A38"
+     ],
+     "dach": "Schiefer/Blech",
+     "merkmale": [
+      "Schlot",
+      "Fachwerk-Backstein"
+     ],
+     "baujahre": "1890-1930"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Peitschenmast mit Spannseil/Fahrleitung (Tram)",
+     "hoehe_m": 9,
+     "abstand_m": 35
+    },
+    {
+     "typ": "Stahlmast Einarm grau",
+     "hoehe_m": 7,
+     "abstand_m": 30
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Logo-Wandbild (Biomarkt gelb)",
+     "ort": "Flachbau Ecke",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Ladenschilder/Messing-Hausnummer mit Stadtwappen",
+     "ort": "Villen",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Linde",
+     "Platane",
+     "Spitzahorn",
+     "Birke",
+     "Kupferbuche",
+     "Kiefer",
+     "Pyramidenpappel"
+    ],
+    "baumabstand_m": 10,
+    "vorgaerten": "3-8 m, Eisenzaun auf Sandsteinsockel 0,3-0,5 m, Hecke Liguster 1,2-1,5 m, Efeu",
+    "gruen": "Hangwege mit Stufen, Gehoelz, Gaerten"
+   },
+   "nichtwohn": [
+    "Christuskirche Strehlen (dunkler Sandstein/Granit, 2 Tuerme)",
+    "Biomarkt Flachbau",
+    "Backstein-Gewerbe mit Schlot",
+    "Eckgaststaette"
+   ]
+  },
+  "Reick": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     5.5,
+     9.0
+    ],
+    "spuren": "2 (+Abbiegestreifen Breitscheidstr.), Wohnstr. 5,5 m",
+    "parken": "Laengsparken, Parkbuchten Granitpflaster",
+    "tram": "seitlich",
+    "radweg": "Radweg Asphalt 2,5 m; Radstreifen Reicker Str."
+   },
+   "bordstein": {
+    "material": "Granit grau",
+    "hoehe_cm": 12,
+    "farbe": "#8C8C88"
+   },
+   "gehweg": {
+    "material": [
+     "Betonplatten",
+     "Granit-Mosaik",
+     "Betonpflaster",
+     "Asphalt"
+    ],
+    "breite_m": [
+     1.5,
+     2.5
+    ],
+    "muster": "Rinne Granit-Kleinpflaster 2 Reihen an Hauptstr.; Wohnstr. Platten + Rasenstreifen 3-6 m"
+   },
+   "fassaden": [
+    {
+     "stil": "Zeilenbau/Genossenschaft 1930-50er",
+     "anteil": 0.4,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#D8C27A",
+      "#D2B870",
+      "#8A7A68",
+      "#A8472B"
+     ],
+     "dach": "steiles Walmdach rot-braun, Reihengauben, hohe Schornsteine",
+     "merkmale": [
+      "Rauhputz sandgelb",
+      "Sandstein-Ecklisenen",
+      "schwarze Holz-/Metallerker an Ecken",
+      "weisse Kastenfenster 1,0x1,5 m",
+      "Eingangsvordach Beton"
+     ],
+     "baujahre": "1930-1955"
+    },
+    {
+     "stil": "Plattenbau WBS 70 saniert 5-6 Geschosse",
+     "anteil": 0.15,
+     "geschosse": [
+      5,
+      6
+     ],
+     "farben": [
+      "#EDE3B8",
+      "#D8D4CC",
+      "#8FA0B8"
+     ],
+     "dach": "Flachdach grau-silber",
+     "merkmale": [
+      "Glas-Balkon-Treppenhaus",
+      "blau-silberne Balkonbaender"
+     ],
+     "baujahre": "1976-1988"
+    },
+    {
+     "stil": "Wohnanlage saniert 1990er/2000er",
+     "anteil": 0.15,
+     "geschosse": [
+      3,
+      4
+     ],
+     "farben": [
+      "#E8DFC8",
+      "#7080A0"
+     ],
+     "dach": "Mansard Zink #3A3A40, Gauben",
+     "merkmale": [
+      "Stahlbalkone grau-blau",
+      "Z325 Spielstrasse"
+     ],
+     "baujahre": "1992-2010"
+    },
+    {
+     "stil": "Buero/Gewerbe 1960-2010 (Hochhaus 12 Geschosse, Bauhaus-Kuben)",
+     "anteil": 0.2,
+     "geschosse": [
+      3,
+      12
+     ],
+     "farben": [
+      "#8A8070",
+      "#F4F4F0"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "Rasterfassade braun-grau",
+      "Glas-Treppenturm",
+      "Dachleuchtschrift"
+     ],
+     "baujahre": "1960-1975, 1990-2020"
+    },
+    {
+     "stil": "Gruenderzeit-Eckhaus",
+     "anteil": 0.1,
+     "geschosse": [
+      4,
+      4
+     ],
+     "farben": [
+      "#D8CBA8",
+      "#C8B898"
+     ],
+     "dach": "Mansard Schiefer",
+     "merkmale": [
+      "Stuck",
+      "Schweifgiebel",
+      "Sandsteinmauer + Eisengitter"
+     ],
+     "baujahre": "1895-1910"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Peitschenmast Stahl grau, Doppelausleger",
+     "hoehe_m": 9,
+     "abstand_m": 35
+    },
+    {
+     "typ": "Pilz-/Zylinderleuchte Wohnhof",
+     "hoehe_m": 4.5,
+     "abstand_m": 25
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Grossflaeche/Plakat + Spanntransparent",
+     "ort": "Gewerbegebiet Breitscheidstr.",
+     "haeufigkeit": "mittel"
+    },
+    {
+     "typ": "Baustellenschild (White Lofts)",
+     "ort": "Reicker Str.",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Dach-Leuchtbuchstaben",
+     "ort": "Bueroturm",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "City-Light",
+     "ort": "Haltestellen",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Linde",
+     "Spitzahorn",
+     "Pyramidenpappel",
+     "Platane",
+     "Kiefer"
+    ],
+    "baumabstand_m": 14,
+    "vorgaerten": "Rasenstreifen/Beete 3-6 m, Hecke 1 m",
+    "gruen": "Brachflaechen, Wiesen, Gehoelzstreifen"
+   },
+   "nichtwohn": [
+    "Heizkraftwerk Reick mit Schlot (150 m, weiss-rot)",
+    "Buerohochhaus 12 Geschosse",
+    "Gewerbe/Verwaltung 1990er weiss",
+    "Hotel Azimut",
+    "Recycling-Sammelstelle",
+    "Brachen"
+   ]
+  },
+  "Südvorstadt-West": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     6.0,
+     13.0
+    ],
+    "spuren": "2x2 (Nuernberger Str.) je 3,25 m; Nebenstr. 2",
+    "parken": "Laengsparken auf Asphalt in Nebenstr. (Zone 30)",
+    "tram": "mittig",
+    "radweg": "Radstreifen ziegelrot #B0564A 1,5 m"
+   },
+   "bordstein": {
+    "material": "Granit grau",
+    "hoehe_cm": 15,
+    "farbe": "#8C8C88"
+   },
+   "gehweg": {
+    "material": [
+     "Betonplatten",
+     "Verbundpflaster",
+     "Granit-Kleinpflaster (Hoefe)"
+    ],
+    "breite_m": [
+     2.0,
+     3.0
+    ],
+    "muster": "Platten + Rasenstreifen mit Baumreihe; Kettengelaender schwarz entlang des Rasengleises"
+   },
+   "fassaden": [
+    {
+     "stil": "Zeilenbau 1950er (Aufbauprogramm)",
+     "anteil": 0.3,
+     "geschosse": [
+      4,
+      6
+     ],
+     "farben": [
+      "#D9D2BE",
+      "#A5472C",
+      "#FFFFFF"
+     ],
+     "dach": "Walmdach rot steil / Pultdach",
+     "merkmale": [
+      "verputzt hellgrau/creme",
+      "weisse Kastenfenster 1,1x1,4 m",
+      "Eingang mit Betonvordach",
+      "Ladenzone EG Alu-Glas"
+     ],
+     "baujahre": "1950-1958"
+    },
+    {
+     "stil": "Wohnscheibe/Studentenwohnheim Plattenbau 10-12 Geschosse",
+     "anteil": 0.3,
+     "geschosse": [
+      10,
+      12
+     ],
+     "farben": [
+      "#9A8F7A",
+      "#C8C8C8",
+      "#D02828",
+      "#E8C050"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "Fensterbaender",
+      "farbige Loggienpaneele gelb/rot",
+      "150 m lang",
+      "rote Treppenhausstreifen"
+     ],
+     "baujahre": "1968-1978"
+    },
+    {
+     "stil": "Backstein-Gewerbe/Brauerei",
+     "anteil": 0.1,
+     "geschosse": [
+      3,
+      4
+     ],
+     "farben": [
+      "#8A3F2E"
+     ],
+     "dach": "Satteldach Pappe/Ziegel, Schlot",
+     "merkmale": [
+      "Klinkerfassade",
+      "Granit-Grosspflaster-Hof 12 cm"
+     ],
+     "baujahre": "1890-1930"
+    },
+    {
+     "stil": "Neubau/Buero 2010-2026 (Glas, Carbonbeton)",
+     "anteil": 0.2,
+     "geschosse": [
+      4,
+      7
+     ],
+     "farben": [
+      "#B8C0C8",
+      "#F2F2F0"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "Fensterbaender",
+      "Betonrohbau",
+      "Baugeruest, Bauzaun"
+     ],
+     "baujahre": "2010-2026"
+    },
+    {
+     "stil": "Gruenderzeitvilla/Reformstil Reste",
+     "anteil": 0.1,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#E8DCC0"
+     ],
+     "dach": "Mansard/Walm",
+     "merkmale": [
+      "Eisenzaun mit Sandsteinpfosten",
+      "Graffiti"
+     ],
+     "baujahre": "1890-1910"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Peitschenmast Stahl grau, Doppelausleger LED (Magistrale)",
+     "hoehe_m": 11,
+     "abstand_m": 35
+    },
+    {
+     "typ": "Tram-Fahrleitungs-Betonmast mit Ausleger",
+     "hoehe_m": 12,
+     "abstand_m": 40
+    },
+    {
+     "typ": "Mastleuchte klein Nebenstrasse",
+     "hoehe_m": 6,
+     "abstand_m": 30
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Ladenschilder/Schaufensterfolien",
+     "ort": "Nuernberger Str. EG",
+     "haeufigkeit": "mittel"
+    },
+    {
+     "typ": "Bauzaun-Banner/Bauschilder",
+     "ort": "Baustellen",
+     "haeufigkeit": "oft"
+    },
+    {
+     "typ": "Parteiplakat am Laternenmast",
+     "ort": "Strassenraender",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "ADAC-Pylon/Plakatgrossflaeche",
+     "ort": "Bahnhofsnaehe",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Linde",
+     "Platane",
+     "Spitzahorn",
+     "Kastanie"
+    ],
+    "baumabstand_m": 10,
+    "vorgaerten": "selten; Zaun Eisen mit Efeu",
+    "gruen": "Rasengleis, Rasenflaechen zwischen Scheiben, Baumallee"
+   },
+   "nichtwohn": [
+    "TU Dresden/HTW (Lehrgebaeude 4-6 Geschosse)",
+    "Backsteinbau Feldschloesschen",
+    "Bahnhofsumfeld Hauptbahnhof Sued",
+    "Buerohaeuser",
+    "Sporthalle"
+   ]
+  },
+  "Südvorstadt-Ost": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     6.0,
+     14.0
+    ],
+    "spuren": "Bergstr. 2x2 mit Gruenstreifen; Nebenstr. 2",
+    "parken": "Laengsparken einseitig",
+    "tram": "seitlich",
+    "radweg": "getrennter Radweg rot/Asphalt"
+   },
+   "bordstein": {
+    "material": "Granit grau",
+    "hoehe_cm": 15,
+    "farbe": "#8C8C88"
+   },
+   "gehweg": {
+    "material": [
+     "Betonplatten",
+     "Verbundpflaster rot-grau",
+     "Granit-Kleinpflaster (Fusswege/Hoefe)",
+     "Klinker"
+    ],
+    "breite_m": [
+     2.0,
+     3.0
+    ],
+    "muster": "Rasenstreifen mit Baumreihe 1,5 m Baumscheibe"
+   },
+   "fassaden": [
+    {
+     "stil": "Wilhelminisch/Neorenaissance (Landgericht)",
+     "anteil": 0.2,
+     "geschosse": [
+      3,
+      5
+     ],
+     "farben": [
+      "#B84A32",
+      "#CDBFA0",
+      "#6B9E8A"
+     ],
+     "dach": "Steildach Biberschwanz rot, Kupferturm patiniert",
+     "merkmale": [
+      "Klinker + Sandsteinquader",
+      "Rundbogenfenster",
+      "Schieferdach"
+     ],
+     "baujahre": "1900-1910"
+    },
+    {
+     "stil": "Jugendstil/Reformstil Mietshaus und Schule",
+     "anteil": 0.35,
+     "geschosse": [
+      4,
+      4
+     ],
+     "farben": [
+      "#EFEAE0",
+      "#B5472C"
+     ],
+     "dach": "Steildach Ziegel, Schweifgiebel",
+     "merkmale": [
+      "Sgraffito",
+      "Rundbogenfenster",
+      "Erker"
+     ],
+     "baujahre": "1900-1915"
+    },
+    {
+     "stil": "Villa Gruenderzeit/Reformstil (weiss/gelb)",
+     "anteil": 0.25,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#F2EDE0",
+      "#E8D27A",
+      "#D8B84A",
+      "#2A9A8A"
+     ],
+     "dach": "Walm Ziegel",
+     "merkmale": [
+      "Saeulenveranda",
+      "gruene Laeden",
+      "weisser Lattenzaun auf Sandstein"
+     ],
+     "baujahre": "1880-1925"
+    },
+    {
+     "stil": "Neubau 1990-2025",
+     "anteil": 0.2,
+     "geschosse": [
+      4,
+      5
+     ],
+     "farben": [
+      "#F0F0F0",
+      "#6A8CC0"
+     ],
+     "dach": "Satteldach rot/Flachdach",
+     "merkmale": [
+      "Glasbalkone",
+      "Laden-EG",
+      "Baugeruest"
+     ],
+     "baujahre": "1993-2025"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Peitschenmast Alu grau (Bundesstrasse)",
+     "hoehe_m": 10,
+     "abstand_m": 35
+    },
+    {
+     "typ": "Tram-Fahrleitungsmast",
+     "hoehe_m": 10,
+     "abstand_m": 40
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Parteiplakat am Mast",
+     "ort": "Bergstr.",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Bauzaun-Banner",
+     "ort": "Neubau Nuernberger Str. 63",
+     "haeufigkeit": "oft"
+    },
+    {
+     "typ": "Aushangkasten Gemeinde",
+     "ort": "Zionskirche",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Spitzahorn",
+     "Linde",
+     "Eibe",
+     "Kastanie"
+    ],
+    "baumabstand_m": 9,
+    "vorgaerten": "3-5 m, Zaun auf Sandsteinsockel",
+    "gruen": "Gruenstreifen Bergstr., Beutlerpark"
+   },
+   "nichtwohn": [
+    "Landgericht Muenchner Platz",
+    "Zionskirche/Lukaskirche",
+    "14. Grundschule (Treppe Granitsplitt, Holz-Glas-Tuer)",
+    "HTW 10-Geschosser gelb",
+    "Baustellen"
+   ]
+  },
+  "Räcknitz/Zschertnitz": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     6.0,
+     14.0
+    ],
+    "spuren": "Bergstr. 2x2 je 3,5 m + Gruenstreifen; Villenstr. 5,5 m",
+    "parken": "Laengsparken, Senkrechtparken in Stichstr.",
+    "tram": "mittig",
+    "radweg": "Radweg ziegelrot #B5614A 1,8 m getrennt"
+   },
+   "bordstein": {
+    "material": "Granit grau",
+    "hoehe_cm": 15,
+    "farbe": "#8C8C88"
+   },
+   "gehweg": {
+    "material": [
+     "Klinker/Mosaikpflaster rot-grau",
+     "Betonplatten",
+     "Granit-Grosspflaster (Fahrbahn Villenstr.)"
+    ],
+    "breite_m": [
+     2.0,
+     2.5
+    ],
+    "muster": "Mosaik rot-grau; Fahrbahn Auguste-Lazar-Str. aus Granit-Grosspflaster 12 cm"
+   },
+   "fassaden": [
+    {
+     "stil": "Hochhaus/Punkthaus Plattenbau 11-12 Geschosse",
+     "anteil": 0.25,
+     "geschosse": [
+      11,
+      12
+     ],
+     "farben": [
+      "#C8C8C4",
+      "#4A78B0",
+      "#D02828"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "Balkonbruestung blau",
+      "rote Treppenhausstreifen (Wundtstr.)",
+      "Betonplatten-Fugenraster"
+     ],
+     "baujahre": "1966-1975"
+    },
+    {
+     "stil": "Plattenbau 5-geschossig saniert (Zschertnitz)",
+     "anteil": 0.25,
+     "geschosse": [
+      5,
+      5
+     ],
+     "farben": [
+      "#D8C8B0",
+      "#E0B8A8",
+      "#C8C8C8"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "Farbfelder Putz",
+      "Betonvordach Eingang #C8C8C8",
+      "orange Wandfeld #E89060"
+     ],
+     "baujahre": "1965-1975"
+    },
+    {
+     "stil": "Wohnanlage 1990er/2000er",
+     "anteil": 0.15,
+     "geschosse": [
+      4,
+      4
+     ],
+     "farben": [
+      "#D8E0A0",
+      "#4A78B0"
+     ],
+     "dach": "Pultdach",
+     "merkmale": [
+      "blaue Balkone",
+      "gruengelber Putz"
+     ],
+     "baujahre": "1995-2005"
+    },
+    {
+     "stil": "Villa/Siedlung 1920-30er",
+     "anteil": 0.2,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#F0EBDD",
+      "#C8281E",
+      "#B5472C"
+     ],
+     "dach": "Walmdach rot",
+     "merkmale": [
+      "roter Fenstererker",
+      "Schmiedeeisenzaun weiss",
+      "Gaslaternen-Imitation 4 m"
+     ],
+     "baujahre": "1920-1935"
+    },
+    {
+     "stil": "Handel/Gewerbe/Neubau 2020er",
+     "anteil": 0.15,
+     "geschosse": [
+      2,
+      6
+     ],
+     "farben": [
+      "#505058",
+      "#E8E8E8"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "REWE Klinker/Putz anthrazit",
+      "Baugeruest"
+     ],
+     "baujahre": "2015-2026"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Konischer Alu-Mast 11 m Einarm LED (Bergstr.)",
+     "hoehe_m": 11,
+     "abstand_m": 35
+    },
+    {
+     "typ": "Zierlaterne Schwanenhals schwarz (Thormeyerstr.)",
+     "hoehe_m": 4,
+     "abstand_m": 25
+    },
+    {
+     "typ": "Stahlmast 6 m Wohnstr.",
+     "hoehe_m": 6,
+     "abstand_m": 30
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "City-Light-Vitrine",
+     "ort": "Bus-/Tramhaltestelle",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Baustellen-Banner (REWE)",
+     "ort": "Bergstr.",
+     "haeufigkeit": "mittel"
+    },
+    {
+     "typ": "Wahlplakat am Mast",
+     "ort": "Bergstr.",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Wegweiser-Gantry (Autobahn-Wechselwegweiser)",
+     "ort": "Bergstr. Tunnel",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Linde",
+     "Spitzahorn",
+     "Pappel",
+     "Eibe",
+     "Hainbuche-Hecke"
+    ],
+    "baumabstand_m": 9,
+    "vorgaerten": "Hecke 1-1,5 m, Eisenzaun weiss",
+    "gruen": "Rasengleis, Laermschutz-Hecke 2 m, Suedpark"
+   },
+   "nichtwohn": [
+    "REWE-Markt 2 Geschosse",
+    "Studentenwohnheime Wundtstr.",
+    "Geschaeftshaus Fritz-Loeffler-Platz",
+    "Haltestellen Bus",
+    "Fernwaerme-Baustellen"
+   ]
+  },
+  "Kleinpestitz/Mockritz": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     5.5,
+     7.0
+    ],
+    "spuren": "2",
+    "parken": "Senkrechtparken am Plattenbau, Laengsparken Siedlung",
+    "tram": "seitlich",
+    "radweg": "kein eigener"
+   },
+   "bordstein": {
+    "material": "Granit grau",
+    "hoehe_cm": 15,
+    "farbe": "#8C8C88"
+   },
+   "gehweg": {
+    "material": [
+     "Mosaik-Verbundpflaster rot",
+     "Betonplatten",
+     "Asphalt"
+    ],
+    "breite_m": [
+     1.5,
+     2.5
+    ],
+    "muster": "Bahnsteig 2,5 m Betonpflaster rot-grau; Haltestellen Granitpflaster"
+   },
+   "fassaden": [
+    {
+     "stil": "Plattenbau WBS 70, 6 Geschosse (Zeile, saniert)",
+     "anteil": 0.4,
+     "geschosse": [
+      6,
+      6
+     ],
+     "farben": [
+      "#E8E6E0",
+      "#D8C090",
+      "#B08860"
+     ],
+     "dach": "Flachdach mit Attika",
+     "merkmale": [
+      "durchgehende Balkonreihen",
+      "Bruestungen beige/braun/gelb",
+      "Treppenhaus-Risalit",
+      "100 m+ lang"
+     ],
+     "baujahre": "1972-1980"
+    },
+    {
+     "stil": "Neubau 2015+ Mehrfamilienhaus (Staffelgeschoss)",
+     "anteil": 0.3,
+     "geschosse": [
+      4,
+      5
+     ],
+     "farben": [
+      "#F2F2F0",
+      "#6A5448",
+      "#D05A4A"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "rote Fensterfelder",
+      "weisse Metallbalkone",
+      "braune Balkonplatten"
+     ],
+     "baujahre": "2015-2024"
+    },
+    {
+     "stil": "Siedlungshaus 1930er-1990er (Mockritz)",
+     "anteil": 0.25,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#F0E6B0",
+      "#FFFFFF"
+     ],
+     "dach": "Satteldach rot",
+     "merkmale": [
+      "Hecke Liguster 1,5 m",
+      "Erker/Balkon"
+     ],
+     "baujahre": "1930-1995"
+    },
+    {
+     "stil": "Kita/Schule farbiges Raster",
+     "anteil": 0.05,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#4A90C8",
+      "#60B060",
+      "#E8C040"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "Farbfelder"
+     ],
+     "baujahre": "2000-2015"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Stahlmast schlank Einarm LED",
+     "hoehe_m": 7,
+     "abstand_m": 33
+    },
+    {
+     "typ": "Tram-Fahrleitungs-Betonmast",
+     "hoehe_m": 9,
+     "abstand_m": 40
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "City-Light-Vitrine DVB",
+     "ort": "Wartehaeuschen Cämmerswalder Str.",
+     "haeufigkeit": "mittel"
+    },
+    {
+     "typ": "DVB-Haltestellenmast gelb/schwarz",
+     "ort": "Haltestellen",
+     "haeufigkeit": "mittel"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Winterlinde",
+     "Eiche",
+     "Spitzahorn",
+     "Kirsche (Kleinbaeume)"
+    ],
+    "baumabstand_m": 9,
+    "vorgaerten": "Rasen 1-3 m",
+    "gruen": "Rasengleis, Streuobst/Haenge, Südpark, Acker am Ortsrand"
+   },
+   "nichtwohn": [
+    "DVB-Wartehaeuschen Glas/Alu mit gelbem Dach",
+    "Fichteturm Aussichtsturm (Granit/Ziegel)",
+    "Liepschs Ruh (Basalt-Kleinpflaster-Rondell, Bruchsteinmauer)",
+    "Kita farbig",
+    "Baustellen Fernwaerme"
+   ]
+  },
+  "Coschütz/Gittersee": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     4.0,
+     5.5
+    ],
+    "spuren": "2 schmal, ohne Mittellinie",
+    "parken": "auf der Fahrbahn einseitig",
+    "tram": "keine",
+    "radweg": "keiner"
+   },
+   "bordstein": {
+    "material": "Beton-Hochbord bzw. Granit/Beton schmal einseitig",
+    "hoehe_cm": 10,
+    "farbe": "#9A9A96"
+   },
+   "gehweg": {
+    "material": [
+     "Granit-Kleinpflaster-Streifen",
+     "Splitt/Gras 1 m",
+     "Asphalt"
+    ],
+    "breite_m": [
+     0.0,
+     1.2
+    ],
+    "muster": "oft kein Gehweg; Wasserhydranten-Schilder"
+   },
+   "fassaden": [
+    {
+     "stil": "Siedlungshaus GEWOG 1930er (zweifarbig)",
+     "anteil": 0.35,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#F0EEE8",
+      "#D8B890",
+      "#8A4830"
+     ],
+     "dach": "Satteldach 45 Grad rot-braun, Dachfenster, Zierband",
+     "merkmale": [
+      "zweifarbig Putz",
+      "Holzzaun dunkel #3A2A20",
+      "Hecke 1 m"
+     ],
+     "baujahre": "1930-1938"
+    },
+    {
+     "stil": "Gruenderzeit/Reformstil Mietshaus",
+     "anteil": 0.2,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#E8D870",
+      "#D6C888"
+     ],
+     "dach": "Walmdach, Zwerchhaus",
+     "merkmale": [
+      "Sandsteinsockel",
+      "Treppengiebel (Schule)"
+     ],
+     "baujahre": "1895-1910"
+    },
+    {
+     "stil": "Rathaus Coschuetz 1907 Jugendstil",
+     "anteil": 0.1,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#E6DEC0",
+      "#B05030",
+      "#6A7A8A"
+     ],
+     "dach": "Walmdach rot, Dachreiter Uhrturm Zink",
+     "merkmale": [
+      "Sandstein-Portal mit Maskaronen",
+      "Balkon schmiedeeisern"
+     ],
+     "baujahre": "1907"
+    },
+    {
+     "stil": "Gewerbe/Verwaltung 1970er",
+     "anteil": 0.2,
+     "geschosse": [
+      5,
+      5
+     ],
+     "farben": [
+      "#D8C070",
+      "#A89E8A"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "Fensterband",
+      "Wandbild Bierkrug an Halle"
+     ],
+     "baujahre": "1970-1980"
+    },
+    {
+     "stil": "Alte Schule/Fabrik unsaniert",
+     "anteil": 0.15,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#A89E8A"
+     ],
+     "dach": "Satteldach Schiefer",
+     "merkmale": [
+      "Efeu",
+      "Rundbogenfenster"
+     ],
+     "baujahre": "1880-1920"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Betonmast + Freileitung + Aufsatzleuchte",
+     "hoehe_m": 8,
+     "abstand_m": 40
+    },
+    {
+     "typ": "Stahlmast Einarm",
+     "hoehe_m": 6,
+     "abstand_m": 35
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Wandbild/Schriftzug an Halle",
+     "ort": "Gewerbe",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Blaufichte",
+     "Kirschlorbeer-Hecke",
+     "Spitzahorn",
+     "Buche",
+     "Bergahorn"
+    ],
+    "baumabstand_m": 20,
+    "vorgaerten": "Hecke 1-1,8 m, dichtes Gruen",
+    "gruen": "Waldpark Felsenkeller (Basalt/Porphyr bemoost), Wiesen"
+   },
+   "nichtwohn": [
+    "Rathaus Coschuetz (Jugendstil)",
+    "Alte Schule",
+    "Verwaltungsbau 5 Geschosse",
+    "Anschlussgleis/Industriebahn"
+   ]
+  },
+  "Plauen": {
+   "bilder": 30,
+   "strasse": {
+    "fahrbahn_m": [
+     6.5,
+     12.0
+    ],
+    "spuren": "2 + Tram mittig (Würzburger Str.), Plauenscher Ring 2x2",
+    "parken": "Laengsparken beidseitig",
+    "tram": "mittig",
+    "radweg": "Radstreifen/markiert"
+   },
+   "bordstein": {
+    "material": "Granit grau, Granit-Einfassung",
+    "hoehe_cm": 15,
+    "farbe": "#8C8C88"
+   },
+   "gehweg": {
+    "material": [
+     "Betonplatten",
+     "Klinker",
+     "Granit-Kleinpflaster-Streifen",
+     "Mosaikpflaster"
+    ],
+    "breite_m": [
+     2.0,
+     3.0
+    ],
+    "muster": "Baumreihe zwischen Gleis und Fahrbahn; Baumscheiben im Rasen"
+   },
+   "fassaden": [
+    {
+     "stil": "Zeilenbau 1930-50er",
+     "anteil": 0.3,
+     "geschosse": [
+      4,
+      5
+     ],
+     "farben": [
+      "#E5DCA0",
+      "#D6D8A8",
+      "#B05030",
+      "#3A4A78"
+     ],
+     "dach": "Walm/Satteldach rot",
+     "merkmale": [
+      "verputzt hellgelb/mint",
+      "Metall-Balkone blau",
+      "Waschbeton-Sockel"
+     ],
+     "baujahre": "1930-1955"
+    },
+    {
+     "stil": "Gruenderzeit-Mietshaus/Villa (Klinker-Verblender)",
+     "anteil": 0.35,
+     "geschosse": [
+      3,
+      4
+     ],
+     "farben": [
+      "#D8B060",
+      "#D0805A",
+      "#EDE4C8"
+     ],
+     "dach": "Mansard Schiefer grau",
+     "merkmale": [
+      "Sandstein-Gesims",
+      "Eibe-Hecke",
+      "Eisenzaun auf Sandsteinsockel 0,4 m",
+      "Bruchsteinmauern"
+     ],
+     "baujahre": "1880-1910"
+    },
+    {
+     "stil": "Rathaus Plauen Neorenaissance/Heimatstil",
+     "anteil": 0.05,
+     "geschosse": [
+      4,
+      5
+     ],
+     "farben": [
+      "#D8C8A0",
+      "#B05030"
+     ],
+     "dach": "Steildach + Turm Kupfer",
+     "merkmale": [
+      "Sandstein-Quader + Ziegel",
+      "Uhrturm",
+      "Eckbetonung"
+     ],
+     "baujahre": "1913"
+    },
+    {
+     "stil": "Buero/Geschaeftshaus 1990er",
+     "anteil": 0.2,
+     "geschosse": [
+      4,
+      5
+     ],
+     "farben": [
+      "#D8CCB0",
+      "#7090B0"
+     ],
+     "dach": "Pultdach",
+     "merkmale": [
+      "Natursteinplatten beige",
+      "Fensterband Glas verspiegelt",
+      "Schaufenster EG Apotheke/Laden",
+      "Flaggen"
+     ],
+     "baujahre": "1992-2002"
+    },
+    {
+     "stil": "Gewerbehalle Alu-Paneel",
+     "anteil": 0.1,
+     "geschosse": [
+      1,
+      2
+     ],
+     "farben": [
+      "#A0A4A8"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "Firmenlogo"
+     ],
+     "baujahre": "2010-2020"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Mastleuchte Alu grau Einarm",
+     "hoehe_m": 9,
+     "abstand_m": 35
+    },
+    {
+     "typ": "Tram-Betonmast mit Ausleger/Spannseil",
+     "hoehe_m": 10,
+     "abstand_m": 40
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Bauzaun-Banner / gelbe Baustellenabsperrung",
+     "ort": "Würzburger Str. (2023-26)",
+     "haeufigkeit": "oft"
+    },
+    {
+     "typ": "Lidl-/Apotheke-Schild",
+     "ort": "Eckbebauung",
+     "haeufigkeit": "mittel"
+    },
+    {
+     "typ": "Großfläche",
+     "ort": "selten",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Winterlinde",
+     "Spitzahorn",
+     "Platane",
+     "Pappel"
+    ],
+    "baumabstand_m": 8,
+    "vorgaerten": "3-4 m, Hecke Eibe, Eisenzaun",
+    "gruen": "Weißeritz-Kanal mit Bruchsteinufer, Waldpark Felsenkeller, Bienertpark"
+   },
+   "nichtwohn": [
+    "Rathaus Plauen 1913",
+    "Bienertmühle (Ziegel + Schlot)",
+    "Bürohaus Falkenbrunnen",
+    "Lidl",
+    "Friedhof Plauen mit Kirche"
+   ]
+  },
+  "Cossebaude": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     4.5,
+     7.0
+    ],
+    "spuren": "2 (Dresdner Str. mit Mittellinie)",
+    "parken": "Laengs auf Fahrbahn / Querparken am Plattenbau",
+    "tram": "keine",
+    "radweg": "kein eigener"
+   },
+   "bordstein": {
+    "material": "Granit grau",
+    "hoehe_cm": 14,
+    "farbe": "#8E8E8A"
+   },
+   "gehweg": {
+    "material": [
+     "Klinker-/Betonpflaster",
+     "Granit-Kleinpflaster",
+     "Asphalt"
+    ],
+    "breite_m": [
+     1.2,
+     2.5
+    ],
+    "muster": "Rinne Granit-Kleinpflaster 2 Reihen; Altort Kopfsteinpflaster-Fahrbahn"
+   },
+   "fassaden": [
+    {
+     "stil": "Dreiseithof/Fachwerkhaus 1800-1860",
+     "anteil": 0.3,
+     "geschosse": [
+      1,
+      2
+     ],
+     "farben": [
+      "#E8E0C8",
+      "#A0987F",
+      "#5A2A22",
+      "#9B4A30"
+     ],
+     "dach": "Satteldach Biberschwanz rot, Eulenloecher",
+     "merkmale": [
+      "Fachwerk-OG schwarz/weiss",
+      "Scheune mit dunkler Bretterverschalung",
+      "Holztor zwischen Steinpfeilern"
+     ],
+     "baujahre": "1800-1860"
+    },
+    {
+     "stil": "Gruenderzeit-Wohn-/Geschaeftshaus Klinker gebaendert",
+     "anteil": 0.3,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#C5703C",
+      "#D8B050",
+      "#E8C040"
+     ],
+     "dach": "Walmdach rot/Schiefer, Zwiebelturm",
+     "merkmale": [
+      "Eckhaus mit Balkon",
+      "Baeckerei vertikales Schild",
+      "Sandsteingesims"
+     ],
+     "baujahre": "1880-1910"
+    },
+    {
+     "stil": "Heimat-/Reformstil Villa",
+     "anteil": 0.15,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#F0D060",
+      "#FFFFFF",
+      "#6B3A30"
+     ],
+     "dach": "Mansard rot, Erker",
+     "merkmale": [
+      "Sandsteinsockel",
+      "Klappladen braun"
+     ],
+     "baujahre": "1910-1930"
+    },
+    {
+     "stil": "Plattenbau 3-4 Geschosse / Schule 1960er",
+     "anteil": 0.25,
+     "geschosse": [
+      3,
+      4
+     ],
+     "farben": [
+      "#C8C8C0",
+      "#B8D0E0",
+      "#A8D0C0"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "Fensterband",
+      "Querparken"
+     ],
+     "baujahre": "1960-1975"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Historisierende Peitschenleuchte mit Laterne schwarz/gruen",
+     "hoehe_m": 5.5,
+     "abstand_m": 25
+    },
+    {
+     "typ": "Holzmast + Freileitung + Aufsatzleuchte",
+     "hoehe_m": 7,
+     "abstand_m": 40
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Leuchtkasten-Schild (Imbiss, rote Schrift gelb)",
+     "ort": "Ortskern",
+     "haeufigkeit": "mittel"
+    },
+    {
+     "typ": "Baeckerei-Hochschild gelb",
+     "ort": "Eckhaus Hauptstr.",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Markise gelb-weiss",
+     "ort": "Gaststaette",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Linde",
+     "Rosskastanie",
+     "Obstbaeume",
+     "Thuja",
+     "Hainbuche-Hecke"
+    ],
+    "baumabstand_m": 15,
+    "vorgaerten": "Zaun Holz rotbraun / Metallzaun weiss auf Sandstein-Pfosten",
+    "gruen": "Obstwiesen am Hangweg, Weinberge, Albertplatz"
+   },
+   "nichtwohn": [
+    "Oberschule (3 Geschosse, Rundbogenglaseingang, Granitsplitt-Treppe)",
+    "Gaststaette 'Deutsches Haus' (Typ Dorfgasthof)",
+    "Scheune/Brauerei",
+    "Bus-Wartehalle Alu-Glas dunkelgruen"
+   ]
+  },
+  "Mobschatz": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     4.5,
+     5.5
+    ],
+    "spuren": "2 schmal, Randlinie weiss",
+    "parken": "auf Fahrbahn einseitig",
+    "tram": "keine",
+    "radweg": "keiner"
+   },
+   "bordstein": {
+    "material": "Beton/Granit-Hochbord",
+    "hoehe_cm": 15,
+    "farbe": "#9A9A96"
+   },
+   "gehweg": {
+    "material": [
+     "Asphalt",
+     "Betonpflaster grau 10x20",
+     "Granit-Kopfsteinpflaster"
+    ],
+    "breite_m": [
+     1.2,
+     1.5
+    ],
+    "muster": "einseitig; Altort komplette Pflasterfahrbahn"
+   },
+   "fassaden": [
+    {
+     "stil": "Dreiseithof/Fachwerk Bauernhaus",
+     "anteil": 0.4,
+     "geschosse": [
+      1,
+      2
+     ],
+     "farben": [
+      "#E8A878",
+      "#4A3A2A",
+      "#A44A2C",
+      "#8A7560"
+     ],
+     "dach": "Satteldach rot, Giebel mit Rundbogenfenster",
+     "merkmale": [
+      "Fachwerk-OG",
+      "Natursteinsockel Granit/Porphyr",
+      "Holztor"
+     ],
+     "baujahre": "1780-1860"
+    },
+    {
+     "stil": "Landhaus/Villa 1920-30er",
+     "anteil": 0.3,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#D8CDB8",
+      "#D4A030"
+     ],
+     "dach": "Walmdach rot-braun, Reihengauben",
+     "merkmale": [
+      "Sandstein-Faschen",
+      "Balkon Schmiedeeisen",
+      "Eckerker gelb"
+     ],
+     "baujahre": "1920-1935"
+    },
+    {
+     "stil": "Weinbergturm Backstein",
+     "anteil": 0.05,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#7A3C2A"
+     ],
+     "dach": "Walm Schiefer grau",
+     "merkmale": [
+      "Rundbogenfenster"
+     ],
+     "baujahre": "1880-1920"
+    },
+    {
+     "stil": "Neubau EFH 1995+",
+     "anteil": 0.25,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#F0E6B0"
+     ],
+     "dach": "Satteldach rot",
+     "merkmale": [
+      "Thuja-Hecke"
+     ],
+     "baujahre": "1995-2020"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Betonmast mit Aufsatzleuchte + Freileitung",
+     "hoehe_m": 8,
+     "abstand_m": 40
+    },
+    {
+     "typ": "Stahlmast schlank LED",
+     "hoehe_m": 6,
+     "abstand_m": 35
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "keine (Info-Tafel Holz rotbraun mit Dach)",
+     "ort": "Haltestelle",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Linde",
+     "Blaufichte",
+     "Kiefer",
+     "Obst (Apfel, Birne)",
+     "Thuja"
+    ],
+    "baumabstand_m": 20,
+    "vorgaerten": "Jaegerzaun/Lattenzaun, Eisenzaun mit Kugelpfosten, Thuja 2 m",
+    "gruen": "Streuobst, Weinhang, Felder"
+   },
+   "nichtwohn": [
+    "Feuerwehrgeraetehaus (Putz #D8C890, Satteldach braun)",
+    "Backstein-Weinbergturm",
+    "VVO-Bushaltestelle Alu-Glas schwarz mit blauem Mast",
+    "Gewaechshaeuser"
+   ]
+  },
+  "Oberwartha": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     3.0,
+     5.0
+    ],
+    "spuren": "1-2, ohne Markierung",
+    "parken": "Rand/Bankett",
+    "tram": "keine",
+    "radweg": "Feldwege"
+   },
+   "bordstein": {
+    "material": "Granit-Kleinpflaster-Rinne bzw. Betonstein",
+    "hoehe_cm": 10,
+    "farbe": "#8E8E8A"
+   },
+   "gehweg": {
+    "material": [
+     "Betonpflaster",
+     "Schotter/Splitt-Streifen",
+     "Kies"
+    ],
+    "breite_m": [
+     0.0,
+     1.5
+    ],
+    "muster": "einseitig oder keiner; Feldwege Kies 3 m mit Grasmittelstreifen"
+   },
+   "fassaden": [
+    {
+     "stil": "Klostergut/Gutshaus Renaissance-Barock",
+     "anteil": 0.2,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#E8CD88",
+      "#D0C8B0",
+      "#B84E2E"
+     ],
+     "dach": "Biberschwanz rot, 50 Grad, Dachreiter Schiefer",
+     "merkmale": [
+      "Treppen-/Schweifgiebel mit Medaillon",
+      "Renaissance-Fenstergewaende Sandstein"
+     ],
+     "baujahre": "1600-1750"
+    },
+    {
+     "stil": "Landhaus/Siedlungshaus 1930er",
+     "anteil": 0.4,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#E0D8B8"
+     ],
+     "dach": "Satteldach rot/braun, Gauben, Solar",
+     "merkmale": [
+      "Bruchsteinmauer 2 m mit Torbogen",
+      "Hecke Thuja 1,8 m",
+      "gruene Metalltore"
+     ],
+     "baujahre": "1925-1940"
+    },
+    {
+     "stil": "Fachwerk-Scheune/Gehoeft",
+     "anteil": 0.25,
+     "geschosse": [
+      1,
+      2
+     ],
+     "farben": [
+      "#6A4A30",
+      "#B05030"
+     ],
+     "dach": "Satteldach Ziegel",
+     "merkmale": [
+      "braunes Holz",
+      "Ziegel"
+     ],
+     "baujahre": "1800-1880"
+    },
+    {
+     "stil": "Garagenreihe/Nebengebaeude",
+     "anteil": 0.15,
+     "geschosse": [
+      1,
+      1
+     ],
+     "farben": [
+      "#B0B0A8"
+     ],
+     "dach": "Flachdach Beton",
+     "merkmale": [],
+     "baujahre": "1970-1990"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Holz-/Betonmast mit Aufsatzleuchte",
+     "hoehe_m": 6.5,
+     "abstand_m": 45
+    },
+    {
+     "typ": "Stahlmast 6 m",
+     "hoehe_m": 6,
+     "abstand_m": 40
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "keine",
+     "ort": "-",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Sommerlinde (Dorflinde)",
+     "Apfel/Birne/Pflaume",
+     "Buche",
+     "Bergahorn",
+     "Blaufichte"
+    ],
+    "baumabstand_m": 8,
+    "vorgaerten": "Hecke 1,8 m",
+    "gruen": "Acker, Streuobst, Fitnesspark im Gruenen, Hochspannungsmasten"
+   },
+   "nichtwohn": [
+    "Klostergut Oberwartha (Brauschenkengut)",
+    "Dorfplatz Fritz-Arndt-Platz",
+    "Garagen",
+    "Weg-/Wanderschilder gruen"
+   ]
+  },
+  "Gompitz": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     4.5,
+     6.5
+    ],
+    "spuren": "2 (Strichlinie nur an Kreuzungen)",
+    "parken": "auf Fahrbahn",
+    "tram": "seitlich",
+    "radweg": "Radweg/Gehweg gemeinsam an Landstrassen"
+   },
+   "bordstein": {
+    "material": "Granit-/Beton-Hochbord, Granit-Kleinpflaster-Rinne",
+    "hoehe_cm": 12,
+    "farbe": "#8E8E8A"
+   },
+   "gehweg": {
+    "material": [
+     "Betonpflaster grau/rot 10x20",
+     "Asphalt",
+     "Granit-Kleinpflaster"
+    ],
+    "breite_m": [
+     1.5,
+     2.0
+    ],
+    "muster": "Neubaugebiet: gelber Klinker-Leitstreifen in der Strassenmitte + Sandstein-Randeinfassung"
+   },
+   "fassaden": [
+    {
+     "stil": "Dreiseithof/Fachwerkhaus",
+     "anteil": 0.3,
+     "geschosse": [
+      1,
+      2
+     ],
+     "farben": [
+      "#E8C880",
+      "#4A3A2A",
+      "#EFE6D0",
+      "#A8472C"
+     ],
+     "dach": "Satteldach 45-50 Grad Biberschwanz rot oder Schiefer dunkel",
+     "merkmale": [
+      "Fachwerk-Giebel dunkel",
+      "Scheune mit Rundbogentor",
+      "Granit-Kopfsteinpflaster-Hof"
+     ],
+     "baujahre": "1750-1850"
+    },
+    {
+     "stil": "Einfamilienhaus 1995-2010",
+     "anteil": 0.4,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#F0E0A0",
+      "#D07A35"
+     ],
+     "dach": "Walm/Satteldach orange-rot, Gauben, Solar",
+     "merkmale": [
+      "Vorgarten Solitaer + Zierstraeucher",
+      "Sandstein-Kantenstein"
+     ],
+     "baujahre": "1995-2010"
+    },
+    {
+     "stil": "Neubau 2020er",
+     "anteil": 0.1,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#F4F4F2",
+      "#4A4A4F"
+     ],
+     "dach": "Mansard anthrazit",
+     "merkmale": [],
+     "baujahre": "2018-2025"
+    },
+    {
+     "stil": "Gewerbe/Einzelhandel (toom/ALDI) + Buero 5 Geschosse",
+     "anteil": 0.2,
+     "geschosse": [
+      1,
+      5
+     ],
+     "farben": [
+      "#C03030",
+      "#FFFFFF"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "Pylon",
+      "Flaggenmasten"
+     ],
+     "baujahre": "1995-2015"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Pilz-/Aufsatzleuchte 4 m",
+     "hoehe_m": 4,
+     "abstand_m": 25
+    },
+    {
+     "typ": "Betonmast + Freileitung + Aufsatzleuchte",
+     "hoehe_m": 8,
+     "abstand_m": 40
+    },
+    {
+     "typ": "Stahlmast LED 8 m (Tram/Hauptstr.)",
+     "hoehe_m": 8,
+     "abstand_m": 35
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Pylon toom/ALDI + Flaggen 8 m",
+     "ort": "Einkaufszentrum Gompitzer Hoehe",
+     "haeufigkeit": "oft"
+    },
+    {
+     "typ": "Ortseingangsschild/Holz-Begruessungstafel",
+     "ort": "Ortsrand",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Apfel/Birne Hochstamm",
+     "Linde",
+     "Birke",
+     "Blaufichte",
+     "Ahorn"
+    ],
+    "baumabstand_m": 15,
+    "vorgaerten": "Rasen mit Zierstraeuchern",
+    "gruen": "Streuobstwiesen, Ackerfelder, Wanderhuetten A-Frame Holz"
+   },
+   "nichtwohn": [
+    "Einkaufszentrum Gompitzer Hoehe (toom, ALDI)",
+    "Kirche Unkersdorf",
+    "A17-Bruecke mit Laermschutz",
+    "Funk-/Gruener Turm Gompitz",
+    "Sportplatz mit Flutlicht"
+   ]
+  },
+  "Altfranken": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     5.0,
+     7.5
+    ],
+    "spuren": "2",
+    "parken": "Rand/Parkbuchten",
+    "tram": "seitlich",
+    "radweg": "Radweg-Gehweg gemeinsam Z240"
+   },
+   "bordstein": {
+    "material": "Granit-Kantenstein 12 cm, Rinne Granit-Kleinpflaster",
+    "hoehe_cm": 12,
+    "farbe": "#8E8E8A"
+   },
+   "gehweg": {
+    "material": [
+     "Betonpflaster dunkelgrau",
+     "Asphalt",
+     "Verbundpflaster rot/grau"
+    ],
+    "breite_m": [
+     1.2,
+     2.5
+    ],
+    "muster": "Einseitig; Rinne 0,3 m"
+   },
+   "fassaden": [
+    {
+     "stil": "Einfamilienhaus 1995-2010",
+     "anteil": 0.6,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#F0DCA8",
+      "#E8B890",
+      "#C8E8D0",
+      "#D06A30"
+     ],
+     "dach": "Satteldach 40-45 Grad orange-rot, Gauben, Wintergarten, Solar",
+     "merkmale": [
+      "Putz creme/gelb/lachs/mint",
+      "Hecken Kirschlorbeer/Thuja 1,5-2 m"
+     ],
+     "baujahre": "1995-2010"
+    },
+    {
+     "stil": "Neubau 2015+",
+     "anteil": 0.1,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#C82828",
+      "#EEEEEA",
+      "#3A3A3C"
+     ],
+     "dach": "Mansard/Satteldach anthrazit",
+     "merkmale": [],
+     "baujahre": "2015-2025"
+    },
+    {
+     "stil": "Dorfkern: Altbau/Gutshof",
+     "anteil": 0.15,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#E5E0D0",
+      "#FFFFFF"
+     ],
+     "dach": "Walm rot, Fachwerk-Haus",
+     "merkmale": [
+      "Rundbogenfenster",
+      "Sandsteinfaschen"
+     ],
+     "baujahre": "1800-1900"
+    },
+    {
+     "stil": "Gewerbe (Moebelhaus 12 m hoch)",
+     "anteil": 0.15,
+     "geschosse": [
+      1,
+      3
+     ],
+     "farben": [
+      "#FFFFFF",
+      "#E87A3A",
+      "#C82A4A"
+     ],
+     "dach": "Flachdach",
+     "merkmale": [
+      "Glasturm",
+      "Megalogo K",
+      "10 Fahnenmasten orange"
+     ],
+     "baujahre": "2000-2015"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Zierleuchte Kugel/Pilz Gussmast gruen-grau",
+     "hoehe_m": 4.5,
+     "abstand_m": 25
+    },
+    {
+     "typ": "LED-Mast grau Einarm",
+     "hoehe_m": 9,
+     "abstand_m": 35
+    },
+    {
+     "typ": "Holzmast Freileitung (Altort)",
+     "hoehe_m": 7,
+     "abstand_m": 40
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Megalogo/Fahnen Moebelhaus",
+     "ort": "Rudolf-Walther-Str.",
+     "haeufigkeit": "oft"
+    },
+    {
+     "typ": "Tankstellen-Preispylon JET gelb",
+     "ort": "Kesselsdorfer Str.",
+     "haeufigkeit": "mittel"
+    },
+    {
+     "typ": "Grossfläche 3x2 m (Immobilien)",
+     "ort": "Hauptstr.",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Hotel-Fahnen/Welcome-Banner rot",
+     "ort": "Kim Hotel",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Ahorn",
+     "Linde",
+     "Eiche",
+     "Blaufichte",
+     "Birke",
+     "Streuobst"
+    ],
+    "baumabstand_m": 15,
+    "vorgaerten": "Hecke 1,5-2 m, Zierstraeucher",
+    "gruen": "Acker mit Dresden-Blick, Spielplaetze, Lucknerpark"
+   },
+   "nichtwohn": [
+    "Moebel Kraft (12 m, Glasturm)",
+    "JET-Tankstelle",
+    "Kim Hotel im Park",
+    "Autohof",
+    "Ortschaftszentrum"
+   ]
+  },
+  "Langebrück": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     5.0,
+     6.5
+    ],
+    "spuren": "2 (Strichlinie nur Hauptstr.)",
+    "parken": "Laengs einseitig",
+    "tram": "keine",
+    "radweg": "keiner"
+   },
+   "bordstein": {
+    "material": "Granit grau",
+    "hoehe_cm": 10,
+    "farbe": "#8E8E8A"
+   },
+   "gehweg": {
+    "material": [
+     "Betonplattenpflaster grau-braun",
+     "Asphalt",
+     "Splitt"
+    ],
+    "breite_m": [
+     1.2,
+     1.5
+    ],
+    "muster": "einseitig; Waldstrassen ohne Gehweg"
+   },
+   "fassaden": [
+    {
+     "stil": "Gruenderzeit/Jugendstil-Mietvilla",
+     "anteil": 0.3,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#EAD8A8",
+      "#4A4A52",
+      "#3A6A58"
+     ],
+     "dach": "Mansard Schiefer, Gauben",
+     "merkmale": [
+      "Holz-Schnitzveranda gruen",
+      "Sandstein-Faschen",
+      "Bruchsteinsockel + Schmiedeeisenzaun 1,3 m"
+     ],
+     "baujahre": "1890-1910"
+    },
+    {
+     "stil": "Landhaus 1920-40er",
+     "anteil": 0.35,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#D8C8D0",
+      "#FFFFFF"
+     ],
+     "dach": "Walm rot/schwarz",
+     "merkmale": [
+      "Fensterlaeden gruen",
+      "Hecke 1,8 m"
+     ],
+     "baujahre": "1920-1940"
+    },
+    {
+     "stil": "Bauernhof/Zweiseitenhof",
+     "anteil": 0.2,
+     "geschosse": [
+      1,
+      2
+     ],
+     "farben": [
+      "#5A6A7A",
+      "#E8E0C8",
+      "#8A4A30"
+     ],
+     "dach": "Satteldach Biberschwanz rot-braun",
+     "merkmale": [
+      "Fachwerk",
+      "Holz-Giebel blaugrau",
+      "Porphyr-Hofmauer",
+      "Spritzenhaus Bruchstein"
+     ],
+     "baujahre": "1750-1880"
+    },
+    {
+     "stil": "Neubau 1990er",
+     "anteil": 0.15,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#F0D880"
+     ],
+     "dach": "Walm braun",
+     "merkmale": [],
+     "baujahre": "1992-2005"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Zierleuchte Kugel/Laterne dunkelgruen",
+     "hoehe_m": 4,
+     "abstand_m": 25
+    },
+    {
+     "typ": "Stahlmast 6 m LED",
+     "hoehe_m": 6,
+     "abstand_m": 35
+    },
+    {
+     "typ": "Holz-/Betonmast + Freileitung",
+     "hoehe_m": 7,
+     "abstand_m": 40
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "keine (Wegweisersaeule Granit mit Fingerpfeil)",
+     "ort": "Liegauer Str.",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Kiefer",
+     "Eiche",
+     "Rotbuche",
+     "Linde",
+     "Ahorn",
+     "Birke"
+    ],
+    "baumabstand_m": 15,
+    "vorgaerten": "Hecke/Efeu 1,5-2 m, Lattenzaun",
+    "gruen": "Heide-Wald, Felder/Weiden, Gaerten (Sonnenblumen)"
+   },
+   "nichtwohn": [
+    "Bahnhof Langebrueck",
+    "Spritzenhaus",
+    "Hofmauern Natur-/Bruchstein",
+    "Bauernhoefe",
+    "Villenpension"
+   ]
+  },
+  "Schönborn": {
+   "bilder": 24,
+   "strasse": {
+    "fahrbahn_m": [
+     4.5,
+     6.0
+    ],
+    "spuren": "2 (Strichlinie nur Ortsdurchfahrt)",
+    "parken": "Rand einseitig",
+    "tram": "keine",
+    "radweg": "keiner"
+   },
+   "bordstein": {
+    "material": "Granit-Hochbord / Granit-Kleinpflaster-Rinne 0,4-0,5 m",
+    "hoehe_cm": 15,
+    "farbe": "#8E8E8A"
+   },
+   "gehweg": {
+    "material": [
+     "Asphalt",
+     "Betonplatten",
+     "Granitplatten-Streifen"
+    ],
+    "breite_m": [
+     1.2,
+     1.5
+    ],
+    "muster": "einseitig; Landstrassen mit Bankett Gras/Splitt"
+   },
+   "fassaden": [
+    {
+     "stil": "Dreiseit-/Zweiseitenhof Lausitzer Typ",
+     "anteil": 0.5,
+     "geschosse": [
+      1,
+      2
+     ],
+     "farben": [
+      "#B8B09A",
+      "#E8DCB8",
+      "#A8452D",
+      "#5A6A58",
+      "#CFC6AC"
+     ],
+     "dach": "Satteldach 45-55 Grad rot, Krueppelwalm",
+     "merkmale": [
+      "Fachwerk-OG oder Stallgebaeude",
+      "Sandsteinfaschen",
+      "Granit-Sockel",
+      "Brettfassade dunkelbraun #3E2E24 (Scheune)",
+      "Portal mit Inschrift 1811"
+     ],
+     "baujahre": "1780-1850"
+    },
+    {
+     "stil": "Schule/Gemeindeamt um 1900 (gelb)",
+     "anteil": 0.1,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#E8D060",
+      "#7A7060"
+     ],
+     "dach": "Walm rot, Rundturm Schiefer",
+     "merkmale": [
+      "Granit-Sockel",
+      "Erker"
+     ],
+     "baujahre": "1895-1905"
+    },
+    {
+     "stil": "Wohnhaus/Villa Heimatstil 2000 saniert",
+     "anteil": 0.1,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#F2F0E8",
+      "#101010"
+     ],
+     "dach": "Betondachziegel grau",
+     "merkmale": [
+      "Fachwerk schwarz-weiss"
+     ],
+     "baujahre": "1905/2000"
+    },
+    {
+     "stil": "Neubau/Siedlung 1990-2010 und Feuerwehr",
+     "anteil": 0.3,
+     "geschosse": [
+      1,
+      2
+     ],
+     "farben": [
+      "#E8D8B0",
+      "#C03030"
+     ],
+     "dach": "Walm/Satteldach rot",
+     "merkmale": [
+      "rotes Sektionaltor"
+     ],
+     "baujahre": "1990-2010"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Holz-/Betonmast mit Freileitung + Aufsatzleuchte",
+     "hoehe_m": 8,
+     "abstand_m": 40
+    },
+    {
+     "typ": "Stahlmast vereinzelt",
+     "hoehe_m": 6,
+     "abstand_m": 45
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "keine (gelbe Wegweiser)",
+     "ort": "Kreuzung",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Linde",
+     "Apfel",
+     "Kiefer",
+     "Birke",
+     "Blaufichte"
+    ],
+    "baumabstand_m": 20,
+    "vorgaerten": "Staketenzaun braun 1,2 m, Maschendraht gruen, Thuja 1,8 m",
+    "gruen": "Felder (Raps, Getreide), Koppeln mit Elektrozaun, Feldwege Kies 3 m"
+   },
+   "nichtwohn": [
+    "Dorfkirche (Dachreiter Schiefer, Walmdach rot)",
+    "Feuerwehr",
+    "Schule/Gemeindehaus",
+    "Pferdehof",
+    "Scheunen"
+   ]
+  },
+  "Schönfeld-Weißig": {
+   "bilder": 33,
+   "strasse": {
+    "fahrbahn_m": [
+     5.0,
+     6.5
+    ],
+    "spuren": "2 (Borsbergstr. mit Strichlinie)",
+    "parken": "Rand/Haltebucht",
+    "tram": "keine",
+    "radweg": "keiner"
+   },
+   "bordstein": {
+    "material": "Granit/Sandstein-Kantenstein, Rinne Granit-Kleinpflaster 0,4 m",
+    "hoehe_cm": 14,
+    "farbe": "#8E8E8A"
+   },
+   "gehweg": {
+    "material": [
+     "Betonpflaster grau/rot",
+     "Granit-Kleinpflaster",
+     "Granitplatten-Streifen"
+    ],
+    "breite_m": [
+     1.3,
+     1.8
+    ],
+    "muster": "Altort: Kopfsteinpflaster-Gassen, Hang"
+   },
+   "fassaden": [
+    {
+     "stil": "Bauernhaus/Rittergut/Umgebindehof",
+     "anteil": 0.3,
+     "geschosse": [
+      1,
+      2
+     ],
+     "farben": [
+      "#E8C050",
+      "#7A6E5A",
+      "#C05A2A"
+     ],
+     "dach": "Satteldach orange-rot, Schiefer",
+     "merkmale": [
+      "Bruchstein-EG",
+      "Scheunen mit Rundbogentor dunkelbraun",
+      "Fachwerk-Gaststaette gelb/schwarz"
+     ],
+     "baujahre": "1700-1860"
+    },
+    {
+     "stil": "Jugendstil-Villa/Heimatstil",
+     "anteil": 0.2,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#EBD8A0",
+      "#F0EDE4",
+      "#5A4A40"
+     ],
+     "dach": "Walm rot, Holzgiebel dunkel",
+     "merkmale": [
+      "Sandstein-Faschen",
+      "Efeu"
+     ],
+     "baujahre": "1900-1925"
+    },
+    {
+     "stil": "Post/Gemeindebau 1930er (hellgruen)",
+     "anteil": 0.1,
+     "geschosse": [
+      2,
+      3
+     ],
+     "farben": [
+      "#A8C890",
+      "#E8D860",
+      "#C03030"
+     ],
+     "dach": "Walm rot",
+     "merkmale": [
+      "gelbe Sandsteingewaende",
+      "rote Bruestung OG"
+     ],
+     "baujahre": "1925-1938"
+    },
+    {
+     "stil": "Gaststaette/Handel 3 Geschosse",
+     "anteil": 0.1,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#F0EDE4",
+      "#C05A2A"
+     ],
+     "dach": "Walmdach orange mit Gauben",
+     "merkmale": [
+      "Zierlaternen",
+      "Biergarten"
+     ],
+     "baujahre": "1900-1930"
+    },
+    {
+     "stil": "Schule/Neubau 1990er",
+     "anteil": 0.3,
+     "geschosse": [
+      3,
+      4
+     ],
+     "farben": [
+      "#E8E4D8",
+      "#E8A820"
+     ],
+     "dach": "Pultdaecher Ziegel rot",
+     "merkmale": [
+      "gelbe Fensterbaender",
+      "Glas-Treppenhaus",
+      "Holzhaus-Anbau Laerche grau"
+     ],
+     "baujahre": "1990-2024"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Zierlaterne Kugel/Schwanenhals schwarz-gruen",
+     "hoehe_m": 4,
+     "abstand_m": 22
+    },
+    {
+     "typ": "Stahlmast Einarm 7 m",
+     "hoehe_m": 7,
+     "abstand_m": 35
+    },
+    {
+     "typ": "Holzmast + Freileitung",
+     "hoehe_m": 8,
+     "abstand_m": 40
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Ladenschilder (Baeckerei, Gaststaette), Banner",
+     "ort": "Markt/Borsbergstr.",
+     "haeufigkeit": "mittel"
+    },
+    {
+     "typ": "Aushang/Yoga-Werbeschild",
+     "ort": "Weissig Hauptstr.",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Biergarten-Schild",
+     "ort": "Markt",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Linde (alt, 20 m)",
+     "Rosskastanie",
+     "Eiche (Luther-Eiche 300 J.)",
+     "Rotbuche-Hecke",
+     "Lebensbaum",
+     "Fichte"
+    ],
+    "baumabstand_m": 11,
+    "vorgaerten": "Staketenzaun braun, Maschendraht weiss, Thuja, Bruchsteinmauer 1-2,5 m",
+    "gruen": "Getreidefelder, Dorfteich, Streuobst, Alleen"
+   },
+   "nichtwohn": [
+    "Schloss Schoenfeld (weiss, Walmdach Schiefer)",
+    "Dorfkirche (Turm Kupfer)",
+    "Friedhofskapelle",
+    "Grundschule (4 Geschosse)",
+    "Gaststaette Alte Brauerei",
+    "Posthaus"
+   ]
+  },
+  "Weixdorf": {
+   "bilder": 30,
+   "strasse": {
+    "fahrbahn_m": [
+     5.0,
+     7.0
+    ],
+    "spuren": "2 (Königsbrücker Landstr. mit Mittellinie)",
+    "parken": "Laengs einseitig, Rasenstreifen",
+    "tram": "seitlich",
+    "radweg": "Radweg-Gehweg an Landstrassen"
+   },
+   "bordstein": {
+    "material": "Granit-Kantenstein, Granit-Rinne",
+    "hoehe_cm": 12,
+    "farbe": "#8E8E8A"
+   },
+   "gehweg": {
+    "material": [
+     "Betonpflaster",
+     "Granitplatten",
+     "Betonplatten",
+     "Asphalt"
+    ],
+    "breite_m": [
+     1.5,
+     2.0
+    ],
+    "muster": "einseitig, Rasenstreifen 1 m mit jungen Strassenbaeumen"
+   },
+   "fassaden": [
+    {
+     "stil": "Gartenstadt-Siedlungshaus 1930er",
+     "anteil": 0.35,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#F0DC90",
+      "#E8B8A8",
+      "#B04A30"
+     ],
+     "dach": "Satteldach 40 Grad rot/braun, Gauben",
+     "merkmale": [
+      "Putz gelb/rosa",
+      "Staketenzaun braun"
+     ],
+     "baujahre": "1930-1940"
+    },
+    {
+     "stil": "Reihenhaus/EFH 2000er farbig",
+     "anteil": 0.25,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#E8962A",
+      "#6A8CC0",
+      "#FFFFFF",
+      "#C03030"
+     ],
+     "dach": "Pultdach grau/Satteldach rot",
+     "merkmale": [
+      "farbige Putzfelder"
+     ],
+     "baujahre": "2000-2015"
+    },
+    {
+     "stil": "Umgebindehaus/Fachwerk Zweiseitenhof",
+     "anteil": 0.1,
+     "geschosse": [
+      2,
+      2
+     ],
+     "farben": [
+      "#4A3A2A",
+      "#FFFFFF",
+      "#E8C040"
+     ],
+     "dach": "Satteldach rot, Krueppelwalm",
+     "merkmale": [
+      "Sandsteinfaschen gelb",
+      "Bruchsteinmauer"
+     ],
+     "baujahre": "1780-1860"
+    },
+    {
+     "stil": "Gruenderzeit-Villa",
+     "anteil": 0.05,
+     "geschosse": [
+      3,
+      3
+     ],
+     "farben": [
+      "#EDE4C8"
+     ],
+     "dach": "Schiefer-Mansard",
+     "merkmale": [
+      "Erker",
+      "Sandsteinmauer"
+     ],
+     "baujahre": "1890-1910"
+    },
+    {
+     "stil": "Gewerbe/Handel (Kaufland, Hohenbusch Center, Hallen)",
+     "anteil": 0.25,
+     "geschosse": [
+      1,
+      3
+     ],
+     "farben": [
+      "#C8D0DC",
+      "#C02020",
+      "#F4F4F0"
+     ],
+     "dach": "Walmdach rot / Flachdach",
+     "merkmale": [
+      "Pylon rot-weiss 8 m",
+      "rote Fensterbaender",
+      "Dachpavillon blau",
+      "Glas-Erker rot"
+     ],
+     "baujahre": "1995-2015"
+    }
+   ],
+   "beleuchtung": [
+    {
+     "typ": "Stahlmast konisch Einarm silber LED",
+     "hoehe_m": 7,
+     "abstand_m": 33
+    },
+    {
+     "typ": "Zierleuchte Kugel/Pilz Neubaugebiet",
+     "hoehe_m": 4,
+     "abstand_m": 22
+    },
+    {
+     "typ": "Betonmast Tram weiss 8 m",
+     "hoehe_m": 8,
+     "abstand_m": 40
+    }
+   ],
+   "werbung": [
+    {
+     "typ": "Pylon Kaufland rot/weiss 8 m",
+     "ort": "Hohenbusch Center",
+     "haeufigkeit": "mittel"
+    },
+    {
+     "typ": "City-Light-/Plakatvitrine",
+     "ort": "Parkplatz Einkaufszentrum",
+     "haeufigkeit": "selten"
+    },
+    {
+     "typ": "Dach-Firmenlogo (Gewerbehalle)",
+     "ort": "Promigberg",
+     "haeufigkeit": "selten"
+    }
+   ],
+   "natur": {
+    "baumarten": [
+     "Spitzahorn",
+     "Linde",
+     "Rotblatt-Ahorn",
+     "Birke",
+     "Kiefer"
+    ],
+    "baumabstand_m": 11,
+    "vorgaerten": "Hecke Thuja/Liguster 1,5 m",
+    "gruen": "Felder (Raps/Getreide), Wiesen, Hochspannungsmasten, Allee"
+   },
+   "nichtwohn": [
+    "Kaufland + Hohenbusch Center",
+    "Gewerbegebiet Am Promigberg",
+    "Feuerwehr Weixdorf (weiss/rot)",
+    "Grundschule Am Zollhaus",
+    "Gewaechshaeuser Gartencenter",
+    "Umspannwerk",
+    "Waldbad Weixdorf"
+   ]
+  }
+ },
+ "muster": [
+  "STRASSENPROFIL: Wohn-/Siedlungsstrassen 4,5-6 m Asphalt (Vororte/Ortschaften 4-5,5 m ohne Mittellinie), Hauptstrassen 6,5-7,5 m mit weisser Strichmittellinie; Magistralen (Bergstr., Nuernberger Str.) 2x2 Spuren zu je 3,25-3,5 m mit Rasengleis oder Gruenstreifen, Gesamtbreite 25-30 m. Zone-30-Schild (rot, 'ZONE') an Einfahrten ist praktisch ueberall.",
+  "TRAM: Mittellage im Rasengleis (Bergstr., Nuernberger Str., Würzburger Str., Strehlen Dohnaer Str. teils im Asphalt), Seitenlage mit Betonmasten 8-10 m und Schotter/Rasen an den Endpunkten (Prohlis, Gompitz, Weixdorf, Kleinpestitz). Bahnsteige 2,5 m aus Betonpflaster rot-grau; Oberleitung Spannseil oder Betonmast mit Ausleger; Wendeschleife Prohlis. Gelb-orange DVB-Fahrzeuge, DVB-Wartehaeuschen Glas/Alu mit gelbem Dach und beleuchteter City-Light-Vitrine.",
+  "BORDSTEIN: Granit grau (#8C8C88, #8E8E8A) 12-15 cm; Plattenbaugebiete eher Beton #A9A9A5; Doerfer zusaetzlich Rinne aus Granit-Kleinpflaster 2-3 Reihen (0,3-0,5 m) oder Sandstein-Kantenstein. Altorte (Mobschatz, Cossebaude, Leubnitz, Gompitz) haben komplette Kopfsteinpflaster-Fahrbahn aus Granit-Kleinpflaster 8-10 cm.",
+  "GEHWEG: Stadtteile 1,5-2,5 m aus Betonplatten 40x40 grau bzw. Betonverbundpflaster (rot-grau/10x20); Hauptachsen 2,5-3 m Klinker/Mosaik rot-grau; Doerfer einseitig 1,2-1,5 m (Asphalt oder Betonpflaster); an Landstrassen kein Gehweg, Bankett Gras/Splitt. Rasenstreifen 1-3 m mit Baeumen zwischen Gehweg und Fahrbahn in Wohngebieten; Baumscheiben meist 1x1 m ohne Gitter im Rasen.",
+  "PLATTENBAU (Prohlis, Reick, Kleinpestitz, Strehlen, Südvorstadt-West): WBS 70 mit 6 Geschossen (Traufe ca. 17 m), Fugenraster 6,0 m, Geschosshoehe 2,8 m, Zeilen 100-180 m, Flachdach mit Zink-Attika grau, durchgehende Loggien-/Balkonreihen mit Betonbruestung, Treppenhaus-Risalit mit Glas-/Aufzugsturm. Nach 1990 WDVS-saniert in Pastell (#EBE3C8 creme, #E2C860 gelb, #D8A878, #E6C8C0, #C8DCC8 mint) mit farbigen Bruestungen und Sockel #8A7A6A. 11-12-Geschosser weiss-grau mit blau/gelben bzw. roten Treppenhausstreifen; 16-Geschosser rotbrauner Keramik #A5582F mit grauem Giebel.",
+  "ZEILENBAU 1930-1955: 3-5 Geschosse, Rauhputz sandgelb/ocker (#D8C27A, #D2B870), Sandstein-Ecklisenen #8A7A68, steiles Walmdach rot-braun #A8472B mit Reihen-/Fledermausgauben und hohen Schornsteinen, weisse Kastenfenster 1,0x1,5 m, schwarze Eck-Erker/Loggien, Eingangsvordach Beton. Siedlerhaeuser 1,5-2 Geschosse Satteldach 40-45 Grad, Hecke Liguster/Eibe 1,5-2 m, Staketen-/Jaegerzaun braun auf Sandstein-/Betonpfosten.",
+  "GRUENDERZEIT/JUGENDSTIL (Strehlen, Plauen, Suedvorstadt, Lockwitz, Leubnitz, Langebrück): 3-4 Geschosse + Mansard/Walm in Schiefer #4A4A52 oder Biberschwanz rot #B04A30; Putz creme/gelb (#EDE6D0, #E4E0A0) oder Klinker-Verblender gelb/orange (#D8B060, #D08A5A) mit Sandstein-Rustika-Sockel 0,8-1,2 m, Erker, Balkone, Zwerchgiebel; Vorgarten 3-8 m mit Schmiedeeisenzaun 1,2-1,3 m auf Sandsteinsockel 0,3-0,5 m, Sandstein-Pfosten, Hecke/Efeu.",
+  "DOERFER/ORTSCHAFTEN: Dreiseit-/Zweiseitenhoefe 1750-1860: Fachwerk-OG schwarzbraun (#4A3A2A) mit hellem Gefach (#EFE6D0), EG Putz ocker/lachs/grau (#E8C880, #E89888, #B8B09A), Satteldach 45-55 Grad rot #A8472C mit Krueppelwalm, Sandstein-Faschen #CFC6AC, Natursteinsockel Granit/Porphyr, Scheunen mit senkrechter dunkelbrauner Bretterverschalung #3E2E24 und Rundbogentor, Bruchsteinmauern 1-2,5 m (#7A6E5A), Hofpflaster Granit-Kleinpflaster. Neubau 1995-2010: Satteldach orange-rot #D06A30 (Betondachstein), Putz creme/gelb, Gauben, Thuja-/Kirschlorbeer-Hecke.",
+  "BELEUCHTUNG: Hauptachsen Peitschen-/Mastleuchte Alu/Stahl grau 9-12 m, Einarm/Doppelausleger, LED (neutralweiss ca. 4000 K, blendend), Abstand 30-35 m; Wohnstrassen Stahlmast 6-8 m Einarm; Plattenbau-Hoefe Pilz-/Aufsatzleuchte 4 m; Ortskerne Zierlaterne Kugel/Schwanenhals schwarz-gruen 4-5,5 m (Cossebaude, Schönfeld, Langebrück, Altfranken, Thormeyerstr.); Randgebiete Holz-/Betonmast mit Freileitung und Aufsatzleuchte 7-8 m, Abstand 40 m. Nachtbild: warmgelbes Natrium noch vereinzelt in Nebenstr.",
+  "WERBUNG: Insgesamt sparsam. Haeufig nur an Gewerbe/Handel (Pylon 6-8 m EDEKA/Kaufland/toom/ALDI/JET, Fahnenmasten 8 m, Megalogo am Moebelhaus), Bauzaun-Banner bei Baustellen (Südvorstadt, Plauen Dauerbaustelle gelb), City-Light-Vitrinen 1,2x1,8 m nur an Tram-/Bushaltestellen, Litfasssaeulen selten (Lockwitz, Prohlis), Grossflaeche 3x2 m am Gewerbegebiet (Niedersedlitz, Reick, Altfranken); Wahlplakate an Laternenmasten saisonal. In Doerfern praktisch keine Werbung, nur Ladenschilder (Baeckerei vertikal gelb) und Gasthof-Schilder.",
+  "BAEUME: Alleen/Reihen aus Linde, Spitzahorn, Platane, Kastanie mit Abstand 8-12 m (Tram-Alleen 8 m); Plattenbau Pyramidenpappeln bis 25 m, Birke, Kiefer; Doerfer Einzellinden/Dorflinde (300-400 J.), Obstbaeume (Hochstamm) auf Streuobstwiesen und entlang Feldwegen, Blaufichte und Thuja in Gaerten; Hecken 1,5-2 m geschnitten (Liguster, Eibe, Kirschlorbeer, Thuja).",
+  "NICHTWOHNBAUTEN: Schulen 3-4 Geschosse Typenbau 1970er (gelb/ocker, Fensterbaender, Freitreppe Granitsplitt-Beton); Kirchen Sandstein mit kupfergruenem/schwarzem Schiefer-Turm; Rathaeuser 1905-1913 Jugendstil/Neorenaissance (Rathaus Plauen, Lockwitz, Coschuetz, Niedersedlitz); Gewerbe: Backstein mit Schlot (Strehlen, Plauen, Südvorstadt) oder weisse Alu-/Putzhallen 1990er mit roten Fensterbaendern; Supermaerkte als 1-2-Geschoss-Flachbau mit Pylon; Garagenreihen Beton-Flachdach grau; Feuerwehr Putz weiss/gelb mit rotem Sektionaltor.",
+  "FARBPALETTE-FAUSTREGEL: Putz fast nie reinweiss, sondern creme/gelb/ocker (#EBE3C8, #E8D880, #D8C27A) oder pastellrosa/lachs (#E8B8A8, #D8705A); Daecher rot-orange (#A8472B bis #D06A30) oder anthrazit (#3A3A40) bei Neubau; Gelaender/Zaeune schwarz/dunkelgruen/braun; Strassenschilder dunkelblau #1A2A7A emailliert mit weisser Antiqua-Schrift (Namensschild + Zusatzschild mit Namensgeber).",
+  "ZUSTAND/DETAIL: Asphalt oft geflickt (Schachtdeckel, Risse), Verteilerkaesten grau 1,2 m teils graffitiert/bemalt, Zone-30-Beschilderung, Findlinge als Parkbarriere in Plattenbaugebieten, gelbe Baustellenabsperrung in Plauen/Suedvorstadt, Kopfsteinpflaster-Kreisel (Leubnitz)."
+ ]
+}

@@ -1,0 +1,204 @@
+[
+  {
+    "file": "bush_a.glb",
+    "height": 1.637,
+    "bbox_min": [
+      -0.874,
+      -0.057,
+      -0.785
+    ],
+    "bbox_max": [
+      0.851,
+      1.637,
+      0.883
+    ],
+    "tris": 548,
+    "materials": [
+      "Bark",
+      "Leaves"
+    ],
+    "notes": "Laubbusch Hasel/Holunder-artig ~1.5 m, vasenförmig, 5 Stämmchen unten sichtbar. COLOR_0=AO, UV2=(Windgewicht, Phase).",
+    "size_bytes": 1229844
+  },
+  {
+    "file": "bush_b.glb",
+    "height": 0.901,
+    "bbox_min": [
+      -0.652,
+      0.071,
+      -0.581
+    ],
+    "bbox_max": [
+      0.569,
+      0.901,
+      0.671
+    ],
+    "tris": 256,
+    "materials": [
+      "Leaves"
+    ],
+    "notes": "Dichter kleiner Busch ~0.9 m (Liguster/Weißdorn-artig), bis zum Boden belaubt. COLOR_0=AO, UV2=(Windgewicht, Phase).",
+    "size_bytes": 464676
+  },
+  {
+    "file": "bush_young_tree.glb",
+    "height": 2.648,
+    "bbox_min": [
+      -0.704,
+      -0.05,
+      -0.766
+    ],
+    "bbox_max": [
+      0.792,
+      2.648,
+      0.756
+    ],
+    "tris": 384,
+    "materials": [
+      "Bark",
+      "Leaves"
+    ],
+    "notes": "Jungbaum/Schössling ~2.5 m (Buche/Hainbuche-artig), dünner Stamm + 6 Äste. COLOR_0=AO, UV2=(Windgewicht, Phase).",
+    "size_bytes": 1223996
+  },
+  {
+    "file": "deadwood.glb",
+    "height": 0.2,
+    "bbox_min": [
+      -1.015,
+      -0.057,
+      -0.503
+    ],
+    "bbox_max": [
+      1.007,
+      0.2,
+      0.302
+    ],
+    "tris": 186,
+    "materials": [
+      "Bark"
+    ],
+    "notes": "Liegender Totholz-Ast ~2 m entlang X, teils entrindet, Moos, 4 Aststummel (einer im Boden). COLOR_0=AO, UV2=(Windgewicht, Phase).",
+    "size_bytes": 979388
+  },
+  {
+    "file": "fern.glb",
+    "height": 0.802,
+    "bbox_min": [
+      -0.925,
+      -0.03,
+      -0.796
+    ],
+    "bbox_max": [
+      0.761,
+      0.802,
+      0.914
+    ],
+    "tris": 144,
+    "materials": [
+      "Leaves"
+    ],
+    "notes": "Adlerfarn-Büschel, 6 Wedel (Stiel steil, Spreite überhängend). COLOR_0=AO, UV2=(Windgewicht, Phase).",
+    "size_bytes": 476292
+  },
+  {
+    "file": "grass_tall.glb",
+    "height": 0.855,
+    "bbox_min": [
+      -0.235,
+      -0.035,
+      -0.332
+    ],
+    "bbox_max": [
+      0.307,
+      0.855,
+      0.223
+    ],
+    "tris": 96,
+    "materials": [
+      "Grass"
+    ],
+    "notes": "Hohes Gras mit Rispen + Brennnessel, 8 Karten (je Vorder-+Rückseite). COLOR_0=AO, UV2=(Windgewicht, Phase).",
+    "size_bytes": 436080
+  },
+  {
+    "file": "grass_tuft.glb",
+    "height": 0.384,
+    "bbox_min": [
+      -0.246,
+      -0.035,
+      -0.242
+    ],
+    "bbox_max": [
+      0.223,
+      0.384,
+      0.231
+    ],
+    "tris": 48,
+    "materials": [
+      "Grass"
+    ],
+    "notes": "Grasbüschel, 6 Karten (je Vorder-+Rückseite). COLOR_0=AO, UV2=(Windgewicht, Phase).",
+    "size_bytes": 428788
+  },
+  {
+    "file": "heather.glb",
+    "height": 0.3,
+    "bbox_min": [
+      -0.27,
+      -0.04,
+      -0.343
+    ],
+    "bbox_max": [
+      0.337,
+      0.3,
+      0.329
+    ],
+    "tris": 40,
+    "materials": [
+      "Leaves"
+    ],
+    "notes": "Zwergstrauch-Polster: 6 Karten Blaubeere + 4 Karten Heidekraut (blühend). COLOR_0=AO, UV2=(Windgewicht, Phase).",
+    "size_bytes": 462824
+  },
+  {
+    "file": "rock_small.glb",
+    "height": 0.6,
+    "bbox_min": [
+      -0.568,
+      -0.106,
+      -0.509
+    ],
+    "bbox_max": [
+      0.64,
+      0.6,
+      0.556
+    ],
+    "tris": 320,
+    "materials": [
+      "Rock"
+    ],
+    "notes": "Findling (Granodiorit) ~0.6 m hoch, 8 cm im Boden, Flechten/Moos. COLOR_0=AO, UV2=(Windgewicht, Phase).",
+    "size_bytes": 1142708
+  },
+  {
+    "file": "stump.glb",
+    "height": 0.484,
+    "bbox_min": [
+      -0.525,
+      -0.12,
+      -0.445
+    ],
+    "bbox_max": [
+      0.421,
+      0.484,
+      0.553
+    ],
+    "tris": 193,
+    "materials": [
+      "Bark"
+    ],
+    "notes": "Baumstumpf Ø~0.6 m mit Wurzelanläufen, schräger Sägeschnitt mit Jahresringen. COLOR_0=AO, UV2=(Windgewicht, Phase).",
+    "size_bytes": 870280
+  }
+]

@@ -1,0 +1,622 @@
+{
+ "taxi_player.glb": {
+  "file": "taxi_player.glb",
+  "length": 4.92,
+  "width": 1.86,
+  "height": 1.612,
+  "bbox_length": 4.962,
+  "bbox_width_with_mirrors": 2.14,
+  "wheelbase": 2.92,
+  "track_width": 1.575,
+  "wheel_radius": 0.34,
+  "wheel_width": 0.225,
+  "center_of_mass_height_hint": 0.48,
+  "tris": 58372
+ },
+ "hatchback.glb": {
+  "file": "hatchback.glb",
+  "length": 4.28,
+  "width": 1.8,
+  "height": 1.49,
+  "bbox_length": 4.325,
+  "bbox_width_with_mirrors": 2.094,
+  "wheelbase": 2.62,
+  "track_width": 1.545,
+  "wheel_radius": 0.315,
+  "wheel_width": 0.205,
+  "center_of_mass_height_hint": 0.45,
+  "tris": 26926
+ },
+ "sedan.glb": {
+  "file": "sedan.glb",
+  "length": 4.66,
+  "width": 1.82,
+  "height": 1.463,
+  "bbox_length": 4.705,
+  "bbox_width_with_mirrors": 2.103,
+  "wheelbase": 2.76,
+  "track_width": 1.545,
+  "wheel_radius": 0.33,
+  "wheel_width": 0.215,
+  "center_of_mass_height_hint": 0.44,
+  "tris": 27243
+ },
+ "van.glb": {
+  "file": "van.glb",
+  "length": 5.93,
+  "width": 2.0,
+  "height": 2.47,
+  "bbox_length": 5.972,
+  "bbox_width_with_mirrors": 2.303,
+  "wheelbase": 3.67,
+  "track_width": 1.72,
+  "wheel_radius": 0.355,
+  "wheel_width": 0.235,
+  "center_of_mass_height_hint": 0.74,
+  "tris": 27113
+ },
+ "citycar.glb": {
+  "file": "citycar.glb",
+  "length": 3.6,
+  "width": 1.65,
+  "height": 1.54,
+  "bbox_length": 3.647,
+  "bbox_width_with_mirrors": 1.943,
+  "wheelbase": 2.42,
+  "track_width": 1.43,
+  "wheel_radius": 0.285,
+  "wheel_width": 0.165,
+  "center_of_mass_height_hint": 0.46,
+  "tris": 25056
+ },
+ "bus_solo.glb": {
+  "file": "bus_solo.glb",
+  "length": 12.0,
+  "width": 2.55,
+  "height": 3.05,
+  "bbox_length": 12.109,
+  "bbox_width_with_mirrors": 3.16,
+  "bbox_min": [
+   -1.58,
+   -0.001,
+   -5.782
+  ],
+  "bbox_max": [
+   1.58,
+   3.054,
+   6.327
+  ],
+  "wheelbase": 5.845,
+  "axle_z": {
+   "front": -2.9225,
+   "rear": 2.9225
+  },
+  "track_width": 2.1,
+  "track_width_rear": 1.82,
+  "twin_tire_offset": 0.165,
+  "wheel_radius": 0.48,
+  "wheel_width": 0.28,
+  "center_of_mass_height_hint": 1.05,
+  "floor_height": 0.34,
+  "front_overhang": 2.805,
+  "rear_overhang": 3.35,
+  "doors": [
+   {
+    "index": 1,
+    "center_z": -4.45,
+    "width": 1.25,
+    "height": 2.08,
+    "floor_y": 0.34,
+    "side": "+X (rechts)",
+    "parent": "Bus",
+    "leaves": {
+     "Door_1_R": {
+      "closed_local": [
+       1.271,
+       0.35,
+       -4.7625
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       -4.7625
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       -0.64
+      ]
+     },
+     "Door_1_L": {
+      "closed_local": [
+       1.271,
+       0.35,
+       -4.1375
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       -4.1375
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       0.64
+      ]
+     }
+    }
+   },
+   {
+    "index": 2,
+    "center_z": -0.0,
+    "width": 1.25,
+    "height": 2.08,
+    "floor_y": 0.34,
+    "side": "+X (rechts)",
+    "parent": "Bus",
+    "leaves": {
+     "Door_2_R": {
+      "closed_local": [
+       1.271,
+       0.35,
+       -0.3125
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       -0.3125
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       -0.64
+      ]
+     },
+     "Door_2_L": {
+      "closed_local": [
+       1.271,
+       0.35,
+       0.3125
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       0.3125
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       0.64
+      ]
+     }
+    }
+   },
+   {
+    "index": 3,
+    "center_z": 4.45,
+    "width": 1.25,
+    "height": 2.08,
+    "floor_y": 0.34,
+    "side": "+X (rechts)",
+    "parent": "Bus",
+    "leaves": {
+     "Door_3_R": {
+      "closed_local": [
+       1.271,
+       0.35,
+       4.1375
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       4.1375
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       -0.64
+      ]
+     },
+     "Door_3_L": {
+      "closed_local": [
+       1.271,
+       0.35,
+       4.7625
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       4.7625
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       0.64
+      ]
+     }
+    }
+   }
+  ],
+  "door_motion": "Schwenkschiebetür: Knoten Door_<n>_L/R sitzt geschlossen bündig in der Öffnung (Ursprung = Unterkante Mitte des Flügels, Außenfläche). Öffnen = Verschieben im Elternraum um open_offset (Godot-Achsen): Phase 1 (0-30 Prozent) nur x += 0.10 (ausschwenken nach außen), Phase 2 (30-100 Prozent) z um +-0.640 (L = hinterer Flügel nach +Z, R = vorderer Flügel nach -Z). Schließen umgekehrt. Dauer real ca. 2-3 s. L/R = aus Sicht von außen links/rechts.",
+  "destination_displays": [
+   {
+    "name": "front",
+    "center": [
+     0.0,
+     2.55,
+     -5.5473
+    ],
+    "width": 1.9,
+    "height": 0.26,
+    "normal": [
+     0.0,
+     0.0524,
+     -0.9986
+    ],
+    "bulge": 0.035
+   },
+   {
+    "name": "side_right",
+    "center": [
+     1.275,
+     2.27,
+     -3.225
+    ],
+    "width": 1.0,
+    "height": 0.3,
+    "normal": [
+     1.0,
+     0.0,
+     -0.0
+    ]
+   },
+   {
+    "name": "rear",
+    "center": [
+     0.0,
+     2.55,
+     6.2183
+    ],
+    "width": 1.1,
+    "height": 0.26,
+    "normal": [
+     -0.0,
+     0.0164,
+     0.9999
+    ]
+   }
+  ],
+  "materials": [
+   "Bellows",
+   "BlackGloss",
+   "BrakeDisc",
+   "BrakeLightEmit",
+   "CarPaint",
+   "Chrome",
+   "DestinationEmit",
+   "Glass",
+   "Handrail",
+   "HeadlightEmit",
+   "IndicatorEmit",
+   "Interior",
+   "InteriorEmit",
+   "InteriorFloor",
+   "InteriorSeat",
+   "PlasticBlack",
+   "Plate",
+   "PlateBlue",
+   "Rim",
+   "RoofUnit",
+   "Rubber",
+   "TaillightEmit"
+  ],
+  "tris": 17644,
+  "size_bytes": 1901384,
+  "notes": "Niederflur-Solobus 12 m, 3 Doppeltüren rechts (+X). Hinterachse Zwillingsreifen: Wheel_RL/RR sitzt in der Zwillingsmitte (track_width_rear), Reifen bei ±twin_tire_offset. Knoten: Bus/{Body,Glass,Interior,Lights,Wheel_*,Door_*}. Ursprung Mitte zwischen den Achsen."
+ },
+ "bus_articulated.glb": {
+  "file": "bus_articulated.glb",
+  "length": 18.075,
+  "width": 2.55,
+  "height": 3.05,
+  "bbox_length": 18.184,
+  "bbox_width_with_mirrors": 3.16,
+  "bbox_min": [
+   -1.58,
+   -0.001,
+   -5.782
+  ],
+  "bbox_max": [
+   1.58,
+   3.054,
+   12.402
+  ],
+  "wheelbase": 5.845,
+  "wheelbase_rear": 5.99,
+  "axle_z": {
+   "front": -2.9225,
+   "middle": 2.9225,
+   "rear": 8.9125
+  },
+  "joint_z": 4.4725,
+  "joint_note": "Rear und Bellows haben ihren Ursprung im Gelenkdrehpunkt (x=0, y=0, z=joint_z); Drehteller-Höhe ca. 0.45 m.",
+  "middle_axle_to_joint": 1.55,
+  "joint_to_rear_axle": 4.44,
+  "front_body_end_z": 4.0225,
+  "rear_body_start_z": 4.9225,
+  "track_width": 2.1,
+  "track_width_middle": 2.1,
+  "track_width_rear": 1.82,
+  "twin_tire_offset": 0.165,
+  "wheel_radius": 0.48,
+  "wheel_width": 0.28,
+  "center_of_mass_height_hint": 1.05,
+  "floor_height": 0.34,
+  "doors": [
+   {
+    "index": 1,
+    "center_z": -4.45,
+    "width": 1.25,
+    "height": 2.08,
+    "floor_y": 0.34,
+    "side": "+X (rechts)",
+    "parent": "Front",
+    "leaves": {
+     "Door_1_R": {
+      "closed_local": [
+       1.271,
+       0.35,
+       -4.7625
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       -4.7625
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       -0.64
+      ]
+     },
+     "Door_1_L": {
+      "closed_local": [
+       1.271,
+       0.35,
+       -4.1375
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       -4.1375
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       0.64
+      ]
+     }
+    }
+   },
+   {
+    "index": 2,
+    "center_z": -0.0,
+    "width": 1.25,
+    "height": 2.08,
+    "floor_y": 0.34,
+    "side": "+X (rechts)",
+    "parent": "Front",
+    "leaves": {
+     "Door_2_R": {
+      "closed_local": [
+       1.271,
+       0.35,
+       -0.3125
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       -0.3125
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       -0.64
+      ]
+     },
+     "Door_2_L": {
+      "closed_local": [
+       1.271,
+       0.35,
+       0.3125
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       0.3125
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       0.64
+      ]
+     }
+    }
+   },
+   {
+    "index": 3,
+    "center_z": 6.45,
+    "width": 1.25,
+    "height": 2.08,
+    "floor_y": 0.34,
+    "side": "+X (rechts)",
+    "parent": "Rear",
+    "leaves": {
+     "Door_3_R": {
+      "closed_local": [
+       1.271,
+       0.35,
+       1.665
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       6.1375
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       -0.64
+      ]
+     },
+     "Door_3_L": {
+      "closed_local": [
+       1.271,
+       0.35,
+       2.29
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       6.7625
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       0.64
+      ]
+     }
+    }
+   },
+   {
+    "index": 4,
+    "center_z": 10.45,
+    "width": 1.25,
+    "height": 2.08,
+    "floor_y": 0.34,
+    "side": "+X (rechts)",
+    "parent": "Rear",
+    "leaves": {
+     "Door_4_R": {
+      "closed_local": [
+       1.271,
+       0.35,
+       5.665
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       10.1375
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       -0.64
+      ]
+     },
+     "Door_4_L": {
+      "closed_local": [
+       1.271,
+       0.35,
+       6.29
+      ],
+      "closed_root": [
+       1.271,
+       0.35,
+       10.7625
+      ],
+      "open_offset": [
+       0.1,
+       0.0,
+       0.64
+      ]
+     }
+    }
+   }
+  ],
+  "door_motion": "Schwenkschiebetür: Knoten Door_<n>_L/R sitzt geschlossen bündig in der Öffnung (Ursprung = Unterkante Mitte des Flügels, Außenfläche). Öffnen = Verschieben im Elternraum um open_offset (Godot-Achsen): Phase 1 (0-30 Prozent) nur x += 0.10 (ausschwenken nach außen), Phase 2 (30-100 Prozent) z um +-0.640 (L = hinterer Flügel nach +Z, R = vorderer Flügel nach -Z). Schließen umgekehrt. Dauer real ca. 2-3 s. L/R = aus Sicht von außen links/rechts.",
+  "destination_displays": [
+   {
+    "name": "front",
+    "center": [
+     0.0,
+     2.55,
+     -5.5473
+    ],
+    "width": 1.9,
+    "height": 0.26,
+    "normal": [
+     0.0,
+     0.0524,
+     -0.9986
+    ],
+    "parent": "Front",
+    "bulge": 0.035
+   },
+   {
+    "name": "side_right",
+    "center": [
+     1.275,
+     2.27,
+     -3.225
+    ],
+    "width": 1.0,
+    "height": 0.3,
+    "normal": [
+     1.0,
+     0.0,
+     -0.0
+    ],
+    "parent": "Front"
+   },
+   {
+    "name": "rear",
+    "center": [
+     0.0,
+     2.55,
+     12.2933
+    ],
+    "width": 1.1,
+    "height": 0.26,
+    "normal": [
+     -0.0,
+     0.0164,
+     0.9999
+    ],
+    "parent": "Rear",
+    "center_local": [
+     0.0,
+     2.55,
+     7.8208
+    ]
+   }
+  ],
+  "materials": [
+   "Bellows",
+   "BlackGloss",
+   "BrakeDisc",
+   "BrakeLightEmit",
+   "CarPaint",
+   "Chrome",
+   "DestinationEmit",
+   "Glass",
+   "Handrail",
+   "HeadlightEmit",
+   "IndicatorEmit",
+   "Interior",
+   "InteriorEmit",
+   "InteriorFloor",
+   "InteriorSeat",
+   "PlasticBlack",
+   "Plate",
+   "PlateBlue",
+   "Rim",
+   "RoofUnit",
+   "Rubber",
+   "TaillightEmit"
+  ],
+  "tris": 24464,
+  "size_bytes": 2362952,
+  "notes": "Gelenkbus 18.1 m (Schubgelenk), 4 Doppeltüren rechts (+X). Knoten: Bus/Front (Vorderwagen, Wheel_FL/FR, Wheel_ML/MR, Door_1/2), Bus/Rear (Nachläufer, Ursprung = Gelenk, Wheel_RL/RR Zwilling, Door_3/4), Bus/Bellows (Faltenbalg + Drehteller, Ursprung = Gelenk, halben Knickwinkel mitdrehen). Ursprung der Wurzel: Mitte zwischen Vorder- und Mittelachse."
+ }
+}

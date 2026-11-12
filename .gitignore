@@ -1,0 +1,32 @@
+# Geodaten: Rohdaten und aufbereitete Kacheln sind zu groß für Git.
+# Spieler bekommen sie über die Installer (GitHub-Release "data-v1"), Entwickler über tools/run_tile.sh.
+/data/raw/
+/data/processed/
+/data/research/*_img/
+
+# Python
+/.venv/
+__pycache__/
+*.pyc
+
+# Godot
+/godot/.godot/
+/godot/data/tiles
+/godot/texcache/
+# alte Einzelkachel-Daten (vom Streaming abgelöst)
+/godot/data/city.json
+/godot/data/ortho.jpg
+/godot/data/splat*.png
+/godot/data/terrain.f32
+/godot/data/terrain.json
+
+# Builds und Release-Pakete
+/build/
+/dist/
+
+# Werkzeug-Ausgaben
+/tools/blender/*/out/
+/tools/blender/street_tmp/
+/.playwright-mcp/
+*.blend1
+/data/research/bruecken_src/

@@ -1,0 +1,1167 @@
+[
+  {
+    "file": "car/starter_long.ogg",
+    "kind": "starter",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 2.65,
+    "channels": 1,
+    "lufs": -15.8,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 162525,
+        "title": "23_StartBig_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162525/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Anlasser 190E-16V: Orgeln, Anspringen, Gasstoss, Abfallen Richtung Leerlauf (D6 am Auspuff); Ende ausgeblendet -> in player_idle ueberblenden"
+  },
+  {
+    "file": "car/starter_short.ogg",
+    "kind": "starter",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 2.25,
+    "channels": 1,
+    "lufs": -15.5,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 162528,
+        "title": "23_StartISmall_D6.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162528/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Anlasser 190E-16V: Orgeln + Anspringen mit kleinem Gasstoss (D6); Ende ausgeblendet"
+  },
+  {
+    "file": "car/blinker_tick.ogg",
+    "kind": "blinker",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.15,
+    "channels": 1,
+    "lufs": -19.7,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 545322,
+        "title": "BMW Indicator",
+        "author": "The_Cri",
+        "source_url": "https://freesound.org/people/The_Cri/sounds/545322/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Blinker-Relais 'tick' (lauterer Schlag), BMW-Innenraum; Schnitt ab 6.88 s; Intervall im Original ca. 0,32 s (tick und tack abwechselnd im Takt abspielen)",
+    "source_time_s": 6.88
+  },
+  {
+    "file": "car/blinker_tack.ogg",
+    "kind": "blinker",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.15,
+    "channels": 1,
+    "lufs": -21.1,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 545322,
+        "title": "BMW Indicator",
+        "author": "The_Cri",
+        "source_url": "https://freesound.org/people/The_Cri/sounds/545322/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Blinker-Relais 'tack' (leiserer Schlag), BMW-Innenraum; Schnitt ab 5.60 s; Intervall im Original ca. 0,32 s (tick und tack abwechselnd im Takt abspielen)",
+    "source_time_s": 5.6
+  },
+  {
+    "file": "car/gear_shift_1.ogg",
+    "kind": "gear_shift",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.42,
+    "channels": 1,
+    "lufs": -22.6,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 117558,
+        "title": "Vitesses.aif",
+        "author": "kougloff",
+        "source_url": "https://freesound.org/people/kougloff/sounds/117558/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Schalthebel-Klacken (Gang einlegen, stehendes Auto), Schnitt ab 7.56 s",
+    "source_time_s": 7.56
+  },
+  {
+    "file": "car/gear_shift_2.ogg",
+    "kind": "gear_shift",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.42,
+    "channels": 1,
+    "lufs": -22.1,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 117558,
+        "title": "Vitesses.aif",
+        "author": "kougloff",
+        "source_url": "https://freesound.org/people/kougloff/sounds/117558/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Schalthebel-Klacken (Gang einlegen, stehendes Auto), Schnitt ab 32.01 s",
+    "source_time_s": 32.01
+  },
+  {
+    "file": "car/gear_shift_3.ogg",
+    "kind": "gear_shift",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.42,
+    "channels": 1,
+    "lufs": -27.2,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 117558,
+        "title": "Vitesses.aif",
+        "author": "kougloff",
+        "source_url": "https://freesound.org/people/kougloff/sounds/117558/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Schalthebel-Klacken (Gang einlegen, stehendes Auto), Schnitt ab 40.22 s",
+    "source_time_s": 40.22
+  },
+  {
+    "file": "car/clutch.ogg",
+    "kind": "clutch",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 1.25,
+    "channels": 1,
+    "lufs": -22.9,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 123016,
+        "title": "carclutch2.wav",
+        "author": "j1987",
+        "source_url": "https://freesound.org/people/j1987/sounds/123016/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Kupplungspedal treten (Volvo 740, Innenraum)"
+  },
+  {
+    "file": "car/horn_start.ogg",
+    "kind": "horn",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.085,
+    "channels": 1,
+    "lufs": -16.9,
+    "peak_dbfs": -3.7,
+    "sources": [
+      {
+        "freesound_id": 162541,
+        "title": "63HornNT1a.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162541/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Hupe Mercedes 190E-16V (Zweiklang 330/396 Hz), Innenraum (Beifahrerkopf-Position), sauber. Grundperiode 15.06 ms (66.41 Hz). Abspielfolge: *_start -> *_loop (beliebig oft) -> *_end; die drei Teile haben gemeinsamen Pegel"
+  },
+  {
+    "file": "car/horn_loop.ogg",
+    "kind": "horn",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 0.1054,
+    "channels": 1,
+    "lufs": -10.9,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 162541,
+        "title": "63HornNT1a.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162541/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Hupe Mercedes 190E-16V (Zweiklang 330/396 Hz), Innenraum (Beifahrerkopf-Position), sauber. Grundperiode 15.06 ms (66.41 Hz). Abspielfolge: *_start -> *_loop (beliebig oft) -> *_end; die drei Teile haben gemeinsamen Pegel",
+    "seam_check": {
+      "flux": 0.75,
+      "level": 0.97
+    },
+    "tone_hz": [
+      330,
+      396
+    ],
+    "period_hz": 66.411
+  },
+  {
+    "file": "car/horn_end.ogg",
+    "kind": "horn",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.2746,
+    "channels": 1,
+    "lufs": -21.0,
+    "peak_dbfs": -5.16,
+    "sources": [
+      {
+        "freesound_id": 162541,
+        "title": "63HornNT1a.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162541/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Hupe Mercedes 190E-16V (Zweiklang 330/396 Hz), Innenraum (Beifahrerkopf-Position), sauber. Grundperiode 15.06 ms (66.41 Hz). Abspielfolge: *_start -> *_loop (beliebig oft) -> *_end; die drei Teile haben gemeinsamen Pegel"
+  },
+  {
+    "file": "car/horn_ext_start.ogg",
+    "kind": "horn",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.065,
+    "channels": 1,
+    "lufs": -12.3,
+    "peak_dbfs": -5.09,
+    "sources": [
+      {
+        "freesound_id": 162540,
+        "title": "63HornNTG2.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162540/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Hupe Mercedes 190E-16V (Zweiklang 330/396 Hz), aussen ca. 1,5 m vor dem Auto; Quelle uebersteuert (leicht verzerrt), heller als die Innenraumversion. Grundperiode 15.07 ms (66.34 Hz). Abspielfolge: *_start -> *_loop (beliebig oft) -> *_end; die drei Teile haben gemeinsamen Pegel"
+  },
+  {
+    "file": "car/horn_ext_loop.ogg",
+    "kind": "horn",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 0.1055,
+    "channels": 1,
+    "lufs": -7.2,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 162540,
+        "title": "63HornNTG2.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162540/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Hupe Mercedes 190E-16V (Zweiklang 330/396 Hz), aussen ca. 1,5 m vor dem Auto; Quelle uebersteuert (leicht verzerrt), heller als die Innenraumversion. Grundperiode 15.07 ms (66.34 Hz). Abspielfolge: *_start -> *_loop (beliebig oft) -> *_end; die drei Teile haben gemeinsamen Pegel",
+    "seam_check": {
+      "flux": 1.0,
+      "level": 1.29
+    },
+    "tone_hz": [
+      330,
+      396
+    ],
+    "period_hz": 66.336
+  },
+  {
+    "file": "car/horn_ext_end.ogg",
+    "kind": "horn",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.2845,
+    "channels": 1,
+    "lufs": -21.7,
+    "peak_dbfs": -5.11,
+    "sources": [
+      {
+        "freesound_id": 162540,
+        "title": "63HornNTG2.wav",
+        "author": "Chippy569",
+        "source_url": "https://freesound.org/people/Chippy569/sounds/162540/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Hupe Mercedes 190E-16V (Zweiklang 330/396 Hz), aussen ca. 1,5 m vor dem Auto; Quelle uebersteuert (leicht verzerrt), heller als die Innenraumversion. Grundperiode 15.07 ms (66.34 Hz). Abspielfolge: *_start -> *_loop (beliebig oft) -> *_end; die drei Teile haben gemeinsamen Pegel"
+  },
+  {
+    "file": "car/tire_squeal_loop_1.ogg",
+    "kind": "tire_squeal",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 1.0,
+    "channels": 1,
+    "lufs": -18.0,
+    "peak_dbfs": -5.1,
+    "sources": [
+      {
+        "freesound_id": 76804,
+        "title": "AE0090 Volvo 740 GLE handbrake turn 01.flac",
+        "author": "audible-edge",
+        "source_url": "https://freesound.org/people/audible-edge/sounds/76804/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Reifenquietschen Volvo 740 (Handbremswende), Ausschnitt ab 8.12 s, Hochpass 350 Hz",
+    "seam_check": {
+      "flux": 0.46,
+      "level": 0.4
+    }
+  },
+  {
+    "file": "car/tire_squeal_loop_2.ogg",
+    "kind": "tire_squeal",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 1.0,
+    "channels": 1,
+    "lufs": -18.0,
+    "peak_dbfs": -1.47,
+    "sources": [
+      {
+        "freesound_id": 71738,
+        "title": "Chrysler LHS tire squeal 03 (04-25-2009).wav",
+        "author": "audible-edge",
+        "source_url": "https://freesound.org/people/audible-edge/sounds/71738/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Reifenquietschen Chrysler LHS in Kurve, Ausschnitt ab 9.62 s, Hochpass 350 Hz",
+    "seam_check": {
+      "flux": 0.51,
+      "level": 0.24
+    }
+  },
+  {
+    "file": "car/roll_asphalt_loop.ogg",
+    "kind": "rolling",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 4.0,
+    "channels": 1,
+    "lufs": -18.0,
+    "peak_dbfs": -2.68,
+    "sources": [
+      {
+        "freesound_id": 817389,
+        "title": "Tire noise on the highway / Bruit des pneus sur l'autoroute",
+        "author": "ViveleVent",
+        "source_url": "https://freesound.org/people/ViveleVent/sounds/817389/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Reifen-Abrollgeraeusch Asphalt (Autobahn, im Innenraum aufgenommen), ab 32.50 s; Lautstaerke/Tonhoehe mit Geschwindigkeit skalieren",
+    "seam_check": {
+      "flux": 0.89,
+      "level": 0.62
+    }
+  },
+  {
+    "file": "car/roll_cobble_loop.ogg",
+    "kind": "rolling",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 4.0,
+    "channels": 1,
+    "lufs": -18.0,
+    "peak_dbfs": -2.27,
+    "sources": [
+      {
+        "freesound_id": 591078,
+        "title": "Car rolling on cobblestone.wav",
+        "author": "orlandorizo",
+        "source_url": "https://freesound.org/people/orlandorizo/sounds/591078/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Kopfsteinpflaster (Kleinwagen, Innenraum, Klappern/Stoesse), ab 32.20 s",
+    "seam_check": {
+      "flux": 0.35,
+      "level": 0.38
+    }
+  },
+  {
+    "file": "car/wind_loop.ogg",
+    "kind": "wind",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 5.0,
+    "channels": 1,
+    "lufs": -18.0,
+    "peak_dbfs": -5.79,
+    "sources": [
+      {
+        "freesound_id": 439242,
+        "title": "Car Strong Wind Noise.mp3",
+        "author": "FunWithSound",
+        "source_url": "https://freesound.org/people/FunWithSound/sounds/439242/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Fahrtwind am offenen Fenster bei hoher Geschwindigkeit, ab 17.20 s",
+    "seam_check": {
+      "flux": 0.8,
+      "level": 0.78
+    }
+  },
+  {
+    "file": "impact/impact_light_1.ogg",
+    "kind": "impact_light",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.91,
+    "channels": 1,
+    "lufs": -20.5,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 798843,
+        "title": "MTLimpt_Metal Impact Medium Bang Resonate x17",
+        "author": "harrisonlace",
+        "source_url": "https://freesound.org/people/harrisonlace/sounds/798843/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Leichter Blechschlag (Hand auf Karosserie), Schnitt ab 2.83 s",
+    "source_time_s": 2.83
+  },
+  {
+    "file": "impact/impact_light_2.ogg",
+    "kind": "impact_light",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.91,
+    "channels": 1,
+    "lufs": -18.5,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 798843,
+        "title": "MTLimpt_Metal Impact Medium Bang Resonate x17",
+        "author": "harrisonlace",
+        "source_url": "https://freesound.org/people/harrisonlace/sounds/798843/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Leichter Blechschlag (Hand auf Karosserie), Schnitt ab 11.23 s",
+    "source_time_s": 11.23
+  },
+  {
+    "file": "impact/impact_light_3.ogg",
+    "kind": "impact_light",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.91,
+    "channels": 1,
+    "lufs": -22.4,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 798843,
+        "title": "MTLimpt_Metal Impact Medium Bang Resonate x17",
+        "author": "harrisonlace",
+        "source_url": "https://freesound.org/people/harrisonlace/sounds/798843/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Leichter Blechschlag (Hand auf Karosserie), Schnitt ab 12.53 s",
+    "source_time_s": 12.53
+  },
+  {
+    "file": "impact/impact_light_4.ogg",
+    "kind": "impact_light",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.91,
+    "channels": 1,
+    "lufs": -17.6,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 798843,
+        "title": "MTLimpt_Metal Impact Medium Bang Resonate x17",
+        "author": "harrisonlace",
+        "source_url": "https://freesound.org/people/harrisonlace/sounds/798843/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Leichter Blechschlag (Hand auf Karosserie), Schnitt ab 13.81 s",
+    "source_time_s": 13.81
+  },
+  {
+    "file": "impact/impact_heavy_1.ogg",
+    "kind": "impact_heavy",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 3.6,
+    "channels": 1,
+    "lufs": -21.9,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 237375,
+        "title": "Car Crash",
+        "author": "squareal",
+        "source_url": "https://freesound.org/people/squareal/sounds/237375/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Schwerer Crash (geschichtet: Blech, Splitt, Glas)"
+  },
+  {
+    "file": "impact/impact_heavy_2.ogg",
+    "kind": "impact_heavy",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 2.2,
+    "channels": 1,
+    "lufs": -17.0,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 592388,
+        "title": "Car Crash (with Glass)",
+        "author": "magnuswaker",
+        "source_url": "https://freesound.org/people/magnuswaker/sounds/592388/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Schwerer Crash mit Glas (Blechpaneele)"
+  },
+  {
+    "file": "impact/impact_heavy_3.ogg",
+    "kind": "impact_heavy",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 2.4,
+    "channels": 1,
+    "lufs": -22.3,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 329516,
+        "title": "Hood Impact",
+        "author": "LPA134",
+        "source_url": "https://freesound.org/people/LPA134/sounds/329516/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Motorhaube zugeknallt (Tiefgarage, Nachhall gekuerzt); Clipping-Anteil Quelle 0.003 %"
+  },
+  {
+    "file": "impact/impact_heavy_4.ogg",
+    "kind": "impact_heavy",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 1.85,
+    "channels": 1,
+    "lufs": -18.0,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 449062,
+        "title": "Car accident. Real. Interior.",
+        "author": "softwalls",
+        "source_url": "https://freesound.org/people/softwalls/sounds/449062/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Echter Auffahrunfall, Innenraum (Original uebersteuert); Clipping-Anteil Quelle 0.025 %"
+  },
+  {
+    "file": "impact/glass_break_1.ogg",
+    "kind": "glass",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 1.15,
+    "channels": 1,
+    "lufs": -19.4,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 221528,
+        "title": "Glass Break",
+        "author": "unfa",
+        "source_url": "https://freesound.org/people/unfa/sounds/221528/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Glasscheibe zerschlagen (Stein)"
+  },
+  {
+    "file": "impact/glass_break_2.ogg",
+    "kind": "glass",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 1.43,
+    "channels": 1,
+    "lufs": -11.9,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 244238,
+        "title": "Glass Smash.wav",
+        "author": "chewiesmissus",
+        "source_url": "https://freesound.org/people/chewiesmissus/sounds/244238/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Glas zerschmettern"
+  },
+  {
+    "file": "impact/bump_1.ogg",
+    "kind": "bump",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.65,
+    "channels": 1,
+    "lufs": -17.4,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 591079,
+        "title": "Car rolling on asphalt .wav",
+        "author": "orlandorizo",
+        "source_url": "https://freesound.org/people/orlandorizo/sounds/591079/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Fahrwerksschlag (Schlagloch/Gullydeckel, Innenraum Kleinwagen), Schnitt ab 32.29 s, Anstieg 15 dB",
+    "source_time_s": 32.29
+  },
+  {
+    "file": "impact/bump_2.ogg",
+    "kind": "bump",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.65,
+    "channels": 1,
+    "lufs": -20.9,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 591079,
+        "title": "Car rolling on asphalt .wav",
+        "author": "orlandorizo",
+        "source_url": "https://freesound.org/people/orlandorizo/sounds/591079/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Fahrwerksschlag (Schlagloch/Gullydeckel, Innenraum Kleinwagen), Schnitt ab 50.15 s, Anstieg 16 dB",
+    "source_time_s": 50.15
+  },
+  {
+    "file": "impact/bump_3.ogg",
+    "kind": "bump",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 0.65,
+    "channels": 1,
+    "lufs": -21.1,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 591079,
+        "title": "Car rolling on asphalt .wav",
+        "author": "orlandorizo",
+        "source_url": "https://freesound.org/people/orlandorizo/sounds/591079/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Fahrwerksschlag (Schlagloch/Gullydeckel, Innenraum Kleinwagen), Schnitt ab 86.72 s, Anstieg 14 dB",
+    "source_time_s": 86.72
+  },
+  {
+    "file": "impact/rumble_grid.ogg",
+    "kind": "bump",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 1.75,
+    "channels": 1,
+    "lufs": -21.5,
+    "peak_dbfs": -1.0,
+    "sources": [
+      {
+        "freesound_id": 345595,
+        "title": "car goes over cattle grid 2.WAV",
+        "author": "soundtracvkradio",
+        "source_url": "https://freesound.org/people/soundtracvkradio/sounds/345595/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Ueberfahren eines Viehgitters (Rumpelserie, z. B. fuer Bordstein-/Schwellenrumpeln)"
+  },
+  {
+    "file": "bus/bus_idle_loop.ogg",
+    "kind": "bus_idle",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 3.0,
+    "channels": 1,
+    "lufs": -18.0,
+    "peak_dbfs": -5.6,
+    "sources": [
+      {
+        "freesound_id": 504866,
+        "title": "bus idle to drive off.wav",
+        "author": "rabbydaw",
+        "source_url": "https://freesound.org/people/rabbydaw/sounds/504866/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Linienbus (Diesel) Leerlauf, aussen, ab 3.20 s",
+    "seam_check": {
+      "flux": 0.82,
+      "level": 0.54
+    }
+  },
+  {
+    "file": "bus/bus_drive_loop.ogg",
+    "kind": "bus_drive",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 1.7241,
+    "channels": 1,
+    "lufs": -18.0,
+    "peak_dbfs": -3.4,
+    "sources": [
+      {
+        "freesound_id": 504866,
+        "title": "bus idle to drive off.wav",
+        "author": "rabbydaw",
+        "source_url": "https://freesound.org/people/rabbydaw/sounds/504866/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Linienbus beim Anfahren unter Last (aussen), 11,2-13,8 s, Grundlinie 76.6 Hz auf konstant geglaettet (Schwankung 2.38 %); Drehzahl unbekannt (Zylinderzahl unbekannt)",
+    "seam_check": {
+      "flux": 0.56,
+      "level": 0.33
+    },
+    "line_hz": 76.56
+  },
+  {
+    "file": "bus/bus_air_release_1.ogg",
+    "kind": "bus_air",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 1.2,
+    "channels": 1,
+    "lufs": -16.3,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 454420,
+        "title": "bus coach ext pull up brake air release idle.wav",
+        "author": "kyles",
+        "source_url": "https://freesound.org/people/kyles/sounds/454420/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Reisebus aussen: Druckluft ablassen (4.15-5.35 s); fuer Tuer-Zischen und Absenken (Kneeling) verwendbar"
+  },
+  {
+    "file": "bus/bus_air_release_2.ogg",
+    "kind": "bus_air",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 1.15,
+    "channels": 1,
+    "lufs": -16.2,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 454420,
+        "title": "bus coach ext pull up brake air release idle.wav",
+        "author": "kyles",
+        "source_url": "https://freesound.org/people/kyles/sounds/454420/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Reisebus aussen: Druckluft ablassen (10.85-12.00 s); fuer Tuer-Zischen und Absenken (Kneeling) verwendbar"
+  },
+  {
+    "file": "bus/bus_brake_squeal.ogg",
+    "kind": "bus_brake",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 1.3,
+    "channels": 1,
+    "lufs": -10.7,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 454420,
+        "title": "bus coach ext pull up brake air release idle.wav",
+        "author": "kyles",
+        "source_url": "https://freesound.org/people/kyles/sounds/454420/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Reisebus aussen: Bremsenquietschen beim Anhalten (0,05-1,35 s)"
+  },
+  {
+    "file": "bus/bus_door_open.ogg",
+    "kind": "bus_door",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 1.6,
+    "channels": 1,
+    "lufs": -22.9,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 534977,
+        "title": "busdoor.mp3",
+        "author": "BabelFishTank",
+        "source_url": "https://freesound.org/people/BabelFishTank/sounds/534977/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Bustuer oeffnet (Druckluft), Haltestelle, ca. 1 m entfernt"
+  },
+  {
+    "file": "bus/bus_door_close.ogg",
+    "kind": "bus_door",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 4.8,
+    "channels": 1,
+    "lufs": -26.0,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 520753,
+        "title": "Bus Closing Door",
+        "author": "am7",
+        "source_url": "https://freesound.org/people/am7/sounds/520753/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Bustuer schliesst: Druckluftzischen + Anschlag (im Bus aufgenommen)"
+  },
+  {
+    "file": "tram/tram_bell_1.ogg",
+    "kind": "tram_bell",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 1.15,
+    "channels": 1,
+    "lufs": -19.4,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 543825,
+        "title": "FXSaSc Berlin Tram Train Ring Bell Alexanderplatz.wav",
+        "author": "Profispiesser",
+        "source_url": "https://freesound.org/people/Profispiesser/sounds/543825/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Strassenbahnklingel Berlin (Alexanderplatz), ein Schlag"
+  },
+  {
+    "file": "tram/tram_bell_2.ogg",
+    "kind": "tram_bell",
+    "rpm": null,
+    "load": "none",
+    "loop": false,
+    "duration": 1.82,
+    "channels": 1,
+    "lufs": -14.3,
+    "peak_dbfs": -3.0,
+    "sources": [
+      {
+        "freesound_id": 497561,
+        "title": "11-3 Tram bell",
+        "author": "16HPanskaWillheimova_Sara",
+        "source_url": "https://freesound.org/people/16HPanskaWillheimova_Sara/sounds/497561/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Strassenbahnklingel (Prag), Klingelfolge"
+  },
+  {
+    "file": "tram/tram_drive_loop.ogg",
+    "kind": "tram_drive",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 6.0,
+    "channels": 1,
+    "lufs": -18.0,
+    "peak_dbfs": -1.66,
+    "sources": [
+      {
+        "freesound_id": 718062,
+        "title": "20231227 - Essen Strassenbahn from Herzogstrasse to Herbertshof",
+        "author": "LG",
+        "source_url": "https://freesound.org/people/LG/sounds/718062/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Strassenbahn Essen, Fahrt (Innenraum: Fahrmotor + Schienenrollen), ab 122.30 s; fuer die Aussenwirkung mit Distanz-Tiefpass abspielen",
+    "seam_check": {
+      "flux": 0.76,
+      "level": 0.51
+    }
+  },
+  {
+    "file": "ambience/amb_city_day.ogg",
+    "kind": "ambience",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 45.0,
+    "channels": 2,
+    "lufs": -20.0,
+    "peak_dbfs": -1.53,
+    "sources": [
+      {
+        "freesound_id": 852125,
+        "title": "Leipzig Inner City Midday Soundscape in Spring",
+        "author": "Garuda1982",
+        "source_url": "https://freesound.org/people/Garuda1982/sounds/852125/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Innenstadt Leipzig, Mittag im Fruehling (Verkehr, Stimmen, Vogel), ab 6.0 s",
+    "seam_check": {
+      "flux": 0.42,
+      "level": 0.52
+    }
+  },
+  {
+    "file": "ambience/amb_park_day.ogg",
+    "kind": "ambience",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 45.0,
+    "channels": 2,
+    "lufs": -22.0,
+    "peak_dbfs": -6.89,
+    "sources": [
+      {
+        "freesound_id": 686798,
+        "title": "leipzig city park with street background in springtime",
+        "author": "Garuda1982",
+        "source_url": "https://freesound.org/people/Garuda1982/sounds/686798/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Stadtpark Leipzig mit Strasse im Hintergrund, Fruehling (Voegel), ab 113.0 s",
+    "seam_check": {
+      "flux": 0.43,
+      "level": 0.5
+    }
+  },
+  {
+    "file": "ambience/amb_city_night.ogg",
+    "kind": "ambience",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 45.0,
+    "channels": 2,
+    "lufs": -26.0,
+    "peak_dbfs": -9.84,
+    "sources": [
+      {
+        "freesound_id": 427841,
+        "title": "Ambience City Quiet Night Air Tone",
+        "author": "leonelmail",
+        "source_url": "https://freesound.org/people/leonelmail/sounds/427841/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Stadt nachts, ruhiger Grundton (ferner Verkehr), ab 49.5 s",
+    "seam_check": {
+      "flux": 0.93,
+      "level": 0.31
+    }
+  },
+  {
+    "file": "ambience/amb_city_night_2.ogg",
+    "kind": "ambience",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 22.0,
+    "channels": 2,
+    "lufs": -26.0,
+    "peak_dbfs": -13.36,
+    "sources": [
+      {
+        "freesound_id": 454822,
+        "title": "Ambience city night DPA semibinaural",
+        "author": "Nimlos",
+        "source_url": "https://freesound.org/people/Nimlos/sounds/454822/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Stadt nachts nahe Wohnhaus (semibinaural, DPA 4060), ab 3.5 s",
+    "seam_check": {
+      "flux": 0.9,
+      "level": 0.48
+    }
+  },
+  {
+    "file": "ambience/amb_rain.ogg",
+    "kind": "ambience",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 40.0,
+    "channels": 2,
+    "lufs": -22.0,
+    "peak_dbfs": -1.25,
+    "sources": [
+      {
+        "freesound_id": 177479,
+        "title": "Slowly Raining Loop",
+        "author": "unfa",
+        "source_url": "https://freesound.org/people/unfa/sounds/177479/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Regen auf Balkon, Stadt (Warschau), ab 26.5 s",
+    "seam_check": {
+      "flux": 0.87,
+      "level": 0.66
+    }
+  },
+  {
+    "file": "ambience/amb_river.ogg",
+    "kind": "ambience",
+    "rpm": null,
+    "load": "none",
+    "loop": true,
+    "duration": 45.0,
+    "channels": 2,
+    "lufs": -24.0,
+    "peak_dbfs": -5.86,
+    "sources": [
+      {
+        "freesound_id": 686343,
+        "title": "River Bank in Biała Góra upon Pilica.wav",
+        "author": "MaciekKubera",
+        "source_url": "https://freesound.org/people/MaciekKubera/sounds/686343/",
+        "license": "CC0 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "note": "Flussufer (Pilica, Polen): Voegel, Wind in Baeumen/Gras, ab 18.0 s",
+    "seam_check": {
+      "flux": 0.64,
+      "level": 0.28
+    }
+  }
+]

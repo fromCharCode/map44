@@ -1,0 +1,791 @@
+{
+  "generator": "tools/blender/stops/build_stops.py (Texturen: make_stop_textures.py)",
+  "coordinates": "Godot-Koordinaten in Metern, +Y oben, Vorderseite (Gleis/Fahrbahn) = -Z, Ursprung am Fußpunkt. footprint = Bodenprojektion der Bounding-Box. Anker: position = Modellraum, local_position = relativ zum Elternknoten, normal = Blickrichtung (lokale +Z des Leerknotens), size = [Breite, Höhe] der Text-/Anzeigefläche.",
+  "models": {
+    "dvb_mast.glb": {
+      "file": "dvb_mast.glb",
+      "tris": 1040,
+      "bbox_min": [
+        -0.043,
+        0.0,
+        -0.125
+      ],
+      "bbox_max": [
+        0.101,
+        3.418,
+        0.698
+      ],
+      "height": 3.418,
+      "footprint": {
+        "width_x": 0.144,
+        "depth_z": 0.823
+      },
+      "materials": [
+        "SignFrame",
+        "SignPrint",
+        "SignYellow",
+        "StopGlass",
+        "StopPole",
+        "TimetableFrame"
+      ],
+      "anchors": {
+        "Anchor_Name": {
+          "parent": "Head",
+          "position": [
+            0.014,
+            2.822,
+            0.398
+          ],
+          "normal": [
+            1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            0.014,
+            0.092,
+            -0.0
+          ],
+          "size": [
+            0.54,
+            0.176
+          ],
+          "note": "Haltestellenname, 1-2 Zeilen, schwarz, Versalhöhe 45-55 mm"
+        },
+        "Anchor_Name_Back": {
+          "parent": "Head",
+          "position": [
+            -0.014,
+            2.822,
+            0.398
+          ],
+          "normal": [
+            -1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            -0.014,
+            0.092,
+            -0.0
+          ],
+          "size": [
+            0.54,
+            0.176
+          ],
+          "note": "Haltestellenname, 1-2 Zeilen, schwarz, Versalhöhe 45-55 mm"
+        },
+        "Anchor_Platform": {
+          "parent": "Head",
+          "position": [
+            0.014,
+            3.315,
+            0.22
+          ],
+          "normal": [
+            1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            0.014,
+            0.585,
+            -0.178
+          ],
+          "size": [
+            0.16,
+            0.035
+          ],
+          "note": "„Steig n“, dunkelgrau #4A4A4A, Versalhöhe 25-30 mm, rechtsbündig"
+        },
+        "Anchor_Platform_Back": {
+          "parent": "Head",
+          "position": [
+            -0.014,
+            3.315,
+            0.576
+          ],
+          "normal": [
+            -1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            -0.014,
+            0.585,
+            0.178
+          ],
+          "size": [
+            0.16,
+            0.035
+          ],
+          "note": "„Steig n“, dunkelgrau #4A4A4A, Versalhöhe 25-30 mm, rechtsbündig"
+        },
+        "Anchor_Row0": {
+          "parent": "LineRow",
+          "position": [
+            0.014,
+            2.682,
+            0.398
+          ],
+          "normal": [
+            1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            0.014,
+            -0.048,
+            -0.0
+          ],
+          "size": [
+            0.54,
+            0.096
+          ],
+          "note": "Linienzeile: Nummer fett links (Versalhöhe 55-60 mm), Ziel rechts daneben (22-28 mm)"
+        },
+        "Anchor_Row0_Back": {
+          "parent": "LineRow",
+          "position": [
+            -0.014,
+            2.682,
+            0.398
+          ],
+          "normal": [
+            -1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            -0.014,
+            -0.048,
+            -0.0
+          ],
+          "size": [
+            0.54,
+            0.096
+          ],
+          "note": "Linienzeile: Nummer fett links (Versalhöhe 55-60 mm), Ziel rechts daneben (22-28 mm)"
+        }
+      },
+      "notes": "DVB-Haltestellenmast mit Schildfahne (Generation ab ca. 2021: weißer Kopf mit gelbem Schwung, Zeichen 224, Name/Linien auf Gelb). Fahne doppelseitig, Fläche in der Godot-YZ-Ebene (Normalen ±X), hängt auf der +Z-Seite des Masts (vom Gleis weg, freier Lichtraum). Für die andere Seite die Instanz um 180° um Y drehen. Material SignYellow der LineRow kann für rote Sonderlinien (#C8312A) überschrieben werden.",
+      "sign": {
+        "outer_width": 0.6,
+        "text_width": 0.54,
+        "center_z": 0.398,
+        "face_x": 0.012,
+        "top_y": 3.37,
+        "stack_top_y": 2.73,
+        "row_pitch": 0.1,
+        "row_text_height": 0.096,
+        "footer_height": 0.12,
+        "dfi_module_height": 0.28,
+        "module_origins": "Head: Unterkante Namensfeld; LineRow/Footer/DfiModule: jeweilige Oberkante; alle bei (x=0, z=center_z)",
+        "row_rule": "Zeile i (0-basiert): LineRow duplizieren, position = (0, stack_top_y - i*row_pitch, center_z). Anchor_Row0/_Back wandern als Kinder mit.",
+        "footer_rule": "Footer.position.y = stack_top_y - n_rows*row_pitch - (dfi ? dfi_module_height : 0)",
+        "dfi_rule": "dfi_small.glb als Kind der Mast-Instanz (Identität), Knoten DfiModule.position.y = stack_top_y - n_rows*row_pitch",
+        "bottom_y_examples": {
+          "1": 2.51,
+          "2": 2.41,
+          "3": 2.31,
+          "4": 2.21,
+          "6": 2.01,
+          "3+dfi": 2.03
+        },
+        "note_height": "Unterkante soll >= 2,20 m bleiben (Lichtraum Gehweg); ab 5 Zeilen ggf. ganze Fahne anheben oder zweite Fahne/Stele verwenden"
+      },
+      "timetable": {
+        "center_y": 1.3,
+        "size": [
+          0.25,
+          0.34
+        ],
+        "face": "+X",
+        "stack_pitch": 0.38,
+        "note": "weitere Kästen: Timetable duplizieren, position.y -= stack_pitch (Mitte 1,2-1,4 m)"
+      },
+      "mast": {
+        "diameter": 0.076,
+        "height": 3.4
+      },
+      "ground_footprint": {
+        "width_x": 0.076,
+        "depth_z": 0.076,
+        "note": "nur das Rohr steht am Boden"
+      },
+      "size_bytes": 172292
+    },
+    "dfi_small.glb": {
+      "file": "dfi_small.glb",
+      "tris": 76,
+      "bbox_min": [
+        -0.016,
+        2.35,
+        0.098
+      ],
+      "bbox_max": [
+        0.016,
+        2.63,
+        0.698
+      ],
+      "height": 2.63,
+      "footprint": {
+        "width_x": 0.032,
+        "depth_z": 0.6
+      },
+      "materials": [
+        "DfiEmit",
+        "SignFrame",
+        "SignYellow"
+      ],
+      "anchors": {
+        "Anchor_Display": {
+          "parent": "DfiModule",
+          "position": [
+            0.0155,
+            2.495,
+            0.398
+          ],
+          "normal": [
+            1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            0.0155,
+            -0.135,
+            -0.0
+          ],
+          "size": [
+            0.46,
+            0.19
+          ],
+          "note": "LED amber #FFA51F auf Schwarz, 3-4 Zeilen (Linie, Ziel, Minuten)"
+        },
+        "Anchor_Display_Back": {
+          "parent": "DfiModule",
+          "position": [
+            -0.0155,
+            2.495,
+            0.398
+          ],
+          "normal": [
+            -1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            -0.0155,
+            -0.135,
+            -0.0
+          ],
+          "size": [
+            0.46,
+            0.19
+          ],
+          "note": "LED amber #FFA51F auf Schwarz, 3-4 Zeilen (Linie, Ziel, Minuten)"
+        }
+      },
+      "notes": "Kleine LED-Abfahrtsanzeige als Modul der Haltestellenfahne (wie Cotta, Gottfried-Keller-Str.). Gleiches Koordinatensystem wie dvb_mast.glb: als Kind der Mast-Instanz einsetzen, dann DfiModule.position.y = sign.stack_top_y - n_rows*row_pitch und Footer zusätzlich um module_height absenken. Doppelseitig. DfiEmit-Fläche hat UV 0..1 in Leserichtung.",
+      "module_height": 0.28,
+      "display": {
+        "width": 0.46,
+        "height": 0.19
+      },
+      "default_position_y": 2.63,
+      "size_bytes": 8544
+    },
+    "dfi_large.glb": {
+      "file": "dfi_large.glb",
+      "tris": 452,
+      "bbox_min": [
+        -0.13,
+        0.0,
+        -0.13
+      ],
+      "bbox_max": [
+        0.13,
+        3.685,
+        1.64
+      ],
+      "height": 3.685,
+      "footprint": {
+        "width_x": 0.26,
+        "depth_z": 1.77
+      },
+      "materials": [
+        "DfiEmit",
+        "DfiHousing",
+        "DfiPanel",
+        "StopPole"
+      ],
+      "anchors": {
+        "Anchor_Display": {
+          "parent": null,
+          "position": [
+            0.083,
+            3.0,
+            0.63
+          ],
+          "normal": [
+            1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            0.083,
+            3.0,
+            0.63
+          ],
+          "size": [
+            0.8,
+            0.7
+          ],
+          "note": "LED amber #FFA51F, Kopfzeile + 6 Zeilen: Linie | Ziel | Minuten (sofort)"
+        },
+        "Anchor_Display_Back": {
+          "parent": null,
+          "position": [
+            -0.083,
+            3.0,
+            0.63
+          ],
+          "normal": [
+            -1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            -0.083,
+            3.0,
+            0.63
+          ],
+          "size": [
+            0.8,
+            0.7
+          ],
+          "note": "Rückseite, gleicher Inhalt"
+        }
+      },
+      "notes": "Große LED-Abfahrtstafel am L-Mast (Bestand wie Schillerplatz): gelbes Gehäuse 1,44 x 0,80 x 0,16 m, Unterkante 2,60 m, schwarze Anzeige am Mastende, Analoguhr am freien Ende. Doppelseitig, Anzeigeflächen in der Godot-YZ-Ebene (Normalen ±X). Mast (Ø 140 mm) steht am Ursprung (Bahnsteigkante), Ausleger zeigt nach Godot +Z (vom Gleis weg).",
+      "display": {
+        "width": 0.8,
+        "height": 0.7,
+        "uv": "0..1 in Leserichtung je Seite"
+      },
+      "ground_footprint": {
+        "width_x": 0.26,
+        "depth_z": 0.26,
+        "note": "Fußflansch; Ausleger in 2,6-3,7 m Höhe"
+      },
+      "housing": {
+        "width": 1.44,
+        "height": 0.8,
+        "depth": 0.16,
+        "bottom_y": 2.6
+      },
+      "size_bytes": 55184
+    },
+    "wall_shelter.glb": {
+      "file": "wall_shelter.glb",
+      "tris": 374,
+      "bbox_min": [
+        -2.0,
+        0.0,
+        -0.75
+      ],
+      "bbox_max": [
+        2.0,
+        2.665,
+        0.75
+      ],
+      "height": 2.665,
+      "footprint": {
+        "width_x": 4.0,
+        "depth_z": 1.5
+      },
+      "materials": [
+        "BenchSeat",
+        "CityLightFrame",
+        "InfoBoard",
+        "NameBlende",
+        "PosterEmit",
+        "ShelterLightEmit",
+        "StopGlass",
+        "StopSteel"
+      ],
+      "anchors": {
+        "Anchor_Name": {
+          "parent": null,
+          "position": [
+            -0.9,
+            2.58,
+            -0.742
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "local_position": [
+            -0.9,
+            2.58,
+            -0.742
+          ],
+          "size": [
+            1.9,
+            0.13
+          ],
+          "note": "Haltestellenname schwarz, Grotesk, Versalhöhe ≈ 70 mm, linksbündig"
+        },
+        "Anchor_Name_Back": {
+          "parent": null,
+          "position": [
+            -0.9,
+            2.58,
+            -0.658
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "local_position": [
+            -0.9,
+            2.58,
+            -0.658
+          ],
+          "size": [
+            1.9,
+            0.13
+          ],
+          "note": "Rückseite (Gehweg)"
+        },
+        "Anchor_Light": {
+          "parent": null,
+          "position": [
+            0.0,
+            2.35,
+            -0.0
+          ],
+          "normal": [
+            0.0,
+            -1.0,
+            -0.0
+          ],
+          "local_position": [
+            0.0,
+            2.35,
+            -0.0
+          ],
+          "note": "Lichtquelle der Dach-LED (nachts OmniLight/SpotLight nach unten)"
+        },
+        "Anchor_Poster": {
+          "parent": null,
+          "position": [
+            1.92,
+            1.075,
+            -0.05
+          ],
+          "normal": [
+            1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            1.92,
+            1.075,
+            -0.05
+          ],
+          "size": [
+            1.19,
+            1.75
+          ],
+          "note": "City-Light-Plakat 4/1 (UV 0..1 auf PosterEmit, z. B. Zelle aus posters.png)"
+        },
+        "Anchor_Poster_Back": {
+          "parent": null,
+          "position": [
+            1.75,
+            1.075,
+            -0.05
+          ],
+          "normal": [
+            -1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            1.75,
+            1.075,
+            -0.05
+          ],
+          "size": [
+            1.19,
+            1.75
+          ],
+          "note": "City-Light-Plakat 4/1 (UV 0..1 auf PosterEmit, z. B. Zelle aus posters.png)"
+        }
+      },
+      "notes": "Wall/JCDecaux-Wartehalle Typ W1 (Flachdach-Glashalle): anthrazit #3D4241, Glasdach, Glasrückwand mit Riegel bei 1,05 m, offene Front zum Gleis (Godot -Z). Godot -X-Ende: Glasseitenwand + gelb-orange Namensblende auf dem Dach; +X-Ende: doppelseitige City-Light-Vitrine (PosterEmit, nachts leuchtend). Infovitrine (InfoBoard) innen an der Rückwand, Edelstahlsitzbank. ShelterLightEmit = LED-Leiste unter dem Dach.",
+      "length": 4.0,
+      "fields": 3,
+      "name_blende": {
+        "width": 2.0,
+        "height": 0.16,
+        "text_area": [
+          1.9,
+          0.13
+        ]
+      },
+      "poster": {
+        "width": 1.19,
+        "height": 1.75,
+        "uv": "0..1 in Leserichtung je Seite"
+      },
+      "size_bytes": 91412
+    },
+    "wall_shelter_long.glb": {
+      "file": "wall_shelter_long.glb",
+      "tris": 456,
+      "bbox_min": [
+        -3.0,
+        0.0,
+        -0.75
+      ],
+      "bbox_max": [
+        3.0,
+        2.665,
+        0.75
+      ],
+      "height": 2.665,
+      "footprint": {
+        "width_x": 6.0,
+        "depth_z": 1.5
+      },
+      "materials": [
+        "BenchSeat",
+        "CityLightFrame",
+        "InfoBoard",
+        "NameBlende",
+        "PosterEmit",
+        "ShelterLightEmit",
+        "StopGlass",
+        "StopSteel"
+      ],
+      "anchors": {
+        "Anchor_Name": {
+          "parent": null,
+          "position": [
+            -1.9,
+            2.58,
+            -0.742
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "local_position": [
+            -1.9,
+            2.58,
+            -0.742
+          ],
+          "size": [
+            1.9,
+            0.13
+          ],
+          "note": "Haltestellenname schwarz, Grotesk, Versalhöhe ≈ 70 mm, linksbündig"
+        },
+        "Anchor_Name_Back": {
+          "parent": null,
+          "position": [
+            -1.9,
+            2.58,
+            -0.658
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "local_position": [
+            -1.9,
+            2.58,
+            -0.658
+          ],
+          "size": [
+            1.9,
+            0.13
+          ],
+          "note": "Rückseite (Gehweg)"
+        },
+        "Anchor_Light": {
+          "parent": null,
+          "position": [
+            0.0,
+            2.35,
+            -0.0
+          ],
+          "normal": [
+            0.0,
+            -1.0,
+            -0.0
+          ],
+          "local_position": [
+            0.0,
+            2.35,
+            -0.0
+          ],
+          "note": "Lichtquelle der Dach-LED (nachts OmniLight/SpotLight nach unten)"
+        },
+        "Anchor_Poster": {
+          "parent": null,
+          "position": [
+            2.92,
+            1.075,
+            -0.05
+          ],
+          "normal": [
+            1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            2.92,
+            1.075,
+            -0.05
+          ],
+          "size": [
+            1.19,
+            1.75
+          ],
+          "note": "City-Light-Plakat 4/1 (UV 0..1 auf PosterEmit, z. B. Zelle aus posters.png)"
+        },
+        "Anchor_Poster_Back": {
+          "parent": null,
+          "position": [
+            2.75,
+            1.075,
+            -0.05
+          ],
+          "normal": [
+            -1.0,
+            0.0,
+            -0.0
+          ],
+          "local_position": [
+            2.75,
+            1.075,
+            -0.05
+          ],
+          "size": [
+            1.19,
+            1.75
+          ],
+          "note": "City-Light-Plakat 4/1 (UV 0..1 auf PosterEmit, z. B. Zelle aus posters.png)"
+        }
+      },
+      "notes": "Wall/JCDecaux-Wartehalle Typ W1 (Flachdach-Glashalle): anthrazit #3D4241, Glasdach, Glasrückwand mit Riegel bei 1,05 m, offene Front zum Gleis (Godot -Z). Godot -X-Ende: Glasseitenwand + gelb-orange Namensblende auf dem Dach; +X-Ende: doppelseitige City-Light-Vitrine (PosterEmit, nachts leuchtend). Infovitrine (InfoBoard) innen an der Rückwand, Edelstahlsitzbank. ShelterLightEmit = LED-Leiste unter dem Dach.",
+      "length": 6.0,
+      "fields": 4,
+      "name_blende": {
+        "width": 2.0,
+        "height": 0.16,
+        "text_area": [
+          1.9,
+          0.13
+        ]
+      },
+      "poster": {
+        "width": 1.19,
+        "height": 1.75,
+        "uv": "0..1 in Leserichtung je Seite"
+      },
+      "size_bytes": 97348
+    },
+    "platform_rail.glb": {
+      "file": "platform_rail.glb",
+      "tris": 304,
+      "bbox_min": [
+        -1.02,
+        -0.0001,
+        -0.07
+      ],
+      "bbox_max": [
+        1.02,
+        1.025,
+        0.07
+      ],
+      "height": 1.0,
+      "footprint": {
+        "width_x": 2.04,
+        "depth_z": 0.14
+      },
+      "materials": [
+        "RailPanel",
+        "RailSteel"
+      ],
+      "anchors": {},
+      "notes": "Schutzgitter-Segment wie an Dresdner Haltestelleninseln (z. B. Julius-Vahlteich-Straße): Rundrohrrahmen Ø 50 mm anthrazit mit gebogenen oberen Ecken, graue Blech-Füllplatte, Fußplatten. Länge entlang Godot X, im Raster segment_length aneinanderreihen (10 cm Fuge zwischen den Rahmen ist Absicht). Symmetrisch, Vorderseite (Fahrbahn) = Godot -Z.",
+      "segment_length": 2.0,
+      "size_bytes": 17276
+    },
+    "stop_bin.glb": {
+      "file": "stop_bin.glb",
+      "tris": 188,
+      "bbox_min": [
+        -0.1795,
+        0.0,
+        -0.1795
+      ],
+      "bbox_max": [
+        0.1795,
+        1.0738,
+        0.1795
+      ],
+      "height": 1.074,
+      "footprint": {
+        "width_x": 0.359,
+        "depth_z": 0.359
+      },
+      "materials": [
+        "BinBase",
+        "BinInside",
+        "BinLid",
+        "BinSteel"
+      ],
+      "anchors": {},
+      "notes": "Edelstahl-Abfallbehälter Ø 0,35 m mit schräg abgeschnittenem Deckel (Tram-Bahnsteige, z. B. Walpurgisstraße). Einwurf (dunkel) unter der niedrigen Deckelkante vorn = Godot -Z.",
+      "size_bytes": 11008
+    },
+    "stop_bin_city.glb": {
+      "file": "stop_bin_city.glb",
+      "tris": 46,
+      "bbox_min": [
+        -0.25,
+        0.0,
+        -0.2
+      ],
+      "bbox_max": [
+        0.25,
+        0.95,
+        0.2
+      ],
+      "height": 0.95,
+      "footprint": {
+        "width_x": 0.5,
+        "depth_z": 0.4
+      },
+      "materials": [
+        "BinBase",
+        "BinGrey",
+        "BinInside",
+        "BinLidOrange"
+      ],
+      "anchors": {},
+      "notes": "Abfallbehälter der Stadtreinigung: grauer, nach unten verjüngter Korpus, oranger Deckel mit Einwurfhaube vorn (Godot -Z), ≈ 0,45 x 0,35 x 0,95 m (z. B. Fritz-Förster-Platz).",
+      "size_bytes": 7128
+    }
+  }
+}

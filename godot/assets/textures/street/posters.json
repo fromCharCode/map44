@@ -1,0 +1,63 @@
+{
+ "texture": "res://assets/textures/street/posters.png",
+ "grid": [
+  4,
+  2
+ ],
+ "cell_px": [
+  512,
+  724
+ ],
+ "layout": "Zellindex i: Spalte i mod 4, Zeile i div 4, Zeile 0 oben; UV 0..1 = ganze Zelle (Godot-UV.y=0 oben).",
+ "note": "Hochformat (A-Format 1:√2) für Litfaßsäulen/Wände. Frei erfundene Inhalte, Schriften OFL.",
+ "cells": {
+  "konzert": {
+   "index": 0,
+   "col": 0,
+   "row": 0,
+   "desc": "Open-Air-Konzert 'Elbufer-Sommer'"
+  },
+  "theater": {
+   "index": 1,
+   "col": 1,
+   "row": 0,
+   "desc": "Theater 'Die Nacht der Brücken'"
+  },
+  "ausstellung": {
+   "index": 2,
+   "col": 2,
+   "row": 0,
+   "desc": "Fotoausstellung 'Licht und Sandstein'"
+  },
+  "stadtfest": {
+   "index": 3,
+   "col": 3,
+   "row": 0,
+   "desc": "Altstadtfest mit Wimpeln"
+  },
+  "zirkus": {
+   "index": 4,
+   "col": 0,
+   "row": 1,
+   "desc": "Circus Fiorello"
+  },
+  "kino": {
+   "index": 5,
+   "col": 1,
+   "row": 1,
+   "desc": "Kinofilm 'Der letzte Dampfer'"
+  },
+  "party": {
+   "index": 6,
+   "col": 2,
+   "row": 1,
+   "desc": "Clubnacht 'Kellerlicht'"
+  },
+  "wahl": {
+   "index": 7,
+   "col": 3,
+   "row": 1,
+   "desc": "Wahlaufruf 'Wählen gehen!' (parteineutral)"
+  }
+ }
+}

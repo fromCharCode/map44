@@ -1,0 +1,452 @@
+[
+  {
+    "file": "bench.glb",
+    "height": 0.93,
+    "radius_or_width": 1.8,
+    "tris": 508,
+    "bbox_min": [
+      -0.9,
+      -0.0,
+      -0.43
+    ],
+    "bbox_max": [
+      0.9,
+      0.93,
+      0.36
+    ],
+    "notes": "Parkbank 1.8 m breit, Sitzflaeche schaut nach +Y(Blender)=-Z(Godot). Material Wood (UV-Textur) + MetalDark.",
+    "size_bytes": 117800
+  },
+  {
+    "file": "bike_rack.glb",
+    "height": 0.84,
+    "radius_or_width": 3.14,
+    "tris": 2064,
+    "bbox_min": [
+      -1.57,
+      0.0,
+      -0.05
+    ],
+    "bbox_max": [
+      1.57,
+      0.84,
+      0.05
+    ],
+    "notes": "4 Anlehnbuegel in Reihe entlang X, 0.8 m Abstand; Buegel in der XZ-Ebene.",
+    "size_bytes": 61136
+  },
+  {
+    "file": "bin.glb",
+    "height": 0.93,
+    "radius_or_width": 0.46,
+    "tris": 624,
+    "bbox_min": [
+      -0.23,
+      0.0,
+      -0.23
+    ],
+    "bbox_max": [
+      0.23,
+      0.93,
+      0.23
+    ],
+    "notes": "Muelleimer, Einwurfoeffnung zeigt nach +Y(Blender)=-Z(Godot).",
+    "size_bytes": 23364
+  },
+  {
+    "file": "bollard.glb",
+    "height": 0.9,
+    "radius_or_width": 0.17,
+    "tris": 336,
+    "bbox_min": [
+      -0.09,
+      0.0,
+      -0.09
+    ],
+    "bbox_max": [
+      0.09,
+      0.9,
+      0.09
+    ],
+    "notes": "Poller 0.9 m.",
+    "size_bytes": 10844
+  },
+  {
+    "file": "bus_stop.glb",
+    "height": 3.01,
+    "radius_or_width": 4.4,
+    "tris": 584,
+    "bbox_min": [
+      -1.85,
+      0.0,
+      -1.03
+    ],
+    "bbox_max": [
+      2.55,
+      3.01,
+      0.95
+    ],
+    "notes": "Wartehalle 3.2x1.45 m (Ruecken -Y, offene Seite/Fahrgaeste zeigen +Y(Blender)=-Z(Godot)) + Haltestellenmast mit gelber H-Scheibe (SignYellow) rechts daneben (x=+2.3). Glass = alpha-transparent.",
+    "size_bytes": 132840
+  },
+  {
+    "file": "sign_pole.glb",
+    "height": 2.62,
+    "radius_or_width": 0.62,
+    "tris": 292,
+    "bbox_min": [
+      -0.31,
+      0.0,
+      -0.07
+    ],
+    "bbox_max": [
+      0.31,
+      2.62,
+      0.05
+    ],
+    "notes": "Mast + runde Schildflaeche d=0.6 m (Material Sign, UV 0..1 planar, zeigt nach +Y(Blender)=-Z(Godot)). Schild-Mittelpunkt auf 2.2 m.",
+    "size_bytes": 13324
+  },
+  {
+    "file": "streetlamp.glb",
+    "height": 7.93,
+    "radius_or_width": 3.13,
+    "tris": 1328,
+    "bbox_min": [
+      -0.19,
+      0.0,
+      -2.95
+    ],
+    "bbox_max": [
+      0.19,
+      7.93,
+      0.19
+    ],
+    "notes": "Peitschenleuchte; Ausleger zeigt nach +Y(Blender)=-Z(Godot); Material LampEmit = Leuchtplatte unter dem Kopf (Emission 0).",
+    "size_bytes": 36948
+  },
+  {
+    "file": "streetlamp_old.glb",
+    "height": 4.21,
+    "radius_or_width": 0.84,
+    "tris": 1116,
+    "bbox_min": [
+      -0.42,
+      0.0,
+      -0.22
+    ],
+    "bbox_max": [
+      0.42,
+      4.21,
+      0.22
+    ],
+    "notes": "Gaslaternen-Optik fuer Altstadt; LampEmit = Glasscheiben der Laterne (Emission 0).",
+    "size_bytes": 34884
+  },
+  {
+    "file": "traffic_light.glb",
+    "height": 6.06,
+    "radius_or_width": 5.6,
+    "tris": 2212,
+    "bbox_min": [
+      -0.23,
+      0.0,
+      -0.47
+    ],
+    "bbox_max": [
+      5.37,
+      6.06,
+      0.19
+    ],
+    "notes": "Mast bei Ursprung, Ausleger +X ueber die Strasse (5.3 m), Signalkoepfe leuchten nach +Y(Blender)=-Z(Godot); 3 Koepfe (2 am Ausleger, 1 Repeater am Mast). Materialien LightRed/Yellow/Green Emission 0.",
+    "size_bytes": 82224
+  },
+  {
+    "file": "traffic_light_ped.glb",
+    "height": 2.88,
+    "radius_or_width": 0.37,
+    "tris": 384,
+    "bbox_min": [
+      -0.16,
+      0.0,
+      -0.25
+    ],
+    "bbox_max": [
+      0.16,
+      2.88,
+      0.12
+    ],
+    "notes": "Fussgaengerampel, Lichter zeigen nach +Y(Blender)=-Z(Godot). PedRed oben, PedGreen unten (Emission 0). UV der Linsen 0..1 fuer Symboltexturen.",
+    "size_bytes": 21240
+  },
+  {
+    "file": "tram.glb",
+    "height": 4.36,
+    "radius_or_width": 44.55,
+    "tris": 6844,
+    "bbox_min": [
+      -1.22,
+      0.0,
+      -22.27
+    ],
+    "bbox_max": [
+      1.22,
+      4.36,
+      22.27
+    ],
+    "notes": "Niederflurbahn (NGT-aehnlich) 5 Wagenkaesten + 4 Gelenkbaelge, 45.1 m lang, 2.4 m breit, Front = -Z(Godot)=+Y(Blender), Mitte im Ursprung, Raeder starr, Gleisoberkante z=0. TramPaint (gelb), TramWhite (Dachstreifen), Glass (alpha), PlasticBlack, HeadlightEmit (vorn), TaillightEmit (hinten), Interior (inkl. Sitze Interior_Seat).",
+    "size_bytes": 353928
+  },
+  {
+    "file": "tram_pole.glb",
+    "height": 7.5,
+    "radius_or_width": 4.0,
+    "tris": 556,
+    "bbox_min": [
+      -0.22,
+      0.0,
+      -2.0
+    ],
+    "bbox_max": [
+      3.2,
+      7.5,
+      2.0
+    ],
+    "notes": "Oberleitungsmast 7.5 m, Ausleger +X (3.2 m), Fahrdraht-Stummel entlang Y bei x=3.0, z=6.4; Spielcode verbindet Masten.",
+    "size_bytes": 20920
+  },
+  {
+    "file": "tree_linden.glb",
+    "height": 17.53,
+    "radius_or_width": 13.41,
+    "tris": 16061,
+    "bbox_min": [
+      -7.0,
+      -0.08,
+      -6.04
+    ],
+    "bbox_max": [
+      6.42,
+      17.44,
+      6.57
+    ],
+    "notes": "Baum, Materialien Bark + Leaves (Alpha-Scissor 0.45, doppelseitig, COLOR_0 = AO/Farbvariation je Karte, Normalen kugelfoermig nach aussen). Ursprung Stammfuss. Hoehe/Breite inkl. Krone.",
+    "size_bytes": 1982124
+  },
+  {
+    "file": "tree_linden_b.glb",
+    "height": 19.5,
+    "radius_or_width": 10.09,
+    "tris": 16947,
+    "bbox_min": [
+      -4.73,
+      -0.08,
+      -4.71
+    ],
+    "bbox_max": [
+      5.16,
+      19.42,
+      5.38
+    ],
+    "notes": "Baum, Materialien Bark + Leaves (Alpha-Scissor 0.45, doppelseitig, COLOR_0 = AO/Farbvariation je Karte, Normalen kugelfoermig nach aussen). Ursprung Stammfuss. Hoehe/Breite inkl. Krone.",
+    "size_bytes": 2010144
+  },
+  {
+    "file": "tree_maple.glb",
+    "height": 15.08,
+    "radius_or_width": 14.88,
+    "tris": 13943,
+    "bbox_min": [
+      -7.71,
+      -0.42,
+      -7.27
+    ],
+    "bbox_max": [
+      7.17,
+      14.65,
+      6.06
+    ],
+    "notes": "Baum, Materialien Bark + Leaves (Alpha-Scissor 0.45, doppelseitig, COLOR_0 = AO/Farbvariation je Karte, Normalen kugelfoermig nach aussen). Ursprung Stammfuss. Hoehe/Breite inkl. Krone.",
+    "size_bytes": 1820292
+  },
+  {
+    "file": "tree_maple_b.glb",
+    "height": 16.53,
+    "radius_or_width": 12.23,
+    "tris": 13645,
+    "bbox_min": [
+      -5.88,
+      -0.08,
+      -6.04
+    ],
+    "bbox_max": [
+      6.36,
+      16.45,
+      6.1
+    ],
+    "notes": "Baum, Materialien Bark + Leaves (Alpha-Scissor 0.45, doppelseitig, COLOR_0 = AO/Farbvariation je Karte, Normalen kugelfoermig nach aussen). Ursprung Stammfuss. Hoehe/Breite inkl. Krone.",
+    "size_bytes": 1766512
+  },
+  {
+    "file": "tree_pine.glb",
+    "height": 16.56,
+    "radius_or_width": 11.34,
+    "tris": 5821,
+    "bbox_min": [
+      -3.89,
+      -0.07,
+      -5.16
+    ],
+    "bbox_max": [
+      6.56,
+      16.49,
+      6.18
+    ],
+    "notes": "Baum, Materialien Bark + Leaves (Alpha-Scissor 0.45, doppelseitig, COLOR_0 = AO/Farbvariation je Karte, Normalen kugelfoermig nach aussen). Ursprung Stammfuss. Hoehe/Breite inkl. Krone.",
+    "size_bytes": 1099032
+  },
+  {
+    "file": "tree_pine_b.glb",
+    "height": 15.02,
+    "radius_or_width": 11.15,
+    "tris": 9888,
+    "bbox_min": [
+      -5.71,
+      -0.01,
+      -5.46
+    ],
+    "bbox_max": [
+      5.29,
+      15.02,
+      5.68
+    ],
+    "notes": "Baum, Materialien Bark + Leaves (Alpha-Scissor 0.45, doppelseitig, COLOR_0 = AO/Farbvariation je Karte, Normalen kugelfoermig nach aussen). Ursprung Stammfuss. Hoehe/Breite inkl. Krone.",
+    "size_bytes": 1370760
+  },
+  {
+    "file": "tree_plane.glb",
+    "height": 20.54,
+    "radius_or_width": 17.85,
+    "tris": 13619,
+    "bbox_min": [
+      -8.06,
+      -0.1,
+      -9.39
+    ],
+    "bbox_max": [
+      7.87,
+      20.44,
+      8.46
+    ],
+    "notes": "Baum, Materialien Bark + Leaves (Alpha-Scissor 0.45, doppelseitig, COLOR_0 = AO/Farbvariation je Karte, Normalen kugelfoermig nach aussen). Ursprung Stammfuss. Hoehe/Breite inkl. Krone.",
+    "size_bytes": 1841728
+  },
+  {
+    "file": "tree_plane_b.glb",
+    "height": 18.43,
+    "radius_or_width": 16.45,
+    "tris": 11415,
+    "bbox_min": [
+      -7.89,
+      -0.09,
+      -8.69
+    ],
+    "bbox_max": [
+      7.84,
+      18.34,
+      7.76
+    ],
+    "notes": "Baum, Materialien Bark + Leaves (Alpha-Scissor 0.45, doppelseitig, COLOR_0 = AO/Farbvariation je Karte, Normalen kugelfoermig nach aussen). Ursprung Stammfuss. Hoehe/Breite inkl. Krone.",
+    "size_bytes": 1724292
+  },
+  {
+    "file": "tree_small.glb",
+    "height": 4.83,
+    "radius_or_width": 4.43,
+    "tris": 4640,
+    "bbox_min": [
+      -2.19,
+      -0.06,
+      -1.9
+    ],
+    "bbox_max": [
+      2.24,
+      4.77,
+      2.22
+    ],
+    "notes": "Baum, Materialien Bark + Leaves (Alpha-Scissor 0.45, doppelseitig, COLOR_0 = AO/Farbvariation je Karte, Normalen kugelfoermig nach aussen). Ursprung Stammfuss. Hoehe/Breite inkl. Krone.",
+    "size_bytes": 1022660
+  },
+  {
+    "file": "tree_small_b.glb",
+    "height": 4.61,
+    "radius_or_width": 4.01,
+    "tris": 4035,
+    "bbox_min": [
+      -2.29,
+      -0.06,
+      -2.12
+    ],
+    "bbox_max": [
+      1.72,
+      4.55,
+      1.85
+    ],
+    "notes": "Baum, Materialien Bark + Leaves (Alpha-Scissor 0.45, doppelseitig, COLOR_0 = AO/Farbvariation je Karte, Normalen kugelfoermig nach aussen). Ursprung Stammfuss. Hoehe/Breite inkl. Krone.",
+    "size_bytes": 981788
+  },
+  {
+    "file": "tram_sections.glb",
+    "height": 4.36,
+    "radius_or_width": 2.4,
+    "length": 44.55,
+    "tris": 6972,
+    "section_centers_z_godot": [
+      -17.2,
+      -8.6,
+      -0.0,
+      8.6,
+      17.2
+    ],
+    "section_pitch_m": 8.6,
+    "section_body_length_m": 7.1,
+    "notes": "Godot-Wurzelknoten (heisst nach Dateiname, bei Bedarf in Tram umbenennen) mit direkten Kindern Section_0..4 (Node3D, Ursprung = Wagenmitte auf Gleisoberkante, Section_0 vorn bei -Z). Mittenabstand 8.6 m. Halbe Faltenbaelge an beiden Enden jedes Abschnitts. Materialien wie tram.glb.",
+    "size_bytes": 356264
+  },
+  {
+    "file": "dampfer.glb",
+    "height": 12.5,
+    "radius_or_width": 12.68,
+    "length": 62.0,
+    "tris": 47232,
+    "bbox_min": [
+      -6.34,
+      -1.4,
+      -31.0
+    ],
+    "bbox_max": [
+      6.34,
+      12.5,
+      32.22
+    ],
+    "nodes": [
+      "Dampfer",
+      "Hull",
+      "Superstructure",
+      "Railings",
+      "Lifeboats",
+      "Fittings",
+      "PaddleL",
+      "PaddleR",
+      "FunnelFront",
+      "FunnelBack",
+      "SmokeFront",
+      "SmokeBack",
+      "BowWave",
+      "WakeL",
+      "WakeR"
+    ],
+    "notes": "Raddampfer 62 m, Bug = -Z(Godot). Wasserlinie y=0, Tiefgang -1.4, Hauptdeck 1.6, Oberdeck 4.4, Schornsteinspitzen 12.5. PaddleL/PaddleR: Ursprung auf Radachse (x=+-3.95,y=1.3,z=0), Drehachse lokal X. FunnelFront/Back: Ursprung am Fuss. Empties SmokeFront/Back (Schornsteinoeffnung), BowWave (Bug, Wasserlinie), WakeL/WakeR (hinter Radkaesten). Materialien: HullWhite, HullDark, HullRed, DeckWood (Plankentextur eingebettet), Funnel, FunnelBand, Glass, Metal, Trim, Paddle, FlagGreen, FlagWhite, Rope. Heckflagge ragt bis z=-32.2 ueber den Rumpf hinaus.",
+    "size_bytes": 2160380
+  }
+]

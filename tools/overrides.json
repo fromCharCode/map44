@@ -1,0 +1,28 @@
+{
+ "_doc": "Manuelle Korrekturen, wo offene Daten nachweislich falsch sind (Quelle je Eintrag angeben).",
+ "osm_elevated": {
+  "307294168": {
+   "min_height": 7.0,
+   "height": 11.3,
+   "roof_colour": "#5f8f7a",
+   "colour": "#d2c5a6",
+   "_src": "Übergang Schloss-Hofkirche, G. Donath, Sächsische Heimatblätter 3/2020: Unterkante ~7 m, Höhe 4,3 m"
+  }
+ },
+ "lod2_roof_colour": {
+  "DESNATPU1000Fpnt": {
+   "colour": "#a9bcc6",
+   "_src": "Kleiner Schlosshof: Glas-/Membrandach statt Ziegel"
+  }
+ },
+ "skip_barriers": [
+  248661852,
+  1203064588
+ ],
+ "skip_bridge_parts": [
+  "DESNATPU10001FdR",
+  "DESNATPU10001qAc",
+  "DESNATPU10004Bgu"
+ ],
+ "skip_bridge_parts_note": "Carolabrücke: Teileinsturz 11.09.2024, Abriss 2025 (data/research/bruecken.md); LoD2-Daten zeigen noch den Altbestand"
+}

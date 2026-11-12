@@ -1,0 +1,187 @@
+{
+  "atlas": "graffiti.png",
+  "grid": [
+    4,
+    2
+  ],
+  "cell_px": 512,
+  "size_px": [
+    2048,
+    1024
+  ],
+  "uv_convention": "uv_rect = [u0, v0, u1, v1], Ursprung oben links (Godot-UV), v nach unten",
+  "orientation": "waagerecht, Bildoberkante = oben an der Wand; je Zelle >= 20 px transparenter Rand",
+  "size_m": "empfohlene Kantenlaenge einer Zelle an der Wand in Metern (Inhalt ist kleiner, siehe content_px = [x0, y0, x1, y1] innerhalb der Zelle)",
+  "zone": "Erdgeschoss ca. 0.3 - 2.4 m; Zellmitte sinnvoll bei 0.9 - 1.5 m",
+  "content": "frei erfundene Buchstabenfolgen/Motive, keine echten Namen, Marken oder politischen Symbole",
+  "cells": [
+    {
+      "index": 0,
+      "col": 0,
+      "row": 0,
+      "name": "tag_a",
+      "type": "tag",
+      "label": "Tag, schwarz, schnell mit Unterschwung",
+      "uv_rect": [
+        0.0,
+        0.0,
+        0.25,
+        0.5
+      ],
+      "size_m": 1.2,
+      "content_px": [
+        33,
+        161,
+        483,
+        386
+      ]
+    },
+    {
+      "index": 1,
+      "col": 1,
+      "row": 0,
+      "name": "tag_b",
+      "type": "tag",
+      "label": "Tag, silber, schmale hohe Buchstaben mit Pfeil",
+      "uv_rect": [
+        0.25,
+        0.0,
+        0.5,
+        0.5
+      ],
+      "size_m": 1.1,
+      "content_px": [
+        47,
+        155,
+        463,
+        385
+      ]
+    },
+    {
+      "index": 2,
+      "col": 2,
+      "row": 0,
+      "name": "tag_c",
+      "type": "tag",
+      "label": "Tag, blau, breit und huepfend mit Sternchen",
+      "uv_rect": [
+        0.5,
+        0.0,
+        0.75,
+        0.5
+      ],
+      "size_m": 1.0,
+      "content_px": [
+        46,
+        160,
+        463,
+        361
+      ]
+    },
+    {
+      "index": 3,
+      "col": 3,
+      "row": 0,
+      "name": "throwup_a",
+      "type": "throwup",
+      "label": "Throw-up, Silber mit schwarzer Kontur",
+      "uv_rect": [
+        0.75,
+        0.0,
+        1.0,
+        0.5
+      ],
+      "size_m": 1.8,
+      "content_px": [
+        84,
+        150,
+        429,
+        377
+      ]
+    },
+    {
+      "index": 4,
+      "col": 0,
+      "row": 1,
+      "name": "throwup_b",
+      "type": "throwup",
+      "label": "Throw-up, Pink mit schwarzer Kontur",
+      "uv_rect": [
+        0.0,
+        0.5,
+        0.25,
+        1.0
+      ],
+      "size_m": 1.7,
+      "content_px": [
+        85,
+        160,
+        401,
+        393
+      ]
+    },
+    {
+      "index": 5,
+      "col": 1,
+      "row": 1,
+      "name": "stencil",
+      "type": "stencil",
+      "label": "Schablone: Vogel auf Ast (schwarz) + kleines Herz (rot)",
+      "uv_rect": [
+        0.25,
+        0.5,
+        0.5,
+        1.0
+      ],
+      "size_m": 0.6,
+      "content_px": [
+        59,
+        99,
+        435,
+        396
+      ]
+    },
+    {
+      "index": 6,
+      "col": 2,
+      "row": 1,
+      "name": "pasteup_stickers",
+      "type": "pasteup",
+      "label": "Paste-up (Comicfigur auf Papier) + Stickergruppe",
+      "uv_rect": [
+        0.5,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "size_m": 0.8,
+      "content_px": [
+        66,
+        80,
+        484,
+        467
+      ]
+    },
+    {
+      "index": 7,
+      "col": 3,
+      "row": 1,
+      "name": "scribbles_drips",
+      "type": "scribble",
+      "label": "Kritzel, Marker, Spruehnebel und Laeufer",
+      "uv_rect": [
+        0.75,
+        0.5,
+        1.0,
+        1.0
+      ],
+      "size_m": 1.6,
+      "content_px": [
+        44,
+        96,
+        466,
+        446
+      ]
+    }
+  ]
+}

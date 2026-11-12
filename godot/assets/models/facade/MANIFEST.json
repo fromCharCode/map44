@@ -1,0 +1,258 @@
+[
+  {
+    "file": "awning.glb",
+    "height": 0.77,
+    "width": 1.0,
+    "depth": 1.335,
+    "bbox_min": [
+      -0.5,
+      0.0,
+      -1.335
+    ],
+    "bbox_max": [
+      0.5,
+      0.77,
+      -0.0
+    ],
+    "tris": 158,
+    "materials": [
+      "Paint",
+      "Iron"
+    ],
+    "mount_top_y": 0.77,
+    "projection": 1.335,
+    "notes": "Gelenkarm-Markise ausgefahren, 1.0-m-Modul (in X skalieren), Ausfall 1.3 m, Neigung ~17°, Bogen-Volant 0.26 m. Paint (Stoff, doppelseitig): U = 0..1 über die Modulbreite (aus Straßensicht links -> rechts, also lokal +X -> -X), V = 0 an der Wand .. 0.75 Vorderkante Tuch .. 1.0 Volant-Unterkante. Arme sitzen bei x=±0.455 und wandern beim Skalieren mit an die Enden. Ursprung = tiefster Volantpunkt; mount_top_y = Oberkante Kassette über Ursprung.",
+    "size_bytes": 11952
+  },
+  {
+    "file": "awning_shop_sign_board.glb",
+    "height": 0.6,
+    "width": 1.0,
+    "depth": 0.06,
+    "bbox_min": [
+      -0.5,
+      -0.3,
+      -0.06
+    ],
+    "bbox_max": [
+      0.5,
+      0.3,
+      -0.0
+    ],
+    "tris": 12,
+    "materials": [
+      "SignBoard"
+    ],
+    "origin": "Mitte Rückseite",
+    "front_z": -0.06,
+    "notes": "Ladenschild-Tafel 1.0 x 0.6 x 0.06 m, Material SignBoard, Vorderseite +Y(Blender) = -Z(Godot) mit UV 0..1 (u wächst aus Sicht des Betrachters vor der Tafel nach rechts = lokal -X, v nach oben); Ränder mappen auf schmale Randstreifen. Ursprung = Mitte der Rückseite (Höhe -0.3..0.3, Vorderseite bei Godot z=-0.06). In X skalieren.",
+    "size_bytes": 2032
+  },
+  {
+    "file": "balcony_gruenderzeit.glb",
+    "height": 1.75,
+    "width": 2.44,
+    "depth": 1.02,
+    "bbox_min": [
+      -1.22,
+      0.0,
+      -1.02
+    ],
+    "bbox_max": [
+      1.22,
+      1.75,
+      -0.0
+    ],
+    "tris": 444,
+    "materials": [
+      "Sandstone",
+      "Iron"
+    ],
+    "floor_y": 0.76,
+    "rail_top_y": 1.75,
+    "notes": "Gründerzeit-Balkon 2.4 x 1.0 m: Sandsteinplatte (3-fach gestuft) auf 3 Volutenkonsolen, Schmiedeeisengeländer ~1 m (Alpha-Karten, Material Iron doppelseitig mit Alpha-Scissor). floor_y = Gehfläche über Ursprung (Ursprung = Konsolenunterkante).",
+    "size_bytes": 1418944
+  },
+  {
+    "file": "balcony_modern.glb",
+    "height": 1.202,
+    "width": 3.04,
+    "depth": 1.42,
+    "bbox_min": [
+      -1.52,
+      0.0,
+      -1.42
+    ],
+    "bbox_max": [
+      1.52,
+      1.202,
+      -0.0
+    ],
+    "tris": 210,
+    "materials": [
+      "Concrete",
+      "Iron",
+      "GlassClear"
+    ],
+    "floor_y": 0.18,
+    "rail_top_y": 1.202,
+    "notes": "Moderner Balkon 3.0 x 1.4 m: Betonplatte 18 cm mit Stirnblech, Flachstahlpfosten, Rundrohr-Handlauf, Glasfüllungen (GlassClear: Alpha-Blend, doppelseitig).",
+    "size_bytes": 879672
+  },
+  {
+    "file": "balcony_rail_french.glb",
+    "height": 0.96,
+    "width": 1.28,
+    "depth": 0.13,
+    "bbox_min": [
+      -0.64,
+      0.0,
+      -0.13
+    ],
+    "bbox_max": [
+      0.64,
+      0.96,
+      -0.0
+    ],
+    "tris": 86,
+    "materials": [
+      "Iron"
+    ],
+    "rail_top_y": 0.96,
+    "notes": "Französischer Balkon: nur Schmiedeeisengeländer 1.2 m breit, 0.10 m vor der Wand, 4 Wandhalter; Ursprung = Unterkante Geländer (auf Fensterbrüstung/Boden setzen).",
+    "size_bytes": 396584
+  },
+  {
+    "file": "door_modern.glb",
+    "height": 3.12,
+    "width": 1.6,
+    "depth": 1.0,
+    "bbox_min": [
+      -0.8,
+      0.0,
+      -1.0
+    ],
+    "bbox_max": [
+      0.8,
+      3.12,
+      -0.0
+    ],
+    "tris": 248,
+    "materials": [
+      "Iron",
+      "Steel",
+      "Glass",
+      "GlassClear"
+    ],
+    "door_opening_wh": [
+      1.06,
+      2.21
+    ],
+    "canopy_y": 2.55,
+    "notes": "Moderne Haustür Alu (anthrazit) mit Glasfüllung 1.2 x 2.3 m, Edelstahl-Stoßgriff, Klingeltableau rechts, Glasvordach 1.6 x 1.0 m auf Höhe 2.55 m (canopy_y) mit zwei Zugstangen. Glass opak/dunkel, GlassClear (Vordach) transparent.",
+    "size_bytes": 19544
+  },
+  {
+    "file": "door_portal.glb",
+    "height": 3.32,
+    "width": 1.9,
+    "depth": 0.64,
+    "bbox_min": [
+      -0.95,
+      0.0,
+      -0.64
+    ],
+    "bbox_max": [
+      0.95,
+      3.32,
+      -0.0
+    ],
+    "tris": 370,
+    "materials": [
+      "Sandstone",
+      "Wood",
+      "Glass",
+      "Iron"
+    ],
+    "threshold_y": 0.32,
+    "door_opening_wh": [
+      1.3,
+      2.68
+    ],
+    "notes": "Gründerzeit-Hauseingang: zweiflügelige Eichentür mit Kassetten, Glasfeldern und Oberlicht, Sandsteingewände 1.6 x 3.0 m (ab Schwelle) mit Verdachung und Schlussstein, 15 cm Vorsprung (Verdachung 23 cm), 2 Sandsteinstufen davor (1.9 m breit, 0.64 m tief). Ursprung = Gehweg vor der untersten Stufe; Schwelle bei threshold_y. Glass = opak/dunkel spiegelnd; Iron hier = Messing-Beschlag.",
+    "size_bytes": 1902904
+  },
+  {
+    "file": "loggia_platte.glb",
+    "height": 1.1,
+    "width": 2.98,
+    "depth": 0.1,
+    "bbox_min": [
+      -1.49,
+      0.0,
+      -0.1
+    ],
+    "bbox_max": [
+      1.49,
+      1.1,
+      -0.0
+    ],
+    "tris": 18,
+    "materials": [
+      "Concrete"
+    ],
+    "notes": "DDR-Plattenbau-Loggiabrüstung (WBS 70) als Vorsatz: Waschbetonplatte 2.98 x 1.10 m, 10 cm Vorsprung, gefaste Kanten; bei 3.0 m Raster bleibt eine 2-cm-Plattenfuge. Concrete-Textur = Waschbeton, Kachel 0.5 m.",
+    "size_bytes": 927824
+  },
+  {
+    "file": "loggia_platte_riffel.glb",
+    "height": 1.1,
+    "width": 2.98,
+    "depth": 0.1,
+    "bbox_min": [
+      -1.49,
+      0.0,
+      -0.1
+    ],
+    "bbox_max": [
+      1.49,
+      1.1,
+      -0.0
+    ],
+    "tris": 320,
+    "materials": [
+      "Concrete"
+    ],
+    "notes": "Variante: Loggiabrüstung mit senkrechten Trapezrippen (Riffelbeton, Raster 6 cm), 2.98 x 1.10 m, 10 cm Vorsprung, glatte Bänder oben/unten.",
+    "size_bytes": 887312
+  },
+  {
+    "file": "shop_window_frame.glb",
+    "height": 2.6,
+    "width": 2.5,
+    "depth": 0.1,
+    "bbox_min": [
+      -1.25,
+      0.0,
+      -0.1
+    ],
+    "bbox_max": [
+      1.25,
+      2.6,
+      -0.0
+    ],
+    "tris": 86,
+    "materials": [
+      "Iron",
+      "ShopGlass"
+    ],
+    "glass_main_x0y0x1y1": [
+      -1.17,
+      0.41,
+      1.17,
+      2.06
+    ],
+    "notes": "Schaufenster-Modul 2.5 x 2.6 m, 8 cm Vorsprung: dunkler Metallrahmen, Sockelpaneel 0.38 m mit Abdeckung, Kämpfer bei 2.06 m, dreiteiliges Oberlicht. ShopGlass = transparent (Alpha-Blend, einseitig) 3.5 cm vor der Wand; glass_main_x0y0x1y1 = Hauptscheibe in m (Godot x/y).",
+    "size_bytes": 8304
+  }
+]

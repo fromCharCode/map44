@@ -1,0 +1,137 @@
+[
+  {
+    "name": "asphalt_new",
+    "source_id": "Asphalt025C",
+    "source_url": "https://ambientcg.com/view?id=Asphalt025C",
+    "license": "CC0",
+    "tile_size_m": 4
+  },
+  {
+    "name": "asphalt_worn",
+    "source_id": "Asphalt027C",
+    "source_url": "https://ambientcg.com/view?id=Asphalt027C",
+    "license": "CC0",
+    "tile_size_m": 4
+  },
+  {
+    "name": "sidewalk",
+    "source_id": "PavingStones136",
+    "source_url": "https://ambientcg.com/view?id=PavingStones136",
+    "license": "CC0",
+    "tile_size_m": 2
+  },
+  {
+    "name": "cobble",
+    "source_id": "PavingStones070",
+    "source_url": "https://ambientcg.com/view?id=PavingStones070",
+    "license": "CC0",
+    "tile_size_m": 1.15
+  },
+  {
+    "name": "paving_sandstone",
+    "source_id": "PavingStones126A",
+    "source_url": "https://ambientcg.com/view?id=PavingStones126A",
+    "license": "CC0",
+    "tile_size_m": 3.5
+  },
+  {
+    "name": "gravel",
+    "source_id": "Gravel035",
+    "source_url": "https://ambientcg.com/view?id=Gravel035",
+    "license": "CC0",
+    "tile_size_m": 1.9
+  },
+  {
+    "name": "grass",
+    "source_id": "Grass008",
+    "source_url": "https://ambientcg.com/view?id=Grass008",
+    "license": "CC0",
+    "tile_size_m": 2
+  },
+  {
+    "name": "grass_wild",
+    "source_id": "Grass004",
+    "source_url": "https://ambientcg.com/view?id=Grass004",
+    "license": "CC0",
+    "tile_size_m": 1.4
+  },
+  {
+    "name": "forest_floor",
+    "source_id": "ScatteredLeaves009",
+    "source_url": "https://ambientcg.com/view?id=ScatteredLeaves009",
+    "license": "CC0",
+    "tile_size_m": 1.7
+  },
+  {
+    "name": "mud_bank",
+    "source_id": "Ground091",
+    "source_url": "https://ambientcg.com/view?id=Ground091",
+    "license": "CC0",
+    "tile_size_m": 2
+  },
+  {
+    "name": "plaster_a",
+    "source_id": "Plaster002",
+    "source_url": "https://ambientcg.com/view?id=Plaster002",
+    "license": "CC0",
+    "tile_size_m": 2
+  },
+  {
+    "name": "plaster_b",
+    "source_id": "Plaster003",
+    "source_url": "https://ambientcg.com/view?id=Plaster003",
+    "license": "CC0",
+    "tile_size_m": 2
+  },
+  {
+    "name": "brick",
+    "source_id": "Bricks097",
+    "source_url": "https://ambientcg.com/view?id=Bricks097",
+    "license": "CC0",
+    "tile_size_m": 2.0,
+    "aspect_w_to_h": 2
+  },
+  {
+    "name": "sandstone",
+    "source_id": "Bricks084",
+    "source_url": "https://ambientcg.com/view?id=Bricks084",
+    "license": "CC0",
+    "tile_size_m": 2.5,
+    "aspect_w_to_h": 2
+  },
+  {
+    "name": "concrete",
+    "source_id": "Concrete042A",
+    "source_url": "https://ambientcg.com/view?id=Concrete042A",
+    "license": "CC0",
+    "tile_size_m": 2
+  },
+  {
+    "name": "roof_tiles",
+    "source_id": "RoofingTiles014A",
+    "source_url": "https://ambientcg.com/view?id=RoofingTiles014A",
+    "license": "CC0",
+    "tile_size_m": 2.9
+  },
+  {
+    "name": "roof_slate",
+    "source_id": "RoofingTiles003",
+    "source_url": "https://ambientcg.com/view?id=RoofingTiles003",
+    "license": "CC0",
+    "tile_size_m": 1.5
+  },
+  {
+    "name": "roof_flat",
+    "source_id": "Gravel040",
+    "source_url": "https://ambientcg.com/view?id=Gravel040",
+    "license": "CC0",
+    "tile_size_m": 2
+  },
+  {
+    "name": "metal_painted",
+    "source_id": "Metal038",
+    "source_url": "https://ambientcg.com/view?id=Metal038",
+    "license": "CC0",
+    "tile_size_m": 1
+  }
+]
