@@ -26,9 +26,21 @@ irm https://raw.githubusercontent.com/fromCharCode/map44/main/install/install.ps
 Danach starten über Startmenü oder Desktop („Map44 Dresden“). Windows SmartScreen kann beim ersten Start warnen
 (das Spiel ist nicht signiert): „Weitere Informationen“ → „Trotzdem ausführen“.
 
-Beide Installer laden die neueste Version aus den [Releases](https://github.com/fromCharCode/map44/releases), prüfen die
+**macOS 11+** (Apple Silicon und Intel) – im Terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fromCharCode/map44/main/install/install-macos.sh | bash
+```
+
+Die App landet als `Map44` in `~/Applications` (Finder, Launchpad, oder `map44` im Terminal), die Kartendaten im
+Benutzer-Datenordner des Spiels (`~/Library/Application Support/Godot/app_userdata/Dresden/data`). Die App ist nur
+ad-hoc signiert (nicht notarisiert): Meldet macOS beim ersten Start, sie sei nicht verifiziert, unter
+Systemeinstellungen → Datenschutz & Sicherheit „Trotzdem öffnen“ wählen.
+
+Alle Installer laden die neueste Version aus den [Releases](https://github.com/fromCharCode/map44/releases), prüfen die
 Prüfsummen und setzen abgebrochene Downloads fort. Erneut ausführen = Update (die Kartendaten werden nur neu geladen,
-wenn sich ihre Version ändert). Deinstallieren unter Linux: `… install.sh | bash -s -- --uninstall`.
+wenn sich ihre Version ändert). Deinstallieren unter Linux/macOS: `… install.sh | bash -s -- --uninstall` bzw.
+`… install-macos.sh | bash -s -- --uninstall`.
 
 **Manuell:** `map44-<system>-x86_64.zip` aus dem neuesten Release entpacken, die Kartendaten
 `map44-data-*-NN.zip` aus dem zugehörigen Daten-Release (`data-v…`) in denselben Ordner entpacken (es entsteht
@@ -36,7 +48,7 @@ wenn sich ihre Version ändert). Deinstallieren unter Linux: `… install.sh | b
 
 ### Systemanforderungen
 
-- 64-Bit Linux oder Windows 10/11, Grafikkarte mit Vulkan (oder Direct3D 12), ab ~4 GB Grafikspeicher
+- 64-Bit Linux, Windows 10/11 oder macOS 11+ (Apple Silicon/Intel mit Metal), ab ~4 GB Grafikspeicher
 - 8 GB RAM (16 GB empfohlen), rund 8 GB freier Platz
 - Getestet auf AMD RX 6700 XT in 1080p und 4K (FSR 2 wird bei hohen Auflösungen automatisch genutzt)
 

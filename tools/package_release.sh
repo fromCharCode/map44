@@ -7,11 +7,12 @@
 # Ergebnis in dist/:
 #   map44-linux-x86_64.zip      Spiel (Programm + .pck + DATA_VERSION + Lizenzen)
 #   map44-windows-x86_64.zip
+#   map44-macos.zip             Dresden.app (Universal, ad-hoc signiert) + DATA_VERSION; Installer: install-macos.sh
 #   map44-<data-version>-NN.zip Kartendaten (je < 1,9 GB; entpacken nach <Spielordner>/data/…)
 #   SHA256SUMS, map44-<data-version>.sha256
 # Hochladen (Beispiel):
 #   gh release create <data-version> dist/map44-<data-version>-*.zip dist/map44-<data-version>.sha256 --latest=false
-#   gh release create <version> dist/map44-*-x86_64.zip dist/SHA256SUMS
+#   gh release create <version> dist/map44-*-x86_64.zip dist/map44-macos.zip dist/SHA256SUMS
 set -euo pipefail
 cd "$(dirname "$0")/.."
 VER="${1:?Version angeben, z. B. v0.1.0}"
@@ -20,7 +21,7 @@ GODOT="${GODOT:-$HOME/.local/bin/godot}"
 ROOT="$PWD"
 STAGE="$ROOT/build/stage"
 DIST="$ROOT/dist"
-mkdir -p "$DIST" "$ROOT/build/linux" "$ROOT/build/windows"
+mkdir -p "$DIST" "$ROOT/build/linux" "$ROOT/build/windows" "$ROOT/build/macos"
 
 echo "==> Materialtexturen vorbacken (res://texcache)"
 "$GODOT" --headless --path godot -s res://scripts/dev/bake_textures.gd -- --texcache
@@ -28,6 +29,9 @@ echo "==> Materialtexturen vorbacken (res://texcache)"
 echo "==> Exportieren"
 "$GODOT" --headless --path godot --export-release "Linux" "$ROOT/build/linux/map44.x86_64"
 "$GODOT" --headless --path godot --export-release "Windows" "$ROOT/build/windows/map44.exe"
+# macOS: Exportvorlage macos.zip nötig (offizielles Godot-Vorlagenpaket); arm64 verlangt ETC2/ASTC-Import
+rm -f "$ROOT/build/macos/map44.zip"
+"$GODOT" --headless --path godot --export-release "macOS" "$ROOT/build/macos/map44.zip"
 
 echo "==> Datenstufe: Kacheln (nur Laufzeitdateien) + vorgebackene Geländetexturen"
 rm -rf "$STAGE/data"
@@ -58,6 +62,13 @@ for plat in linux windows; do
   cp README.md THIRD_PARTY.md "$P/" 2>/dev/null || true
   (cd "$P" && zip -q -r "$DIST/map44-$plat-x86_64.zip" .)
 done
+# macOS: Godots signiertes App-Zip unverändert übernehmen, DATA_VERSION/Lizenzen daneben anhängen
+P="$ROOT/build/pkg_macos"
+rm -rf "$P" && mkdir -p "$P"
+cp "$ROOT/build/macos/map44.zip" "$DIST/map44-macos.zip"
+echo "$DATA_VER" > "$P/DATA_VERSION"
+cp README.md THIRD_PARTY.md "$P/" 2>/dev/null || true
+(cd "$P" && zip -q "$DIST/map44-macos.zip" DATA_VERSION README.md THIRD_PARTY.md)
 
 echo "==> Datenpakete (je < 1,9 GB)"
 .venv/bin/python - "$STAGE" "$DIST" "$DATA_VER" <<'PY'
@@ -90,6 +101,6 @@ print(f"{part} Datenpakete")
 PY
 
 echo "==> Prüfsummen"
-(cd "$DIST" && sha256sum map44-linux-x86_64.zip map44-windows-x86_64.zip > SHA256SUMS)
+(cd "$DIST" && sha256sum map44-linux-x86_64.zip map44-windows-x86_64.zip map44-macos.zip > SHA256SUMS)
 (cd "$DIST" && sha256sum map44-"$DATA_VER"-*.zip > "map44-$DATA_VER.sha256")
 ls -la "$DIST"
