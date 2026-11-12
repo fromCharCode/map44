@@ -227,8 +227,31 @@ func cover_at(x: float, z: float) -> Color:
 	return cover.get_pixel(px, py)
 
 
+const TUNNEL_CUT := """	if (has_tunnel) {
+		// Gelände im Lichtraum der Tunnelröhre ausblenden (Portalöffnung, flache Abschnitte unter dem Kastendach)
+		vec2 tv = texture(tunnel_tex, huv).rg;
+		if (tv.g > 0.5 && wpos.y < tv.r + 4.9 && wpos.y > tv.r - 3.0) {
+			discard;
+		}
+	}
+"""
+static var _tun_shader: Shader = null
+
+
 func set_tunnel_mask(img: Image) -> void:
-	## Tunnelband (scripts/tunnels.gd): der Shader blendet Gelände im Lichtraum der Röhre aus
+	## Tunnelband (scripts/tunnels.gd): der Shader blendet Gelände im Lichtraum der Röhre aus. Nur Kacheln mit
+	## Tunnel bekommen die Variante mit discard (discard kostet ~0,7 ms GPU, wenn er im Shader aller Kacheln steht).
+	if _tun_shader == null:
+		var code: String = material.shader.code
+		_tun_shader = Shader.new()
+		_tun_shader.code = code.replace("\t//@TUNNEL_CUT\n", TUNNEL_CUT)
+	var vals := {}
+	for u in material.shader.get_shader_uniform_list():
+		vals[u["name"]] = material.get_shader_parameter(u["name"])
+	material.shader = _tun_shader
+	for k in vals:
+		if vals[k] != null:
+			material.set_shader_parameter(k, vals[k])
 	material.set_shader_parameter("tunnel_tex", ImageTexture.create_from_image(img))
 	material.set_shader_parameter("has_tunnel", true)
 

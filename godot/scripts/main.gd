@@ -983,3 +983,4 @@ static func _release_statics() -> void:
 	Stops._mats.clear()
 	Stops._rail_parts.clear()
 	Tunnels._mats.clear()
+	Terrain._tun_shader = null

@@ -108,13 +108,13 @@ func build(k: String, noise: ImageTexture) -> void:
 	roads_node.build(terrain, city, road_index)
 	if Time.get_ticks_msec() - _t_roads_node > 150: print("Kachel %s: roads_node %d ms" % [k, Time.get_ticks_msec() - _t_roads_node])
 
-	if not (city.get("tunnels", []) as Array).is_empty():
+	if not (city.get("tunnels", []) as Array).is_empty() and not OS.has_environment("DRESDEN_NOTUNNELS"):
 		var tunnels := Tunnels.new()
 		tunnels.name = "Tunnels"
 		_mods.append(tunnels)
 		tunnels.build(terrain, city["tunnels"], center_of(e_km, n_km))
 		var tm := tunnels.mask_image()
-		if tm != null:
+		if tm != null and not OS.has_environment("DRESDEN_NOTUNMASK"):
 			terrain.set_tunnel_mask(tm)
 
 	walls = Walls.new()

@@ -26,6 +26,22 @@ var _lights: Array = []              # Leuchtenpositionen (alle 24 m in der Röh
 # Parameter ginge an einer Kopie verloren)
 var _faces := PackedVector3Array()
 var _lid := PackedVector3Array()
+var _axes := {}                      # Vector2i -> [[a, b, hw, kette], …] aller Ketten dieser Kachel
+var _own := -1
+
+
+func _in_other(p: Vector3, margin := 0.3) -> bool:
+	## Liegt p im Lichtraum einer anderen Tunnelkette dieser Kachel?
+	var q := Vector2(p.x, p.z)
+	for e in _axes.get(Vector2i(floori(p.x / CELL), floori(p.z / CELL)), []):
+		if int(e[3]) == _own:
+			continue
+		var a: Vector2 = e[0]
+		var ab: Vector2 = (e[1] as Vector2) - a
+		var t := clampf((q - a).dot(ab) / maxf(ab.length_squared(), 1e-6), 0.0, 1.0)
+		if q.distance_to(a + ab * t) < float(e[2]) - margin:
+			return true
+	return false
 
 
 static func inside(p: Vector3) -> bool:
@@ -111,9 +127,25 @@ func build(t: Terrain, data: Array, ctr: Vector2) -> void:
 		return
 	var x0 := ctr.x - 1000.0
 	var z0 := ctr.y - 1000.0
-	for tn in data:
-		_tunnel(tn, x0, z0)
-	for lp in _lights:
+	# Achsen aller Ketten (Raster 32 m): Wände, die in einer anderen Röhre liegen, entfallen (Zwillingsröhren
+	# dicht nebeneinander, Rampen mit gemeinsamem Portal wie am Waldschlößchen)
+	for ci in data.size():
+		var q: Array = data[ci]["pts"]
+		var hw_o := float(data[ci]["w"]) * 0.5
+		for i in q.size() - 1:
+			var a2 := Vector2(float(q[i][0]), float(q[i][1]))
+			var b2 := Vector2(float(q[i + 1][0]), float(q[i + 1][1]))
+			var e := [a2, b2, hw_o, ci]
+			for cx in range(floori((minf(a2.x, b2.x) - hw_o) / CELL), floori((maxf(a2.x, b2.x) + hw_o) / CELL) + 1):
+				for cz in range(floori((minf(a2.y, b2.y) - hw_o) / CELL), floori((maxf(a2.y, b2.y) + hw_o) / CELL) + 1):
+					var key := Vector2i(cx, cz)
+					if not _axes.has(key):
+						_axes[key] = []
+					(_axes[key] as Array).append(e)
+	for ci in data.size():
+		_own = ci
+		_tunnel(data[ci], x0, z0)
+	for lp in ([] if OS.has_environment("DRESDEN_NOTUNLIGHT") else _lights):
 		var ol := OmniLight3D.new()
 		ol.position = lp
 		ol.omni_range = 15.0
@@ -236,8 +268,12 @@ func _tunnel(tn: Dictionary, x0: float, z0: float) -> void:
 			_q(st["line"], a - na * 0.06 + l2, b - nb * 0.06 + l2, b + nb * 0.06 + l2, a + na * 0.06 + l2, up)
 		# Innenwände (Normalen zur Röhrenmitte), Decke (nach unten), Lichtband
 		var h := Vector3(0, CLEAR, 0)
-		_q(st["wall"], lA, lB, lB + h, lA + h, -na, true)
-		_q(st["wall"], rB, rA, rA + h, rB + h, na, true)
+		var skip_l := _in_other((lA + lB) * 0.5) or _in_other((lA + lB) * 0.5 + (na + nb) * 0.5 * WALL)
+		var skip_r := _in_other((rA + rB) * 0.5) or _in_other((rA + rB) * 0.5 - (na + nb) * 0.5 * WALL)
+		if not skip_l:
+			_q(st["wall"], lA, lB, lB + h, lA + h, -na, true)
+		if not skip_r:
+			_q(st["wall"], rB, rA, rA + h, rB + h, na, true)
 		_q(st["wall"], lA + h, lB + h, rB + h, rA + h, -up, true)
 		var lw := Vector3(0, CLEAR - 0.03, 0)
 		if i % 12 == 0:
@@ -252,8 +288,10 @@ func _tunnel(tn: Dictionary, x0: float, z0: float) -> void:
 			var oLB := b + nb * ow
 			var oRA := a - na * ow
 			var oRB := b - nb * ow
-			_q(st["outer"], oLB + dn, oLA + dn, oLA + top, oLB + top, na, true)
-			_q(st["outer"], oRA + dn, oRB + dn, oRB + top, oRA + top, -na, true)
+			if not skip_l:
+				_q(st["outer"], oLB + dn, oLA + dn, oLA + top, oLB + top, na, true)
+			if not skip_r:
+				_q(st["outer"], oRA + dn, oRB + dn, oRB + top, oRA + top, -na, true)
 			_q(st["outer"], oRA + top, oRB + top, oLB + top, oLA + top, up, true)
 		else:
 			# Kollisionsdeckel über der Röhre in Geländehöhe (Kollisionsraster ist im Band abgesenkt)
@@ -286,8 +324,10 @@ func _tunnel(tn: Dictionary, x0: float, z0: float) -> void:
 		var yc := Vector3(0, CLEAR, 0)
 		var yt := Vector3(0, CLEAR + ROOF + 0.35, 0)
 		# von außen gesehen: Normale = out; Viereck gegen den Uhrzeigersinn
-		_q(st["outer"], p - side * ow + y0, p - side * hw + y0, p - side * hw + yt, p - side * ow + yt, out, true)
-		_q(st["outer"], p + side * hw + y0, p + side * ow + y0, p + side * ow + yt, p + side * hw + yt, out, true)
+		if not _in_other(p - side * (hw + 0.6)):
+			_q(st["outer"], p - side * ow + y0, p - side * hw + y0, p - side * hw + yt, p - side * ow + yt, out, true)
+		if not _in_other(p + side * (hw + 0.6)):
+			_q(st["outer"], p + side * hw + y0, p + side * ow + y0, p + side * ow + yt, p + side * hw + yt, out, true)
 		_q(st["outer"], p - side * hw + yc, p + side * hw + yc, p + side * hw + yt, p - side * hw + yt, out, true)
 		# Brüstungskante oben
 		_q(st["outer"], p - side * ow + yt, p + side * ow + yt, p + side * ow + yt - out * 0.6, p - side * ow + yt - out * 0.6, Vector3.UP)

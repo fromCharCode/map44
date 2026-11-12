@@ -37,6 +37,7 @@ WALL = 1.2           # Wandstärke
 STEP = 2.0
 MARGIN = 30.0
 EXT = 2.0            # Verlängerung an den Portalen
+SKIP = set(json.loads((ROOT / "tools" / "overrides.json").read_text(encoding="utf-8")).get("skip_tunnels", []))
 
 
 def _local(lon, lat):
@@ -181,12 +182,32 @@ def build():
         pb, eb = _ext(cs[-1], cs[-2], yb)
         ln = LineString([pa] + cs + [pb])
         L = ln.length
+        # Höhe an den verlängerten Enden = anschließende Straße bzw. Gelände dort (sonst Stufe an der Platte,
+        # wenn die Anfahrt außerhalb des Portals steigt/fällt)
+        def _end_y(pt, y_portal):
+            # Gelände dort, wo die Verlängerung endet (darauf fährt man an); unter einer Brücke (Gelände weit
+            # unten, A17) die anschließende Straße
+            g = raw_at(*pt)
+            if g is not None and abs(g - y_portal) < 2.5:
+                return g
+            r = road_at(*pt)
+            if r is not None and abs(r[0] - y_portal) < 4.0:
+                return r[0]
+            return y_portal
+        ya_x, yb_x = _end_y(pa, ya), _end_y(pb, yb)
+
+        def prof(s_):
+            if s_ <= ea:
+                return ya_x + (ya - ya_x) * (s_ / ea if ea > 0 else 1.0)
+            if s_ >= L - eb:
+                return yb + (yb_x - yb) * ((s_ - (L - eb)) / eb if eb > 0 else 0.0)
+            return ya + (yb - ya) * (s_ - ea) / max(L - ea - eb, 1e-6)
         n = max(2, int(L / STEP) + 1)
         pts, box = [], []
         for i in range(n):
             s = L * i / (n - 1)
             p = ln.interpolate(s)
-            y = ya + (yb - ya) * s / L
+            y = prof(s)
             g = raw_at(p.x, p.y)
             cover = (g - y) if g is not None else 99.0
             pts.append([round(p.x, 2), round(p.y, 2), round(y, 3), round(g if g is not None else y + 99.0, 2)])
@@ -196,6 +217,9 @@ def build():
             if box[i] == 0 and box[i - 1] == 1 and i + 4 < n and any(box[i + 1:i + 5]):
                 box[i] = 1
         name = tags.get("name") or tags.get("tunnel:name") or ""
+        if name in SKIP:
+            print(f"  (übersprungen laut overrides.json: {name})")
+            continue
         if L < 40.0 or (n - sum(box)) * STEP < 20.0:
             # kurze Unterführungen ohne Überdeckung (unter Bahn-/Straßenbrücken): Gelände liegt schon auf
             # Fahrbahnhöhe, ein Betonkasten stieße an die Brücke darüber -> nichts bauen
@@ -268,6 +292,7 @@ def build():
                     e["b"] = nid
                 g["edges"].append(e)
         if tl:
+            _clear_objects(d, city, tl)
             _terrain(d, tl)
             # Bäume im Grundriss der Portalbauwerke entfernen (stünden sonst auf/in der Decke)
             x0, z0 = tile_origin(d.name)
@@ -285,6 +310,127 @@ def build():
                         keep.append(tr)
                 city["trees"] = keep
         cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
+
+
+def _clear_objects(d, city, tl):
+    """Objekte im Lichtraum der Röhre entfernen (vorher endete die Straße am Portal: Treppen, Mauern, Laternen,
+    Masten … standen dort im Weg). Was oben auf dem Hang steht (Gelände ≥ Röhrendach), bleibt."""
+    x0, z0 = tile_origin(d.name)
+    ter = np.frombuffer((d / "terrain.f32").read_bytes(), dtype="<f4").reshape(2000, 2000)
+    from shapely.geometry import MultiLineString
+    from shapely.strtree import STRtree
+    segs = []
+    for t in tl:
+        hw = t["w"] * 0.5 + WALL + 0.8
+        q = t["pts"]
+        for i in range(len(q) - 1):
+            segs.append((LineString([(q[i][0], q[i][1]), (q[i + 1][0], q[i + 1][1])]), hw, q[i][2], q[i + 1][2]))
+    tree = STRtree([sg[0] for sg in segs])
+
+    def low_inside(x, z):
+        p = Point(x, z)
+        for j in tree.query(p.buffer(12.0)):
+            ln, hw, ya, yb = segs[int(j)]
+            if ln.distance(p) < hw:
+                t_ = ln.project(p) / max(ln.length, 1e-6)
+                y = ya + (yb - ya) * t_
+                c = min(max(int(x - x0), 0), 1999)
+                r = min(max(int(z - z0), 0), 1999)
+                if float(ter[r, c]) < y + CLEAR + ROOF + 0.3:
+                    return True
+        return False
+
+    n = 0
+    for key in ("lamps", "props", "tram_poles", "signals", "signal_heads", "manholes", "grates", "parked", "trees"):
+        lst = city.get(key)
+        if not lst:
+            continue
+        keep = [it for it in lst if not low_inside(float(it[0]), float(it[1]))]
+        n += len(lst) - len(keep)
+        city[key] = keep
+    life = city.get("life") or {}
+    for key, ix in (("furniture", 1), ("signs", 2), ("litter", 1)):
+        lst = life.get(key)
+        if lst:
+            keep = []
+            for it in lst:
+                try:
+                    x, z = float(it[ix]), float(it[ix + 1])
+                except (TypeError, ValueError, IndexError):
+                    keep.append(it)
+                    continue
+                if not low_inside(x, z):
+                    keep.append(it)
+            n += len(lst) - len(keep)
+            life[key] = keep
+    # LoD2-Brückenteile (oft das Portalbauwerk selbst als "Brücke" erfasst): Dreiecke im Lichtraum entfernen
+    def in_clear(x, y, z):
+        p = Point(x, z)
+        for j in tree.query(p.buffer(12.0)):
+            ln, hw, ya, yb = segs[int(j)]
+            if ln.distance(p) < hw - 0.8:
+                t_ = ln.project(p) / max(ln.length, 1e-6)
+                yf = ya + (yb - ya) * t_
+                return yf - 0.6 < y < yf + CLEAR + 0.2
+        return False
+    for m in city.get("bridge_meshes", []):
+        for key in ("top", "side", "bot"):
+            v = m.get(key) or []
+            if not v:
+                continue
+            out = []
+            dropped = 0
+            for k in range(0, len(v) - 8, 9):
+                cx = (v[k] + v[k + 3] + v[k + 6]) / 3.0
+                cy = (v[k + 1] + v[k + 4] + v[k + 7]) / 3.0
+                cz = (v[k + 2] + v[k + 5] + v[k + 8]) / 3.0
+                if in_clear(cx, cy, cz):
+                    dropped += 1
+                    continue
+                out.extend(v[k:k + 9])
+            if dropped:
+                m[key] = out
+                n += dropped
+    # Linienobjekte (Mauern, Zäune, Treppen) im Lichtraum herausschneiden (1-m-Stücke)
+    for key in ("barriers", "steps"):
+        lst = city.get(key)
+        if not lst:
+            continue
+        out = []
+        for it in lst:
+            ps = it.get("pts") or []
+            if len(ps) < 2:
+                out.append(it)
+                continue
+            run, cut = [], False
+            pieces = []
+            for a, b in zip(ps[:-1], ps[1:]):
+                L = math.hypot(b[0] - a[0], b[1] - a[1])
+                k = max(1, int(L))
+                for m in range(k + 1):
+                    tt = m / k
+                    q = [a[i] + (b[i] - a[i]) * tt for i in range(len(a))]
+                    if low_inside(q[0], q[1]):
+                        cut = True
+                        if len(run) >= 2:
+                            pieces.append(run)
+                        run = []
+                    else:
+                        if not run or (run[-1][0], run[-1][1]) != (q[0], q[1]):
+                            run.append([round(v, 2) for v in q])
+            if len(run) >= 2:
+                pieces.append(run)
+            if not cut:
+                out.append(it)
+                continue
+            n += 1
+            for pc in pieces:
+                e = dict(it)
+                e["pts"] = pc
+                out.append(e)
+        city[key] = out
+    if n:
+        print(f"  {d.name}: {n} Objekte aus dem Tunnel-Lichtraum entfernt/gekürzt")
 
 
 def _terrain(d, tl):

@@ -28,5 +28,9 @@
  "road_width": {
   "30129851": 10.2
  },
- "road_width_note": "Feste Fahrbahnbreiten (OSM-Weg-ID -> m), z. B. Blaues Wunder: 10,20 m zwischen den Fachwerkträgern"
+ "road_width_note": "Feste Fahrbahnbreiten (OSM-Weg-ID -> m), z. B. Blaues Wunder: 10,20 m zwischen den Fachwerkträgern",
+ "skip_tunnels": [
+  "Coventrystraße"
+ ],
+ "skip_tunnels_note": "Unterführung B 173 (Coventrystraße, 76 m): Einfahrt im Test blockiert (Stufe an der Platte, Ursache offen) - bis zur Klärung ohne Tunnel"
 }

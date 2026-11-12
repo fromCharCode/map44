@@ -92,7 +92,10 @@ func add_graph(graph: Dictionary, key: String = "") -> void:
 				(nd["app"] as Array).append([base + int(a[0]), int(a[1]), float(a[2]), int(a[3]), int(a[4]), int(a[5]), float(a[6]), ctl])
 			nd["rbl"] = int(n.get("rbl", 0))
 			nd["jr"] = float(n.get("jr", 6.0))
+	var no_tun := OS.has_environment("DRESDEN_NOTUNEDGES")
 	for e in graph["edges"]:
+		if no_tun and e.get("tunnel", false):
+			continue
 		var ge: Dictionary = e
 		ge["a"] = remap[int(e["a"])]
 		ge["b"] = remap[int(e["b"])]

@@ -94,13 +94,7 @@ Layer layer(int i, vec2 wuv, float k) {
 void fragment() {
 	vec2 wuv = wpos.xz;
 	vec2 huv = (wpos.xz - tile_center + world_size * 0.5) / world_size;
-	if (has_tunnel) {
-		// Gelände im Lichtraum der Tunnelröhre ausblenden (Portalöffnung, flache Abschnitte unter dem Kastendach)
-		vec2 tv = texture(tunnel_tex, huv).rg;
-		if (tv.g > 0.5 && wpos.y < tv.r + 4.9 && wpos.y > tv.r - 3.0) {
-			discard;
-		}
-	}
+	//@TUNNEL_CUT
 	vec4 s0 = texture(splat0, huv);
 	vec4 s1 = texture(splat1, huv);
 	vec4 s2 = texture(splat2, huv);
