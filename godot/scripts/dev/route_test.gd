@@ -137,12 +137,10 @@ func _physics_process(delta: float) -> void:
 		var dir := p1 - p0
 		dir.y = 0.0
 		dir = dir.normalized()
-		var st := p0 - dir * 12.0
-		st.y = main.world.height_at(st.x, st.z) + 0.9
-		if absf(st.y - p0.y) > 3.0:
-			st = p0 + dir * 0.5
-			st.y = p0.y + 0.9
-		pts.push_front(Vector3(st.x, st.y - 0.9, st.z))
+		# Start auf der Fahrbahn selbst (1 m nach Wegbeginn, Profilhöhe): 12 m davor lag das Auto teils neben der
+		# Straße (Böschung, Mauer) und blieb hängen, ohne dass die Straße unter der Brücke daran schuld war
+		var st := p0 + dir * 1.0
+		st.y = p0.y + 0.9
 		player.global_transform = Transform3D(Basis(Vector3.UP, atan2(-dir.x, -dir.z)), st)
 		player.linear_velocity = Vector3.ZERO
 		player.override_input = true
