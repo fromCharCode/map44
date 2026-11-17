@@ -98,12 +98,30 @@ func _cell(x: float, z: float) -> Vector2i:
 	return Vector2i(floori((x + 1000.0) / CELL), floori((z + 1000.0) / CELL))
 
 
-func _spawn(name: String, by_cell: Dictionary, range_end: float, shadows: bool = true, parts_override: Array = []) -> void:
+func _spawn(name: String, by_cell: Dictionary, range_end: float, shadows: bool = true, parts_override: Array = [], brk: Array = []) -> void:
+	## brk = [Radius, Höhe, Masse kg, Bruchgeschwindigkeit km/h, Sachschaden €]: Mast als Zylinder, fest und ab der
+	## Bruchgeschwindigkeit umfahrbar (Breakables)
 	var parts := parts_override if not parts_override.is_empty() else _parts(name)
 	for key in by_cell:
 		var xfs: Array = by_cell[key]
+		var mms: Array = []
+		if not brk.is_empty():
+			var body := StaticBody3D.new()
+			body.collision_layer = 1 | Breakables.LAYER
+			var cy := CylinderShape3D.new()
+			cy.radius = brk[0]
+			cy.height = brk[1]
+			for i in xfs.size():
+				var cs := CollisionShape3D.new()
+				cs.shape = cy
+				var base := xfs[i] as Transform3D
+				cs.transform = Transform3D(Basis(), base.origin + Vector3(0, float(brk[1]) * 0.5, 0))
+				Breakables.tag(cs, mms, i, parts, base, brk[2], brk[3], brk[4])
+				body.add_child(cs)
+			add_child(body)
 		for part in parts:
 			var mm := MultiMesh.new()
+			mms.append(mm)
 			mm.transform_format = MultiMesh.TRANSFORM_3D
 			mm.mesh = part["mesh"]
 			RenderUtil.fill_multimesh(mm, xfs, part["xf"])
@@ -310,6 +328,73 @@ func _trees(trees: Array) -> void:
 		for it in cls_groups[key]:
 			xf_far[it[0]] = it[1]
 	tree_data = {"pos": pos, "sp": sp, "xf": xfs, "xf_far": xf_far, "mm": mm_ref, "mi": mm_idx, "grid": grid, "near": {}}
+	# Stämme als Hindernis: nur Bäume im Umkreis von 25 m einer Straße (erreichbar), nicht IN der Fahrbahn
+	# (Laserscan-Bäume stehen vereinzelt auf Straßen). Kleine Bäume (< 6,5 m) umfahrbar, große fest.
+	for i in pos.size():
+		var hit := index.nearest(pos[i].x, pos[i].z, 25.0)
+		if hit.is_empty():
+			continue
+		var dd := Vector2(float(hit["px"]) - pos[i].x, float(hit["pz"]) - pos[i].z).length()
+		if dd < float(hit["road"]["width"]) * 0.5 + 0.6:
+			continue
+		var small := int(sp[i]) >= SPECIES.size() - SMALL.size() and float(trees[i][3]) < 6.5
+		(_trunk_small if small else _trunk_big).append(i)
+
+
+var _trunk_small := PackedInt32Array()
+var _trunk_big := PackedInt32Array()
+var _trunk_rids: Array = []
+static var _trunk_shapes: Array = []       # [groß, klein] gemeinsame Zylinder
+
+
+func _enter_tree() -> void:
+	if not _trunk_rids.is_empty() or tree_data.is_empty():
+		return
+	if _trunk_shapes.is_empty():
+		for r in [[0.22, 3.0], [0.07, 2.4]]:
+			var cy := CylinderShape3D.new()
+			cy.radius = r[0]
+			cy.height = r[1]
+			_trunk_shapes.append(cy)
+	var pos: PackedVector3Array = tree_data["pos"]
+	var space := get_world_3d().space
+	for k in 2:
+		var list: PackedInt32Array = _trunk_big if k == 0 else _trunk_small
+		if list.is_empty():
+			continue
+		var cy: CylinderShape3D = _trunk_shapes[k]
+		var rid := PhysicsServer3D.body_create()
+		PhysicsServer3D.body_set_mode(rid, PhysicsServer3D.BODY_MODE_STATIC)
+		PhysicsServer3D.body_set_collision_layer(rid, 1 if k == 0 else (1 | Breakables.LAYER))
+		PhysicsServer3D.body_set_collision_mask(rid, 0)
+		for e in list:
+			PhysicsServer3D.body_add_shape(rid, cy.get_rid(), Transform3D(Basis(), pos[e] + Vector3(0, cy.height * 0.5, 0)))
+		PhysicsServer3D.body_set_space(rid, space)
+		_trunk_rids.append(rid)
+		if k == 1:
+			Breakables.tree_bodies[rid] = [self, list]
+
+
+func _exit_tree() -> void:
+	for rid in _trunk_rids:
+		Breakables.tree_bodies.erase(rid)
+		PhysicsServer3D.free_rid(rid)
+	_trunk_rids.clear()
+
+
+func fell_tree(rid: RID, shape_idx: int, car: RigidBody3D, v: Vector3, sp: float) -> void:
+	## kleiner Baum wird umgefahren: Form aus, Baum aus der Darstellung, dafür ein kippender Körper
+	var tb = Breakables.tree_bodies.get(rid)
+	if tb == null or shape_idx >= (tb[1] as PackedInt32Array).size() or TreeLOD.instance == null:
+		return
+	var e: int = (tb[1] as PackedInt32Array)[shape_idx]
+	if (tree_data.get("dead", {}) as Dictionary).has(e):
+		return
+	PhysicsServer3D.body_set_shape_disabled(rid, shape_idx, true)
+	var parts := TreeLOD.instance.remove_tree(self, e)
+	var xf: Transform3D = tree_data["xf"][e]
+	var cy: CylinderShape3D = _trunk_shapes[1]
+	Breakables.spawn(car, cy, Transform3D(Basis(), xf.origin + Vector3(0, cy.height * 0.5, 0)), parts, xf, 70.0, v, sp, 1800.0)
 
 
 func _yaw_arm_neg_z(d: Vector2) -> float:
@@ -361,7 +446,9 @@ func _lamps(lamps: Array) -> void:
 					if not lamp_mats.has(m):
 						lamp_mats.append(m)
 		# dünne Masten: keine Schatten (tausende Leuchten je Kachel)
-		_spawn(name, groups[name], 300.0, false)
+		# Mast fest, ab 45 km/h umfahrbar (Kandelaber/Gaslaterne aus Guss: schwerer, erst ab 55)
+		var cast: bool = name in ["streetlamp_old", "streetlamp_gas"]
+		_spawn(name, groups[name], 300.0, false, [], [0.11 if cast else 0.08, 3.5, 260.0 if cast else 170.0, 55.0 if cast else 45.0, 4500.0])
 	_light_pools()
 
 
@@ -478,8 +565,10 @@ func _signal_heads(heads: Array, ctls: Array) -> void:
 		by_cell[cell].append([xf, Color(float(c[0]), float(h[4]), float(c[1]), float(c[2]) if c.size() > 2 else 9.0)])
 	for cell in by_cell:
 		var list: Array = by_cell[cell]
+		var mms: Array = []
 		for part in parts:
 			var mm := MultiMesh.new()
+			mms.append(mm)
 			mm.transform_format = MultiMesh.TRANSFORM_3D
 			mm.use_custom_data = true
 			mm.mesh = part["mesh"]
@@ -497,15 +586,18 @@ func _signal_heads(heads: Array, ctls: Array) -> void:
 			add_child(inst)
 		# Kollision: Mast als dünner Zylinder
 		var body := StaticBody3D.new()
-		body.collision_layer = 1
+		body.collision_layer = 1 | Breakables.LAYER
 		add_child(body)
-		for e in list:
+		for i in list.size():
+			var e: Array = list[i]
 			var cs := CollisionShape3D.new()
 			var cy := CylinderShape3D.new()
 			cy.radius = 0.09
 			cy.height = 4.0
 			cs.shape = cy
 			cs.transform = (e[0] as Transform3D) * Transform3D(Basis(), Vector3(0, 2.0, 0))
+			# Ampelmast: ab 35 km/h umfahrbar (Stahlrohr mit Sollbruchstelle am Fuß)
+			Breakables.tag(cs, mms, i, parts, e[0], 110.0, 35.0, 6000.0)
 			body.add_child(cs)
 
 

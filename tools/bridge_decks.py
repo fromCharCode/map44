@@ -1052,7 +1052,11 @@ def fill_decks(city, ter=None, x0=0.0, z0=0.0, decks=None):
             c_, r_ = int(x - x0), int(z - z0)
             if not (0 <= c_ < 2000 and 0 <= r_ < 2000):
                 return True
-            return float(ter[r_, c_]) < y - 0.15
+            if float(ter[r_, c_]) < y - 0.15:
+                return True
+            # Geländekante (> 1 m Abfall) im Nachbarpixel: die Kollisionsfläche rundet sie in die Fahrbahn hinein
+            # (0,6 m Mulde am Fahrbahnrand: Augustusbrücke am Terrassenufer, Löbtauer Brücke) -> auch dort Deck
+            return float(ter[max(r_ - 1, 0):r_ + 2, max(c_ - 1, 0):c_ + 2].min()) < y - 1.0
         top, bot, side = [], [], []
         # in 3-m-Zellen zerlegen: die Loch-Prüfung (Gelände unter der Fahrbahn) gilt dann örtlich, nicht für große
         # Dreiecke über wechselndem Gelände (sonst blieben Lücken unter der äußeren Spur)

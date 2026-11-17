@@ -29,7 +29,9 @@ static func setup() -> void:
 	_btn("horn", JOY_BUTTON_LEFT_STICK)              # L3 (wie GTA)
 	_btn("toggle_manual", JOY_BUTTON_RIGHT_STICK)    # R3
 	_btn("lights", JOY_BUTTON_DPAD_UP)
-	_btn("map", JOY_BUTTON_DPAD_DOWN)
+	_btn("cruise", JOY_BUTTON_DPAD_DOWN)              # Tempomat an/aus (Karte: Back/Select); Steuerkreuz ←/→ = ∓5 km/h
+	_btn("cruise_down", JOY_BUTTON_DPAD_LEFT)
+	_btn("cruise_up", JOY_BUTTON_DPAD_RIGHT)
 	_btn("time_back", JOY_BUTTON_DPAD_LEFT)
 	_btn("time_forward", JOY_BUTTON_DPAD_RIGHT)
 	_btn("pause", JOY_BUTTON_START)
@@ -56,6 +58,11 @@ static func setup() -> void:
 	_key("gear_down", KEY_Q)
 	_key("toggle_manual", KEY_F)
 	_key("horn", KEY_H)
+	_key("cruise", KEY_V)                              # Tempomat
+	_key("cruise_up", KEY_KP_ADD)
+	_key("cruise_down", KEY_KP_SUBTRACT)
+	_key("cruise_up", KEY_PERIOD)
+	_key("cruise_down", KEY_COMMA)
 	_key("pause", KEY_ESCAPE)
 	_key("look_back", KEY_B)
 	_key("time_forward", KEY_T)

@@ -69,6 +69,13 @@ func _draw() -> void:
 	var sp := str(int(round(kmh)))
 	_text(sp, c + Vector2(0, 14), 52, Color.WHITE, true)
 	_text("km/h", c + Vector2(0, 40), 16, Color(1, 1, 1, 0.7), true)
+	if car.cruise_on:
+		# Tempomat: grüne Marke am Tachobogen + gesetzter Wert
+		var cf := clampf(car.cruise_target * 3.6 / 220.0, 0.0, 1.0)
+		var ca := a0 + (a1 - a0) * cf
+		var cd := Vector2(cos(ca), sin(ca))
+		draw_line(c + cd * (r - 9.0), c + cd * (r + 9.0), Color(0.3, 1.0, 0.45), 4.0, true)
+		_text("TEMPOMAT %d" % int(round(car.cruise_target * 3.6)), c + Vector2(0, 62), 15, Color(0.3, 1.0, 0.45), true)
 	var g := "R" if car.gear == 0 else str(car.gear)
 	if car.manual:
 		g += "M"

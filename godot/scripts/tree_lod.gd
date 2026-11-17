@@ -24,7 +24,11 @@ var _cell_of := {}              # key -> Vector3i
 var _dirty_cells := {}
 
 
+static var instance: TreeLOD
+
+
 func setup() -> void:
+	instance = self
 	var d := Dressing.new()
 	for nm in Dressing.SPECIES:
 		_parts.append(d._parts(nm))
@@ -47,6 +51,21 @@ func unregister(d: Dressing) -> void:
 		tiles.erase(d)
 		_rebuild_dirty()
 	_dirty = true
+
+
+func remove_tree(d: Dressing, e: int) -> Array:
+	## Baum e der Kachel d dauerhaft entfernen (umgefahren); gibt die Modellteile der Art zurück
+	var td: Dictionary = d.tree_data
+	if not td.has("dead"):
+		td["dead"] = {}
+	td["dead"][e] = true
+	(td["mm"][e] as MultiMesh).set_instance_transform(td["mi"][e], Transform3D(Basis().scaled(Vector3.ZERO), td["pos"][e]))
+	if (td["near"] as Dictionary).has(e):
+		_cell_remove(_key(d, e))
+		(td["near"] as Dictionary).erase(e)
+		_rebuild_dirty()
+	var si := int(td["sp"][e])
+	return _parts[si] if si >= 0 and si < _parts.size() else []
 
 
 func _key(d: Dressing, e: int) -> int:
@@ -153,7 +172,10 @@ func _refresh() -> void:
 				var arr = grid.get(Vector2i(ix, iz))
 				if arr == null:
 					continue
+				var dead: Dictionary = td.get("dead", {})
 				for e in arr:
+					if dead.has(e):
+						continue
 					var p: Vector3 = pos[e]
 					var dd := Vector2(p.x - fx, p.z - fz).length()
 					if dd < NEAR or (dd < NEAR_OUT and near.has(e)):
@@ -183,7 +205,8 @@ func _refresh() -> void:
 				continue
 			_cell_remove(_key(d, e))
 			var mm2: MultiMesh = td["mm"][e]
-			mm2.set_instance_transform(td["mi"][e], td["xf_far"][e])
+			if not (td.get("dead", {}) as Dictionary).has(e):
+				mm2.set_instance_transform(td["mi"][e], td["xf_far"][e])
 			near.erase(e)
 	for d in want:
 		var td: Dictionary = d.tree_data

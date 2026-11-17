@@ -2075,7 +2075,12 @@ def build_passages(buildings):
     for el in load("roads"):
         t = el.get("tags", {})
         cls = t.get("highway")
-        if el["type"] != "way" or t.get("tunnel") != "building_passage" or not cls or cls in ("steps", "corridor"):
+        if el["type"] != "way" or not cls or cls in ("steps", "corridor"):
+            continue
+        # ohne Kennzeichnung: Fahrwege, die durch einen LoD2-Baukörper laufen (Vorfahrt unter dem Flughafenterminal:
+        # Vordach/Hochstraße ist im LoD2 ein massiver Block) -> ebenfalls Durchfahrt, sonst steht eine Wand quer
+        implicit = t.get("tunnel") != "building_passage"
+        if implicit and (cls not in DRIVE or t.get("tunnel") not in (None, "no") or t.get("bridge") not in (None, "no")):
             continue
         c = way_coords(el)
         if len(c) < 2:
@@ -2092,7 +2097,7 @@ def build_passages(buildings):
             members = groups[gkeys[int(gi)]]
             inter = line.intersection(uni)
             for g in getattr(inter, "geoms", [inter]):
-                if g.geom_type != "LineString" or g.length < 0.3:
+                if g.geom_type != "LineString" or g.length < (2.0 if implicit else 0.3):
                     continue
                 gb = g.buffer(0.6)
                 crossed = [(pid, ev) for pg, pid, ev in members if pg.intersects(gb)]

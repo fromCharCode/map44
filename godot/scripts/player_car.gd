@@ -31,7 +31,8 @@ const REVERSE := 3.3
 const FINAL := 3.3
 const IDLE_RPM := 850.0
 const REDLINE := 6200.0
-const SPEED_LIMIT := 95.0       # m/s
+const SPEED_LIMIT := 68.0       # m/s (Abregelung 245 km/h; erreichbar sind ~235)
+const CRUISE_MIN := 30.0 / 3.6  # Tempomat ab 30 km/h (wie Serienfahrzeuge)
 const DRAG_K := 0.40            # 0.5*rho*Cd*A  [N/(m/s)^2]
 const ROLL_RES := 140.0         # N
 # Reifen
@@ -80,6 +81,9 @@ var _headlights: Array[SpotLight3D] = []
 var _taxi_sign := true
 var _shift_cd := 0.0
 var manual := false
+var cruise_on := false            # Tempomat
+var cruise_target := 0.0          # m/s
+var _cruise_i := 0.0
 var _shift_req := 0
 var _last_pos := Vector3.ZERO
 var _stuck_t := 0.0
@@ -177,11 +181,13 @@ func setup(paint: Color = Color(0.93, 0.89, 0.74)) -> void:
 
 
 func _torque(r: float) -> float:
+	## Taxi der oberen Mittelklasse (Vorbild E 220 d: 143 kW, 1,8 t = 80 W/kg) auf die 1550 kg des Modells
+	## umgerechnet: ~125 kW ab 3400/min, 0–100 in ~8,5 s, Spitze ~235 km/h (vorher 195 kW, 283 km/h)
 	if r < 1100.0:
-		return lerpf(210.0, 390.0, clampf((r - 700.0) / 400.0, 0.0, 1.0))
-	if r < 3600.0:
-		return 415.0
-	return lerpf(415.0, 300.0, clampf((r - 3600.0) / 2600.0, 0.0, 1.0))
+		return lerpf(190.0, 330.0, clampf((r - 700.0) / 400.0, 0.0, 1.0))
+	if r < 3400.0:
+		return 350.0
+	return lerpf(350.0, 192.0, clampf((r - 3400.0) / 2800.0, 0.0, 1.0))
 
 
 static func _tire_curve(s: float) -> float:
@@ -406,10 +412,42 @@ func _read_input(delta: float) -> void:
 		_shift_req = -1
 	if Input.is_action_just_pressed("toggle_manual"):
 		manual = not manual
+	_cruise(delta)
+
+
+func _cruise(delta: float) -> void:
+	## Tempomat: hält die gesetzte Geschwindigkeit über das Gas (PI-Regler, bremst nicht aktiv – bergab nur
+	## Motorbremse). Aus bei Bremse/Handbremse, im Rückwärtsgang oder unter 20 km/h. Mehr Gas vom Fahrer übersteuert.
+	if Input.is_action_just_pressed("cruise"):
+		if cruise_on:
+			cruise_on = false
+		elif speed >= CRUISE_MIN and gear >= 1:
+			cruise_on = true
+			cruise_target = roundf(speed * 3.6) / 3.6
+			_cruise_i = in_throttle
+	if not cruise_on:
+		return
+	if Input.is_action_just_pressed("cruise_up"):
+		cruise_target = minf((floorf(cruise_target * 3.6 / 5.0 + 0.01) + 1.0) * 5.0 / 3.6, 200.0 / 3.6)
+	if Input.is_action_just_pressed("cruise_down"):
+		cruise_target = maxf((ceilf(cruise_target * 3.6 / 5.0 - 0.01) - 1.0) * 5.0 / 3.6, CRUISE_MIN)
+	if Input.get_action_strength("brake") > 0.08 or in_handbrake or gear < 1 or speed < 20.0 / 3.6:
+		cruise_on = false
+		return
+	in_throttle = maxf(in_throttle, cruise_throttle(delta))
+
+
+func cruise_throttle(delta: float) -> float:
+	## Gasstellung des Tempomat-Reglers (PI mit begrenztem I-Anteil)
+	var err := cruise_target - speed
+	if absf(err) < 3.0:
+		_cruise_i = clampf(_cruise_i + err * 0.12 * delta, 0.0, 1.0)
+	return clampf(err * 0.35 + _cruise_i, 0.0, 1.0)
 
 
 func _physics_process(delta: float) -> void:
 	_read_input(delta)
+	Breakables.check(self, delta)
 	_slip_acc = 0.0
 	var space := get_world_3d().direct_space_state
 	var up_body := global_transform.basis.y

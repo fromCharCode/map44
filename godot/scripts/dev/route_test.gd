@@ -259,6 +259,11 @@ func _physics_process(delta: float) -> void:
 		_why += " Spurabweichung %+.2f m" % (rel.x * -sd.y + rel.y * sd.x)
 	if fail:
 		_why += " " + _blockers(player)
+		var ds := PhysicsServer3D.body_get_direct_state(player.get_rid())
+		for ci in ds.get_contact_count():
+			var co := ds.get_contact_collider_object(ci)
+			_why += " <K %s lokal %s n %s>" % [BridgeAudit.owner_of(co) if co != null else "RID", str((player.global_transform.affine_inverse() * ds.get_contact_collider_position(ci)).snappedf(0.01)), str(ds.get_contact_local_normal(ci).snappedf(0.01))]
+		_why += " {Gas %.2f Bremse %.2f Lenk %.2f Gang %d %.0f/min vmax %.1f Kurve %.2f Rad-ω %s}" % [player.in_throttle, player.in_brake, player.in_steer, player.gear, player.rpm, vmax, turn, str([snappedf(player.wheels["FL"]["omega"], 0.1), snappedf(player.wheels["RL"]["omega"], 0.1)])]
 	if done or fail:
 		_finish(done and _resets == 0, "ROUTETEST %s %s:%d: %d/%d Punkte, Rücksetzen %d, Höhe über Profil %.2f … %.2f m %s" % [
 			"DURCHFAHREN" if done and _resets == 0 else "ABBRUCH", _tile, _wid, best, pts.size(), _resets, _min_dy, _max_dy, _why])

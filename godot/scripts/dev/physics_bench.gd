@@ -73,6 +73,10 @@ func _next() -> void:
 	match name:
 		"A": _reset(0.0)
 		"B": _reset(27.78)
+		"J": _reset(58.0)
+		"L": _reset(13.89)
+		"M": _reset(2.5)
+		"K": _reset(11.0)
 		"C": _reset(16.67)
 		"D": _reset(22.22)
 		"E": _reset(19.44)
@@ -132,6 +136,57 @@ func _step() -> void:
 				rec["t100"] = t
 			if t > 22.0:
 				results.append("A Beschleunigung: 0-100 km/h %s s, nach 22 s %.0f km/h, Aufbäumen max %.1f°" % [("%.1f" % rec["t100"]) if rec.has("t100") else "—", m["vx"] * 3.6, rec.get("pitch_max", 0.0)])
+				_next()
+		"L", "M":
+			# Umfahrbares Objekt 12 m voraus: L Ampelmast (110 kg, ab 35 km/h) mit 50 km/h -> bricht;
+			# M derselbe Mast mit 9 km/h -> bleibt stehen, Auto wird gestoppt
+			if not rec.has("obj"):
+				var sb := StaticBody3D.new()
+				sb.collision_layer = 1 | Breakables.LAYER
+				var cs := CollisionShape3D.new()
+				var cy := CylinderShape3D.new()
+				cy.radius = 0.09
+				cy.height = 4.0
+				cs.shape = cy
+				sb.add_child(cs)
+				root.add_child(sb)
+				sb.global_position = Vector3(0.3, 2.0, -12.0)
+				Breakables.tag(cs, [], 0, [], Transform3D(Basis(), Vector3(0.3, 0, -12.0)), 110.0, 35.0, 6000.0)
+				rec["obj"] = sb
+				rec["cs"] = cs
+				rec["n0"] = Breakables.broken
+				rec["v0"] = m["vx"]
+			car.in_throttle = 0.0 if name == "L" else 0.12
+			rec["vmin"] = minf(rec.get("vmin", 99.0), m["vx"])
+			if t > (3.0 if name == "L" else 9.0):
+				results.append("%s Objekt bei %.0f km/h: gebrochen %s, Form aus %s, Tempo danach min %.1f km/h, Position z %.1f" % [name, rec["v0"] * 3.6, str(Breakables.broken > rec["n0"]), str((rec["cs"] as CollisionShape3D).disabled), rec["vmin"] * 3.6, car.global_position.z])
+				(rec["obj"] as Node).queue_free()
+				_next()
+		"J":
+			# Höchstgeschwindigkeit: Vollgas ab 209 km/h, 40 s
+			car.in_throttle = 1.0
+			if t > 40.0:
+				results.append("J Höchstgeschwindigkeit: %.0f km/h (Gang %d, %.0f/min)" % [m["vx"] * 3.6, car.gear, car.rpm])
+				_next()
+		"K":
+			# Tempomat: von 40 auf 50 km/h setzen, nach 15 s auf 100; Überschwingen und Restabweichung
+			if t < 0.05:
+				car.cruise_on = true
+				car.cruise_target = 50.0 / 3.6
+			if t > 15.0:
+				car.cruise_target = 100.0 / 3.6
+			car.in_throttle = car.cruise_throttle(dt)
+			if t < 15.0:
+				rec["max50"] = maxf(rec.get("max50", 0.0), m["vx"] * 3.6)
+				if t > 10.0:
+					rec["lo50"] = minf(rec.get("lo50", 999.0), m["vx"] * 3.6)
+			else:
+				rec["max100"] = maxf(rec.get("max100", 0.0), m["vx"] * 3.6)
+				if not rec.has("t100") and m["vx"] * 3.6 >= 99.0:
+					rec["t100"] = t - 15.0
+			if t > 45.0:
+				results.append("K Tempomat: Soll 50 -> max %.1f, min (10–15 s) %.1f km/h; Soll 100 -> erreicht nach %s s, max %.1f, am Ende %.1f km/h" % [rec["max50"], rec["lo50"], ("%.1f" % rec["t100"]) if rec.has("t100") else "—", rec["max100"], m["vx"] * 3.6])
+				car.cruise_on = false
 				_next()
 		"B":
 			car.in_throttle = 0.0

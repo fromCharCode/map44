@@ -19,6 +19,11 @@ const RANGE := {"litfass": 380.0, "billboard": 380.0, "bus_stop": 320.0, "stop_p
 const COLLIDE := {"litfass": "cyl", "billboard": "box", "bus_stop": "box", "glass_containers": "box",
 	"paper_container": "box", "street_cabinet": "box", "post_box": "box", "hydrant": "cyl", "parking_meter": "box",
 	"bin_public": "cyl", "bollard": "cyl", "stop_pole": "cyl", "sign_post": "cyl"}
+# Umfahrbar (Breakables): Modell -> [Masse kg, Bruchgeschwindigkeit km/h, Sachschaden €]; übrige COLLIDE-Modelle fest
+const BREAK := {"bin_public": [22.0, 6.0, 250.0], "bollard": [35.0, 22.0, 400.0], "stop_pole": [45.0, 22.0, 900.0],
+	"sign_post": [30.0, 18.0, 350.0], "parking_meter": [60.0, 28.0, 3500.0], "post_box": [70.0, 30.0, 1200.0],
+	"hydrant": [90.0, 40.0, 2500.0], "bus_stop": [420.0, 45.0, 12000.0], "paper_container": [320.0, 38.0, 600.0],
+	"glass_containers": [650.0, 50.0, 1500.0], "billboard": [180.0, 40.0, 2000.0]}
 const PAINT := {
 	"cafe_parasol": [Color(0.93, 0.9, 0.82), Color(0.62, 0.12, 0.1), Color(0.12, 0.3, 0.2), Color(0.15, 0.22, 0.42),
 		Color(0.95, 0.95, 0.95), Color(0.2, 0.2, 0.22)],
@@ -273,8 +278,10 @@ func _flush() -> void:
 		var model: String = key[0]
 		var list: Array = _groups[key]
 		var range_end: float = RANGE.get(model, 120.0)
+		var mms: Array = []
 		for part in parts(model):
 			var mm := MultiMesh.new()
+			mms.append(mm)
 			mm.transform_format = MultiMesh.TRANSFORM_3D
 			mm.use_colors = true
 			mm.use_custom_data = part["special"] == "atlas"
@@ -298,11 +305,11 @@ func _flush() -> void:
 			add_child(inst)
 		var kind: String = COLLIDE.get(model, "")
 		if kind != "":
-			_collide(model, kind, key[1], list)
+			_collide(model, kind, key[1], list, mms)
 	_groups.clear()
 
 
-func _collide(model: String, kind: String, cell: Vector2i, list: Array) -> void:
+func _collide(model: String, kind: String, cell: Vector2i, list: Array, mms: Array = []) -> void:
 	var aabb := AABB()
 	var first := true
 	for part in parts(model):
@@ -311,11 +318,13 @@ func _collide(model: String, kind: String, cell: Vector2i, list: Array) -> void:
 		first = false
 	if aabb.size.y < 0.3:
 		return
-	if not _bodies.has(cell):
+	var brk: Array = BREAK.get(model, [])
+	var bkey: Variant = [cell, 1] if not brk.is_empty() else cell
+	if not _bodies.has(bkey):
 		var body := StaticBody3D.new()
-		body.collision_layer = 1
+		body.collision_layer = 1 | (Breakables.LAYER if not brk.is_empty() else 0)
 		add_child(body)
-		_bodies[cell] = body
+		_bodies[bkey] = body
 	var shape: Shape3D
 	if kind == "cyl":
 		var cy := CylinderShape3D.new()
@@ -326,11 +335,15 @@ func _collide(model: String, kind: String, cell: Vector2i, list: Array) -> void:
 		var bx := BoxShape3D.new()
 		bx.size = aabb.size
 		shape = bx
-	for e in list:
+	var mparts := parts(model)
+	for i in list.size():
+		var e: Array = list[i]
 		var cs := CollisionShape3D.new()
 		cs.shape = shape
 		cs.transform = (e[0] as Transform3D) * Transform3D(Basis(), aabb.get_center())
-		(_bodies[cell] as StaticBody3D).add_child(cs)
+		if not brk.is_empty():
+			Breakables.tag(cs, mms, i, mparts, e[0], brk[0], brk[1], brk[2])
+		(_bodies[bkey] as StaticBody3D).add_child(cs)
 
 
 # --- Verkehrszeichen ---------------------------------------------------------

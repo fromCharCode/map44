@@ -783,9 +783,10 @@ func _process(delta: float) -> void:
 		hud.message("Schaden: " + ("an" if player.damage_enabled else "aus"), 2.0)
 	if Input.is_action_just_pressed("map"):
 		hud.minimap.big = not hud.minimap.big
-	if Input.is_action_pressed("time_forward"):
+	var cruising: bool = player != null and player.cruise_on      # Steuerkreuz ←/→ stellt dann den Tempomat
+	if Input.is_action_pressed("time_forward") and not cruising:
 		env_mgr.set_time(env_mgr.hours + delta * 1.2)
-	if Input.is_action_pressed("time_back"):
+	if Input.is_action_pressed("time_back") and not cruising:
 		env_mgr.set_time(env_mgr.hours - delta * 1.2)
 	if Input.is_action_just_pressed("quality"):
 		env_mgr.apply_quality((env_mgr.quality + 1) % 3)

@@ -807,8 +807,11 @@ class RoadSurface:
                         k -= 1
                     # nur Widerlager/Rampe (≤ 2,5 m über dem Gelände): ein Brückenende ohne LoD2-Deck hoch in der Luft
                     # wurde sonst zum Damm – unter der A4 stand so eine 14 m hohe Wand quer über dem Zubringer
+                    # Fußwege/Treppen: nur ≤ 0,6 m – ein steiler Brückenabgang (13 m -> 5,5 m auf 3 Punkten) schüttete
+                    # sonst einen 2,5-m-Hügel neben die Zufahrt darunter (Budapester Straße/Hauptbahnhof)
+                    lim = 0.6 if p["lc"] in ("walk", "steps") else 2.5
                     with np.errstate(invalid="ignore"):
-                        conf &= np.abs(self.y[idx] - self.terr[idx]) <= 2.5
+                        conf &= np.abs(self.y[idx] - self.terr[idx]) <= lim
             hw = float(p["hw"]) + (0.3 if p["kind"] == "road" else 0.6)
             wgt_kind = 0.35 if p["lc"] == "tram" else 1.0
             if p["bridge"]:
