@@ -40,6 +40,9 @@ var _beam: MeshInstance3D
 var _figure: MeshInstance3D
 var rng := RandomNumberGenerator.new()
 var enabled := true
+var mode_taxi := true         # false = freier Modus (keine Aufträge, kein Taxameter)
+var offers: Array = []        # Funkaufträge zur Auswahl: {pickup, pname, dest, dname, trip_km, fare}
+var _offers_t := 0.0
 
 
 func setup(p: PlayerCar, t: Traffic, h: Hud) -> void:
@@ -85,6 +88,7 @@ func _load() -> void:
 		money = float(j.get("money", 0.0))
 		trips = int(j.get("trips", 0))
 		km_total = float(j.get("km", 0.0))
+		mode_taxi = bool(j.get("taxi_mode", true))
 		if player:
 			player.fuel_l = float(j.get("fuel", player.fuel_l))
 
@@ -92,7 +96,7 @@ func _load() -> void:
 func save() -> void:
 	var f := FileAccess.open(SAVE, FileAccess.WRITE)
 	if f:
-		f.store_string(JSON.stringify({"money": snappedf(money, 0.01), "trips": trips, "km": snappedf(km_total, 0.01),
+		f.store_string(JSON.stringify({"money": snappedf(money, 0.01), "trips": trips, "km": snappedf(km_total, 0.01), "taxi_mode": mode_taxi,
 			"fuel": snappedf(player.fuel_l, 0.1) if player else 45.0}))
 
 
@@ -140,33 +144,46 @@ func _process(delta: float) -> void:
 		return
 	var pp := player.global_position
 	var v := absf(player.speed)
+	if Input.is_action_just_pressed("taxi_mode"):
+		toggle_mode()
 	_fuel(delta, pp, v)
 	match state:
 		FREI:
+			if not mode_taxi:
+				return
+			# Funkaufträge wie in der Taxizentrale: bis zu drei zur Auswahl, alle 75 s neue; Annahme mit 1/2/3
+			# (Gamepad: LB halten + A/X/Y), N bzw. LB+B fordert andere an
+			_offers_t -= delta
 			_timer -= delta
-			if _timer <= 0.0:
-				_timer = 2.0
-				var a := _edge_point(pp, 120.0, 520.0, 30)
-				if a.is_empty():
-					return
-				var b := _edge_point(a[0], 1200.0, 4200.0, 80)
-				if b.is_empty():
-					b = _edge_point(a[0], 500.0, 1500.0, 80)
-				if b.is_empty() or String(b[1]) == String(a[1]):
-					return
-				pickup = a[0]
-				pickup_name = a[1]
-				dest = b[0]
-				dest_name = b[1]
+			if (_offers_t <= 0.0 or offers.size() < 3) and _timer <= 0.0:
+				_timer = 0.4
+				if _offers_t <= 0.0:
+					offers.clear()
+					_offers_t = 75.0
+				var o := _make_offer(pp)
+				if not o.is_empty():
+					offers.append(o)
+			var pick := _pick_input()
+			if pick == 9:
+				offers.clear()
+				_offers_t = 75.0
+			elif pick >= 0 and pick < offers.size():
+				var of: Dictionary = offers[pick]
+				pickup = of["pickup"]
+				pickup_name = of["pname"]
+				dest = of["dest"]
+				dest_name = of["dname"]
+				offers.clear()
 				state = ANFAHRT
-				_offer_t = 240.0
+				_offer_t = 300.0
 				_show(pickup, Color(1.0, 0.85, 0.1, 0.28), true)
-				hud.message("Fahrgast wartet: %s" % pickup_name, 4.0)
-				if OS.has_environment("DRESDEN_TTDBG"):
-					print("TAXIDBG Auftrag: %s %s -> %s %s, Luftlinie %.0f m, Tarif für diese Strecke ~%s" % [pickup_name, str(pickup.snappedf(0.1)), dest_name, str(dest.snappedf(0.1)), pickup.distance_to(dest), eur(price(pickup.distance_to(dest) * 1.3 / 1000.0, 60.0, night_tariff(Timetable.hours)))])
+				hud.message("Auftrag angenommen – Fahrgast wartet: %s" % pickup_name, 4.0)
 		ANFAHRT:
 			_offer_t -= delta
-			if _offer_t <= 0.0 or pp.distance_to(pickup) > 1500.0:
+			if _pick_input() == 9:
+				hud.message("Auftrag abgegeben", 3.0)
+				_reset(1.0)
+			elif _offer_t <= 0.0 or pp.distance_to(pickup) > 6000.0:
 				hud.message("Fahrgast hat ein anderes Taxi genommen", 3.0)
 				_reset(4.0)
 			elif _flat_dist(pp, pickup) < 9.0 and v < 0.6:
@@ -201,13 +218,16 @@ func _process(delta: float) -> void:
 			if acc > 6.5:
 				comfort = maxf(comfort - 0.15 * delta * (acc / 6.5), 0.0)
 			if Breakables.broken > _broken0:
-				damage_cost += minf(Breakables.last_cost, 250.0) * float(Breakables.broken - _broken0)
+				# Eigenanteil je Schaden höchstens 40 €, je Fahrt höchstens der halbe Fahrpreis – vorher fraßen
+				# ein paar umgefahrene Schilder den Verdienst vieler Fahrten auf
+				damage_cost += minf(Breakables.last_cost, 40.0) * float(Breakables.broken - _broken0)
 				comfort = maxf(comfort - 0.25, 0.0)
 				_broken0 = Breakables.broken
 			if _flat_dist(pp, dest) < 12.0 and v < 0.6:
 				state = AUSSTEIGEN
 				_timer = 2.5
 				var tip := snappedf(fare * 0.12 * comfort, 0.1)
+				damage_cost = minf(damage_cost, fare * 0.5)
 				var total := fare + tip - damage_cost
 				money += total
 				trips += 1
@@ -221,6 +241,7 @@ func _process(delta: float) -> void:
 
 
 var fueling := false
+var _at_station := false
 var _fuel_session := 0.0          # getankte Liter am Stück (Anzeige)
 var _fuel_msg_t := 0.0
 
@@ -244,7 +265,13 @@ func _fuel(delta: float, pp: Vector3, v: float) -> void:
 				var loc: Vector3 = (st["basis"] as Basis).inverse() * (pp - (st["pos"] as Vector3))
 				if absf(loc.x) < float(st["w"]) * 0.5 + 1.0 and absf(loc.z) < float(st["l"]) * 0.5 + 1.0:
 					at = true
-	if at and player.fuel_l < PlayerCar.FUEL_CAP - 0.05 and money > -200.0:
+	if at and not _at_station and not fueling:
+		hud.message("Tankstelle – stehen bleiben zum Tanken (%s/l)" % eur(StreetLife.FUEL_PRICE), 3.0)
+	_at_station = at
+	if OS.has_environment("DRESDEN_TTDBG") and Engine.get_process_frames() % 120 == 0:
+		print("TANKDBG Tankstellen %d, an Tankstelle %s, v %.2f, Tank %.2f l, Kasse %.2f" % [StreetLife.fuel_sites.size(), str(at), v, player.fuel_l, money])
+	# getankt wird immer (notfalls auf Rechnung): eine leere Kasse darf das Spiel nicht blockieren
+	if at and player.fuel_l < PlayerCar.FUEL_CAP - 0.05:
 		var add := minf(0.6 * delta, PlayerCar.FUEL_CAP - player.fuel_l)
 		player.fuel_l += add
 		money -= add * StreetLife.FUEL_PRICE
@@ -256,6 +283,46 @@ func _fuel(delta: float, pp: Vector3, v: float) -> void:
 			save()
 		fueling = false
 		_fuel_session = 0.0
+
+
+func _make_offer(pp: Vector3) -> Dictionary:
+	## Ein Funkauftrag: Abholort 150–1500 m entfernt, Ziel 0,8–6 km weiter; Fahrpreis geschätzt (Luftlinie × 1,3)
+	var a := _edge_point(pp, 150.0, 1500.0, 12)
+	if a.is_empty():
+		return {}
+	var b := _edge_point(a[0], 800.0, 6000.0, 30)
+	if b.is_empty() or String(b[1]) == String(a[1]):
+		return {}
+	for o in offers:
+		if String(o["pname"]) == String(a[1]):
+			return {}
+	var trip := (a[0] as Vector3).distance_to(b[0]) * 1.3 / 1000.0
+	return {"pickup": a[0], "pname": a[1], "dest": b[0], "dname": b[1], "trip_km": trip,
+		"fare": price(trip, 45.0, night_tariff(Timetable.hours))}
+
+
+func _pick_input() -> int:
+	## 0..2 = Auftrag annehmen, 9 = andere Aufträge/abbrechen, -1 = nichts
+	var combo := Input.is_action_pressed("look_back")
+	if Input.is_action_just_pressed("taxi_1") or (combo and Input.is_action_just_pressed("gear_up")):
+		return 0
+	if Input.is_action_just_pressed("taxi_2") or (combo and Input.is_action_just_pressed("gear_down")):
+		return 1
+	if Input.is_action_just_pressed("taxi_3") or (combo and Input.is_action_just_pressed("camera")):
+		return 2
+	if Input.is_action_just_pressed("taxi_new") or (combo and Input.is_action_just_pressed("reset")):
+		return 9
+	return -1
+
+
+func toggle_mode() -> void:
+	## Taxi-Modus <-> freier Modus (im freien Modus keine Aufträge; eine laufende Fahrt wird beendet)
+	mode_taxi = not mode_taxi
+	offers.clear()
+	if not mode_taxi and state != FREI:
+		_reset(1.0)
+	hud.message("Taxi-Modus: Aufträge kommen über Funk" if mode_taxi else "Freier Modus: keine Aufträge", 3.5)
+	save()
 
 
 func _flat_dist(a: Vector3, b: Vector3) -> float:
@@ -294,11 +361,11 @@ func target() -> Vector3:
 func status_line() -> String:
 	match state:
 		ANFAHRT:
-			return "Abholen: %s" % pickup_name
+			return "Abholen: %s  (N = abgeben)" % pickup_name
 		EINSTEIGEN:
 			return "Fahrgast steigt ein"
 		BESETZT:
 			return "Besetzt – Ziel: %s" % dest_name
 		AUSSTEIGEN:
 			return "Fahrgast steigt aus"
-	return "Frei"
+	return "Frei – Auftrag wählen" if mode_taxi else "Freier Modus (K = Taxi)"

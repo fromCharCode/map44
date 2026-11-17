@@ -556,6 +556,16 @@ static var fuel_sites := {}       # Instanz-ID -> Array [{pos, basis, w, l, bran
 const FUEL_PRICE := 1.74          # €/l Super E10 (Richtwert Dresden)
 
 
+var _fuel_mine: Array = []        # Tankstellen dieser Kachel
+
+
+func _enter_tree() -> void:
+	# erst beim Einhängen anmelden (und nach jedem Wiedereinhängen erneut): die Kachel wird im Hintergrund gebaut und
+	# beim Streaming ein-/ausgehängt – vorher blieb die Liste nach dem ersten Aushängen leer, Tanken ging nicht
+	if not _fuel_mine.is_empty():
+		fuel_sites[get_instance_id()] = _fuel_mine
+
+
 func _exit_tree() -> void:
 	fuel_sites.erase(get_instance_id())
 
@@ -627,7 +637,9 @@ func _fuel(sites: Array) -> void:
 			lb.transform = Transform3D(side_b, o + Vector3(0, h + 0.38, 0) + side_b * Vector3(0, 0, half))
 			_label_specs.append(lb)
 		mine.append({"pos": o, "basis": basis, "w": w, "l": l, "brand": brand, "name": String(st[8])})
-	fuel_sites[get_instance_id()] = mine
+	_fuel_mine = mine
+	if is_inside_tree():
+		fuel_sites[get_instance_id()] = mine
 
 
 # --- Läden ---------------------------------------------------------------------

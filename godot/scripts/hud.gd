@@ -122,6 +122,18 @@ func _draw_taxi(vp: Vector2) -> void:
 		draw_rect(Rect2(Vector2(x0 - 10.0, y0 + 62.0), Vector2(330.0, 44.0)), Color(0.05, 0.05, 0.05, 0.7))
 		_text("Taxameter  %s" % TaxiGame.eur(taxi.fare), Vector2(x0, y0 + 92.0), 24, Color(1.0, 0.3, 0.2))
 		_text("%.1f km" % taxi.fare_km, Vector2(x0 + 250.0, y0 + 92.0), 15, Color(1, 1, 1, 0.7))
+	# Funkaufträge zur Auswahl
+	if taxi.mode_taxi and taxi.state == TaxiGame.FREI and not taxi.offers.is_empty() and car:
+		var oy := y0 + 74.0
+		draw_rect(Rect2(Vector2(x0 - 10.0, oy - 8.0), Vector2(470.0, 26.0 + 44.0 * float(taxi.offers.size()))), Color(0, 0, 0, 0.5))
+		_text("FUNK  –  1/2/3 annehmen (LB+A/X/Y), N andere (LB+B)", Vector2(x0, oy + 8.0), 12, Color(1, 1, 1, 0.6))
+		for i in taxi.offers.size():
+			var of: Dictionary = taxi.offers[i]
+			var dp := int(car.global_position.distance_to(of["pickup"]))
+			var yy := oy + 30.0 + 44.0 * float(i)
+			_text("%d  %s  →  %s" % [i + 1, String(of["pname"]), String(of["dname"])], Vector2(x0, yy), 16, Color(1.0, 0.9, 0.4))
+			_text("Anfahrt %s  ·  Fahrt ca. %.1f km  ·  ca. %s" % [("%d m" % dp) if dp < 1000 else ("%.1f km" % (dp / 1000.0)),
+				float(of["trip_km"]), TaxiGame.eur(float(of["fare"]))], Vector2(x0 + 18.0, yy + 18.0), 13, Color(1, 1, 1, 0.8))
 	# Tankanzeige
 	if car:
 		var fx := x0 + 200.0

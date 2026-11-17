@@ -58,6 +58,11 @@ static func setup() -> void:
 	_key("gear_down", KEY_Q)
 	_key("toggle_manual", KEY_F)
 	_key("horn", KEY_H)
+	_key("taxi_mode", KEY_K)                           # Taxi-Modus / freier Modus
+	_key("taxi_1", KEY_1)                              # Auftrag 1–3 annehmen
+	_key("taxi_2", KEY_2)
+	_key("taxi_3", KEY_3)
+	_key("taxi_new", KEY_N)                            # andere Aufträge / Auftrag abbrechen
 	_key("cruise", KEY_V)                              # Tempomat
 	_key("cruise_up", KEY_KP_ADD)
 	_key("cruise_down", KEY_KP_SUBTRACT)

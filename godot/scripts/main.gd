@@ -776,13 +776,13 @@ func _process(delta: float) -> void:
 		hud.message("Wetter: " + EnvManager.WEATHER_NAMES[env_mgr.weather], 2.0)
 	if paused_menu:
 		return
-	if Input.is_action_just_pressed("camera"):
+	if Input.is_action_just_pressed("camera") and not Input.is_action_pressed("look_back"):
 		cam_rig.cycle_mode()
 		hud.message(CamRig.MODE_NAMES[cam_rig.mode], 1.2)
 	if Input.is_action_just_pressed("lights"):
 		player.lights_on = not player.lights_on
 		auto_lights = false
-	if Input.is_action_just_pressed("reset"):
+	if Input.is_action_just_pressed("reset") and not Input.is_action_pressed("look_back"):
 		player.reset_upright()
 	if Input.is_action_just_pressed("repair"):
 		player.repair()

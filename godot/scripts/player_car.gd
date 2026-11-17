@@ -408,9 +408,11 @@ func _read_input(delta: float) -> void:
 	in_brake = move_toward(in_brake, Input.get_action_strength("brake"), 9.0 * delta)
 	in_handbrake = Input.is_action_pressed("handbrake")
 	horn_pressed = Input.is_action_pressed("horn")
-	if Input.is_action_just_pressed("gear_up"):
+	# LB gehalten + A/X/Y/B wählt Taxi-Aufträge (TaxiGame) – dann nicht schalten
+	var combo := Input.is_action_pressed("look_back")
+	if Input.is_action_just_pressed("gear_up") and not combo:
 		_shift_req = 1
-	if Input.is_action_just_pressed("gear_down"):
+	if Input.is_action_just_pressed("gear_down") and not combo:
 		_shift_req = -1
 	if Input.is_action_just_pressed("toggle_manual"):
 		manual = not manual
