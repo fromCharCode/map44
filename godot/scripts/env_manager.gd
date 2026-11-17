@@ -14,6 +14,18 @@ var env: Environment
 var sky_mat: ShaderMaterial
 var cam_attr: CameraAttributesPractical
 var night_value := 0.0
+# Abstimmwerte (für Versuche überschreibbar: DRESDEN_GFX="amb=2.0,sun=4.4,expo=0.3,contrast=1.05,ssao=1.5,fog=1.0")
+# Himmelslicht 2,2 statt 1,1: Schattenseiten waren fast schwarz (Sonne zu Himmel etwa 5:1 wie draußen, vorher 10:1);
+# Belichtung 0,28 statt 0,35: besonnter Boden brannte weiß aus
+var tune := {"amb": 2.2, "sun": 4.4, "expo": 0.28, "contrast": 1.04, "ssao": 1.4, "fog": 1.0, "sat": 0.9, "lut": 1.0,
+	"sdfgi": 1.0, "vfog": 1.0}
+
+
+func _read_tune() -> void:
+	for kv in OS.get_environment("DRESDEN_GFX").split(",", false):
+		var a := kv.split("=")
+		if a.size() == 2 and tune.has(a[0]):
+			tune[a[0]] = float(a[1])
 var quality := 2               # 0 niedrig, 1 mittel, 2 hoch
 var render_scale := -1.0       # 3D-Auflösung; < 1 = FSR2-Hochskalierung (ersetzt TAA); -1 = automatisch
 const WEATHER_NAMES := ["Klar", "Bewölkt", "Regen", "Nach dem Regen"]
@@ -39,6 +51,7 @@ func setup(noise: ImageTexture) -> void:
 	sky.sky_material = sky_mat
 	sky.radiance_size = Sky.RADIANCE_SIZE_256
 
+	_read_tune()
 	env = Environment.new()
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
@@ -54,9 +67,10 @@ func setup(noise: ImageTexture) -> void:
 	env.glow_hdr_threshold = 0.95
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
 	env.adjustment_enabled = true
-	env.adjustment_contrast = 1.14
-	env.adjustment_saturation = 0.9
-	env.adjustment_color_correction = _grade_lut()
+	env.adjustment_contrast = float(tune["contrast"])
+	env.adjustment_saturation = float(tune["sat"])
+	if float(tune["lut"]) > 0.5:
+		env.adjustment_color_correction = _grade_lut()
 	env.fog_enabled = true
 	env.fog_mode = Environment.FOG_MODE_EXPONENTIAL
 	env.fog_density = 0.0005
@@ -64,13 +78,13 @@ func setup(noise: ImageTexture) -> void:
 	env.fog_sky_affect = 0.12
 	env.fog_sun_scatter = 0.25
 	env.volumetric_fog_enabled = true
-	env.volumetric_fog_density = 0.0009
+	env.volumetric_fog_density = 0.0009 * float(tune["vfog"])
 	env.volumetric_fog_length = 120.0
 	env.volumetric_fog_gi_inject = 0.5
 	env.volumetric_fog_anisotropy = 0.55
 	env.ssao_enabled = true
 	env.ssao_radius = 1.6
-	env.ssao_intensity = 2.2
+	env.ssao_intensity = float(tune["ssao"])
 	env.ssao_power = 1.6
 	env.ssil_enabled = true
 	env.ssil_intensity = 0.8
@@ -84,12 +98,12 @@ func setup(noise: ImageTexture) -> void:
 	env.sdfgi_min_cell_size = 0.3
 	env.sdfgi_use_occlusion = true
 	env.sdfgi_bounce_feedback = 0.5
-	env.sdfgi_energy = 1.0
+	env.sdfgi_energy = float(tune["sdfgi"])
 	env.sdfgi_read_sky_light = true
 
 	cam_attr = CameraAttributesPractical.new()
 	cam_attr.auto_exposure_enabled = true
-	cam_attr.auto_exposure_scale = 0.35
+	cam_attr.auto_exposure_scale = float(tune["expo"])
 	cam_attr.auto_exposure_speed = 0.8
 	cam_attr.auto_exposure_min_sensitivity = 50.0
 	cam_attr.auto_exposure_max_sensitivity = 2500.0
@@ -241,7 +255,7 @@ func set_time(h: float) -> void:
 	var warm := 1.0 - smoothstep(0.0, 0.42, elev)
 	sun.light_color = Color(1.0, 0.97, 0.92).lerp(Color(1.0, 0.55, 0.28), warm)
 	var wcfg: Array = WEATHER[weather]
-	sun.light_energy = lerpf(0.0, 4.4, day) * lerpf(0.55, 1.0, smoothstep(0.0, 0.3, elev)) * float(wcfg[3])
+	sun.light_energy = lerpf(0.0, float(tune["sun"]), day) * lerpf(0.55, 1.0, smoothstep(0.0, 0.3, elev)) * float(wcfg[3])
 	sun.visible = elev > -0.08
 	moon.light_energy = lerpf(0.09, 0.0, day) * (1.0 if mv.y > 0.0 else 0.0)     # Mondlicht schwach: die Stadt leuchtet selbst
 	moon.visible = mv.y > 0.0
@@ -253,9 +267,9 @@ func set_time(h: float) -> void:
 	sky_mat.set_shader_parameter("sun_dir", sv)
 	sky_mat.set_shader_parameter("moon_dir", mv)
 	# nachts wenig Himmelslicht (vorher 0,5: die ganze Stadt war gleichmäßig blau aufgehellt, Laternen wirkungslos)
-	env.ambient_light_energy = lerpf(0.18, 1.1, day) * float(wcfg[4])
+	env.ambient_light_energy = lerpf(0.18, float(tune["amb"]), day) * float(wcfg[4])
 	env.fog_light_color = Color(0.70, 0.74, 0.80).lerp(Color(0.02, 0.03, 0.06), night)
-	env.fog_density = lerpf(0.0007, 0.0005, day) * float(wcfg[5])
+	env.fog_density = lerpf(0.0007, 0.0005, day) * float(wcfg[5]) * float(tune["fog"])
 	sky_mat.set_shader_parameter("cloud_cover", float(wcfg[1]))
 	sky_mat.set_shader_parameter("cloud_dark", float(wcfg[2]))
 	env.volumetric_fog_albedo = Color(0.85, 0.9, 1.0).lerp(Color(0.12, 0.16, 0.3), night)

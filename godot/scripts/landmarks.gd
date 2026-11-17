@@ -40,6 +40,26 @@ const TEX_DIR := "res://assets/textures/landmarks/"
 var terrain: Terrain
 var mats := {}
 
+static var _walls = null
+
+
+static func photo_walls() -> Array:
+	if _walls == null:
+		var wf := TEX_DIR + "walls.json"
+		var j = JSON.parse_string(FileAccess.get_file_as_string(wf)) if FileAccess.file_exists(wf) else null
+		_walls = j if j is Array else []
+	return _walls
+
+
+static func on_photo_wall(p: Vector2) -> bool:
+	## Liegt der Punkt (Mitte einer Fassadenkante) an einer Fotowand? Dort keine Balkone/Gitter davorsetzen.
+	for pw in photo_walls():
+		var a := Vector2(pw["a"][0], pw["a"][1])
+		var b := Vector2(pw["b"][0], pw["b"][1])
+		if Geometry2D.get_closest_point_to_segment(p, a, b).distance_to(p) < 0.8:
+			return true
+	return false
+
 
 static func filter_buildings(blds: Array) -> Array:
 	## Entfernt OSM-Gebäude, deren Mittelpunkt in der Grundfläche eines Wahrzeichens liegt.
@@ -70,13 +90,7 @@ static func filter_buildings(blds: Array) -> Array:
 
 
 func _photo_walls(t: Terrain) -> void:
-	var wf := TEX_DIR + "walls.json"
-	if not FileAccess.file_exists(wf):
-		return
-	var walls = JSON.parse_string(FileAccess.get_file_as_string(wf))
-	if not (walls is Array):
-		return
-	for pw in walls:
+	for pw in photo_walls():
 		var a := Vector2(pw["a"][0], pw["a"][1])
 		var b := Vector2(pw["b"][0], pw["b"][1])
 		var mid := (a + b) * 0.5
@@ -105,7 +119,7 @@ func _photo_walls(t: Terrain) -> void:
 			st.begin(Mesh.PRIMITIVE_TRIANGLES)
 			var vs := [v0, v1, v1 + Vector3(0, h, 0), v0 + Vector3(0, h, 0)]
 			var uvs := [Vector2(0, 1), Vector2(1, 1), Vector2(1, 0), Vector2(0, 0)]
-			for idx in [0, 1, 2, 0, 2, 3]:
+			for idx in [0, 2, 1, 0, 3, 2]:        # im Uhrzeigersinn vom Betrachter aus = Vorderseite
 				st.set_normal(n3)
 				st.set_uv(uvs[idx])
 				st.add_vertex(vs[idx])
@@ -113,7 +127,6 @@ func _photo_walls(t: Terrain) -> void:
 			var m := StandardMaterial3D.new()
 			m.albedo_texture = load(path)
 			m.roughness = float(pw.get("rough", 0.6))
-			m.cull_mode = BaseMaterial3D.CULL_DISABLED
 			m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 			var mi := MeshInstance3D.new()
 			mi.mesh = st.commit()

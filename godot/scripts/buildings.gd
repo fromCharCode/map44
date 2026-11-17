@@ -444,7 +444,7 @@ static func _h21(px: float, py: float) -> float:
 func _deco_edge(b: Dictionary, style: int, seed: float, p0: Vector2, p1: Vector2, ln: float, acc: float, nrm: Vector3, ref: float, shop_iv: Array) -> void:
 	var levels := maxf(float(b["levels"]), 1.0)
 	var height := maxf(float(b["eave"]), 3.0)
-	if height < 7.5:
+	if height < 7.5 or Landmarks.on_photo_wall((p0 + p1) * 0.5):
 		return
 	var fh := clampf(height / levels, 2.7, 4.6)
 	var rows := int(floor(height / fh))

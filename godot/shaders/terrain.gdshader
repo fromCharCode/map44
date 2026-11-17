@@ -272,10 +272,15 @@ void fragment() {
 	rgh = mix(rgh, 0.015, pud);
 	nrm = mix(nrm, vec3(0.0, 0.0, 1.0), pud);
 
+	// Helligkeit begrenzen: Pflaster, Platten und Kies reflektieren draußen selten mehr als ~35 % – die hellen
+	// Texturen ließen Plätze und Ufer in der Sonne wie Schnee aussehen
+	float alum = dot(alb, vec3(0.3, 0.59, 0.11));
+	alb *= (alum > 0.3 ? 0.3 + (alum - 0.3) * 0.3 : alum) / max(alum, 0.001);
 	ALBEDO = alb;
 	float road_like = max(road_mask, wetness);
-	ROUGHNESS = clamp(mix(max(rgh, 0.72), rgh, road_like), 0.04, 1.0);
-	SPECULAR = 0.4;
+	// trockener Boden streut matt: bei Gegenlicht glänzten Plätze und Wiesen sonst weiß
+	ROUGHNESS = clamp(mix(max(rgh, 0.9), max(rgh, mix(0.78, 0.04, wetness)), road_like), 0.04, 1.0);
+	SPECULAR = mix(0.18, 0.4, wetness);
 	NORMAL_MAP = normalize(nrm) * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = 1.0;
 }

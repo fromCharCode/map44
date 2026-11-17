@@ -32,8 +32,12 @@ void fragment() {
 	vec3 a = texture(roof_albedo, uv).rgb;
 	float l = dot(a, vec3(0.3, 0.59, 0.11));
 	vec3 col = COLOR.rgb * 0.72 * mix(0.65, 1.35, clamp(l * 1.6, 0.0, 1.0));
+	// helle Dachfarben aus dem besonnten Luftbild dämpfen (Dächer reflektieren selten mehr als ~40 %)
+	float rl = dot(col, vec3(0.3, 0.59, 0.11));
+	col *= (rl > 0.34 ? 0.34 + (rl - 0.34) * 0.3 : rl) / max(rl, 0.001);
 	ALBEDO = col;
-	ROUGHNESS = mix(texture(roof_rough, uv).r, 0.25, wetness * 0.5);
+	ROUGHNESS = mix(max(texture(roof_rough, uv).r, 0.8), 0.25, wetness * 0.5);
+	SPECULAR = mix(0.22, 0.5, wetness);
 	SPECULAR = 0.4;
 	NORMAL_MAP = texture(roof_normal, uv).xyz;
 	NORMAL_MAP_DEPTH = 1.0;
