@@ -31,6 +31,15 @@ const LIST := [
 		"name": "Blaues Wunder", "no_collision": true, "trimesh_kind": "bridge"},
 ]
 
+# Echte Wandbilder als Fototextur vor der LoD2-Wand: Bild von links nach rechts = a -> b (vom Betrachter aus gesehen),
+# h = dargestellte Wandhöhe. Der Fürstenzug (Augustusstraße, 102 m Meißner Porzellan): Foto Gerd Eichmann,
+# CC BY-SA 4.0 (Wikimedia Commons, Dresden-Fuerstenzug-ganz-01-gje.jpg), in vier Teile geschnitten.
+const TEX_DIR := "res://assets/textures/landmarks/"
+const PHOTO_WALLS := [
+	{"name": "Fürstenzug", "a": [657.98, -220.14], "b": [573.52, -277.23], "h": 10.3, "rough": 0.42,
+		"tex": ["fuerstenzug_0.jpg", "fuerstenzug_1.jpg", "fuerstenzug_2.jpg", "fuerstenzug_3.jpg"]},
+]
+
 var terrain: Terrain
 var mats := {}
 
@@ -63,9 +72,59 @@ static func filter_buildings(blds: Array) -> Array:
 	return out
 
 
+func _photo_walls(t: Terrain) -> void:
+	for pw in PHOTO_WALLS:
+		var a := Vector2(pw["a"][0], pw["a"][1])
+		var b := Vector2(pw["b"][0], pw["b"][1])
+		var mid := (a + b) * 0.5
+		if not t.contains(mid.x, mid.y):
+			continue
+		var texs: Array = pw["tex"]
+		var dir := (b - a).normalized()
+		# a -> b ist für den Betrachter „nach rechts“; die Wandnormale zeigt zu ihm: n = dir x up
+		var n3 := Vector3(dir.x, 0.0, dir.y).cross(Vector3.UP).normalized()
+		var y0 := INF
+		for k in 9:
+			var q := a.lerp(b, float(k) / 8.0)
+			y0 = minf(y0, terrain.height_at(q.x + n3.x * 1.5, q.y + n3.z * 1.5))
+		y0 -= 0.15
+		var h := float(pw["h"])
+		for i in texs.size():
+			var path: String = TEX_DIR + String(texs[i])
+			if not ResourceLoader.exists(path):
+				continue
+			var p0 := a.lerp(b, float(i) / float(texs.size()))
+			var p1 := a.lerp(b, float(i + 1) / float(texs.size()))
+			var off := n3 * 0.09
+			var v0 := Vector3(p0.x, y0, p0.y) + off
+			var v1 := Vector3(p1.x, y0, p1.y) + off
+			var st := SurfaceTool.new()
+			st.begin(Mesh.PRIMITIVE_TRIANGLES)
+			var vs := [v0, v1, v1 + Vector3(0, h, 0), v0 + Vector3(0, h, 0)]
+			var uvs := [Vector2(0, 1), Vector2(1, 1), Vector2(1, 0), Vector2(0, 0)]
+			for idx in [0, 1, 2, 0, 2, 3]:
+				st.set_normal(n3)
+				st.set_uv(uvs[idx])
+				st.add_vertex(vs[idx])
+			st.generate_tangents()
+			var m := StandardMaterial3D.new()
+			m.albedo_texture = load(path)
+			m.roughness = float(pw.get("rough", 0.6))
+			m.cull_mode = BaseMaterial3D.CULL_DISABLED
+			m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+			var mi := MeshInstance3D.new()
+			mi.mesh = st.commit()
+			mi.material_override = m
+			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			mi.visibility_range_end = 700.0
+			mi.name = "%s_%d" % [String(pw["name"]), i]
+			add_child(mi)
+
+
 func build(t: Terrain, noise: ImageTexture) -> void:
 	terrain = t
 	_make_materials()
+	_photo_walls(t)
 	for lm in LIST:
 		var path: String = DIR + lm["file"]
 		if not ResourceLoader.exists(path):
