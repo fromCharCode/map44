@@ -96,7 +96,32 @@ def _ends_confirm(dgm, ce, cn, ax, ay, u, v, zt, corr_at):
     return good >= 1
 
 
-def _piecewise(u, d):
+def _ends_both(dgm, ce, cn, ax, ay, u, v, zt, c):
+    """Große Korrektur c: an BEIDEN Enden einer Hauptrichtung liegt das Gelände (Damm/Widerlager) auf der
+    korrigierten Höhe (≤ 1 m) und deutlich nicht auf der alten (≥ 3 m)."""
+    if dgm is None:
+        return False
+    for w, dx, dy in ((u, ax, ay), (v, -ay, ax)):
+        ok = 0
+        for sgn, we in ((-1.0, float(w.min())), (1.0, float(w.max()))):
+            sel = np.abs(w - we) < 4.0
+            if sel.sum() < 3:
+                break
+            ws = we + sgn * np.array([2.0, 3.0, 4.0, 5.0])
+            g = dgm.sample(ce + ws * dx, cn + ws * dy)
+            g = g[np.isfinite(g)]
+            if len(g) < 2:
+                break
+            g = float(np.median(g))
+            z_end = float(np.median(zt[sel]))
+            if abs(z_end + c - g) <= 1.0 and abs(z_end - g) >= 3.0:
+                ok += 1
+        if ok == 2:
+            return True
+    return False
+
+
+def _piecewise(u, d, relax=False):
     """Abschnittsweise Korrektur entlang der Achse (Stützstellen alle 30 m, untere Hülle je Fenster ±20 m) für lange
     Teile, die eine Ebene/Parabel nicht beschreibt (Hochstraße mit Rampen in EINEM LoD2-Teil: Löbtauer Brücke lag in
     der Mitte 7 m zu tief). Rückgabe (knots_u, offsets) oder None."""
@@ -124,17 +149,64 @@ def _piecewise(u, d):
         return None
     kv = ks[good]
     cs = np.interp(ks, ks[good], cs[good])
-    if np.abs(np.diff(cs)).max() > 2.0 or np.abs(cs).max() > 9.0 or float(np.median(np.abs(cs))) < 0.8:
+    if np.abs(np.diff(cs)).max() > 2.0 or np.abs(cs).max() > 9.5 \
+            or (float(np.median(np.abs(cs))) < 0.8 and not (relax and float(np.abs(cs).max()) >= 0.5)):
         return None
     near = np.min(np.abs(u[:, None] - kv[None, :]), axis=1) < 20.0      # nur Pixel in gestützten Fenstern
     res = (d - np.interp(u, ks, cs))[near]
     if len(res) < 50 or float((np.abs(res) < 0.4).mean()) < 0.6:
         return None
-    return ks, cs
+    return ks, cs, int(good.sum())
 
 
-def correct_parts(parts, dom: DomMosaic, tri_fn, log=print, dgm=None):
-    """tri_fn: Triangulierung von LoD2-Polygonen (build_city._oriented_tris)."""
+def _big_smooth(e, n, d, zt, dgm, pe, pn):
+    """Große, glatt verlaufende Abweichung über ein weites Fenster (A4-Elbbrücke Kaditz: LoD2 flach auf 112 m,
+    das Deck steigt laut DOM über 550 m gleichmäßig von +6,7 auf +14,3 m darüber, Streuung 0,2 m). Modell wie die
+    normale Korrektur (Parabel entlang der Achse, quer linear, untere Hüllfläche), aber nur bei sehr sauberer,
+    dichter Messung und wenn ein Ende vom Gelände (Widerlager/Damm) bestätigt wird. Rückgabe corr(e, n) oder None."""
+    if len(d) < 200:
+        return None
+    ce, cn = float(e.mean()), float(n.mean())
+    _, evec = np.linalg.eigh(np.cov(np.vstack([e - ce, n - cn])))
+    ax, ay = evec[0, 1], evec[1, 1]
+    u = (e - ce) * ax + (n - cn) * ay
+    v = -(e - ce) * ay + (n - cn) * ax
+    L = max(float(np.abs(u).max()), 1.0)
+    if L < 30.0 or len(d) / (2 * L) < 5.0:
+        return None
+
+    def design(uu, vv):
+        t = np.clip(uu / L, -1.1, 1.1)
+        return np.column_stack([np.ones_like(uu), t, vv, t * t])
+    X = design(u, v)
+    coef = np.zeros(4)
+    coef[0] = np.percentile(d, 30)
+    for _ in range(12):
+        res = d - X @ coef
+        wts = np.where(res > 0.2, 0.02, 1.0 / np.maximum(1.0, np.abs(res) / 0.2))
+        sw = np.sqrt(wts)
+        coef, *_ = np.linalg.lstsq(X * sw[:, None], d * sw, rcond=None)
+    inl = float((np.abs(d - X @ coef) < 0.35).mean())
+    pe_a, pn_a = np.asarray(pe, float), np.asarray(pn, float)
+    corr_v = design((pe_a - ce) * ax + (pn_a - cn) * ay, -(pe_a - ce) * ay + (pn_a - cn) * ax) @ coef
+    ts = np.linspace(-1, 1, 21)
+    slope = np.abs(coef[1] + 2 * coef[3] * ts) / L
+    if inl < 0.85 or slope.max() > 0.05 or abs(coef[2]) > 0.03 or np.abs(corr_v).max() <= 6.0 \
+            or np.abs(corr_v).max() > 20.0 or float(np.median(corr_v)) < 3.0:
+        return None
+
+    def corr(q0, q1):
+        uu = (np.asarray(q0, float) - ce) * ax + (np.asarray(q1, float) - cn) * ay
+        vv = -(np.asarray(q0, float) - ce) * ay + (np.asarray(q1, float) - cn) * ax
+        return design(np.atleast_1d(uu), np.atleast_1d(vv)) @ coef
+    if not _ends_confirm(dgm, ce, cn, ax, ay, u, v, zt, lambda uu, vv: float(design(np.array([uu]), np.array([vv]))[0] @ coef)):
+        return None
+    return corr, inl, float(corr_v.min()), float(corr_v.max()), 2 * L
+
+
+def correct_parts(parts, dom: DomMosaic, tri_fn, log=print, dgm=None, force_ids=()):
+    """tri_fn: Triangulierung von LoD2-Polygonen (build_city._oriented_tris). force_ids: Teile, für die die
+    abschnittsweise Korrektur auch bei kleiner mittlerer Abweichung gilt (overrides.json bridge_part_dom_force)."""
     """Gibt neue Teile-Liste zurück (korrigierte Kopien). Schreibt ein kurzes Protokoll."""
     # Oberste Deckhöhe aller Teile (für "dieses Teil ist oben")
     allt = []
@@ -181,6 +253,58 @@ def correct_parts(parts, dom: DomMosaic, tri_fn, log=print, dgm=None):
         n = ytop - r0 - rr[top] - 0.5
         d = dom.sample(e, n) - z[top]
         ok = np.isfinite(d) & (np.abs(d) < 6.0)
+        # abschnittsweise Korrektur: weiteres Fenster (Hochstraße mit Kuppe: Löbtauer Brücke lag am Scheitel 8,8 m zu
+        # tief – mit ±6 m fielen genau die Scheitelpixel heraus und die Korrektur blieb flach)
+        # nur nach oben erweitert: tiefer liegende DOM-Pixel sind Wasser/Gelände durch Lücken (Fachwerk Blaues Wunder)
+        okw = np.isfinite(d) & (d > -6.0) & (d < 10.0)
+        ew, nw, dw = e[okw], n[okw], d[okw]
+        # sehr große, aber eindeutige Abweichung (LoD2-Bahnbrücken über Eschenstraße/Dammweg lagen 10,5 m zu tief;
+        # mit dem ±6-m-Fenster fielen alle Pixel heraus): einheitlicher Versatz 6–12 m, ≥ 80 % der Pixel ±0,5 m,
+        # und an beiden Enden einer Hauptrichtung schließt das Gelände (Damm) auf der neuen Höhe an
+        okb = np.isfinite(d) & (d > -6.0) & (d < 12.5)
+        if okb.sum() >= 30:
+            cb = float(np.median(d[okb]))
+            if 6.0 <= cb <= 12.0 and float(np.mean(np.abs(d[okb] - cb) < 0.5)) >= 0.8:
+                eb, nb, zb = e[okb], n[okb], z[top][okb]
+                ceb, cnb = float(eb.mean()), float(nb.mean())
+                _, evb = np.linalg.eigh(np.cov(np.vstack([eb - ceb, nb - cnb])))
+                axb, ayb = evb[0, 1], evb[1, 1]
+                ub = (eb - ceb) * axb + (nb - cnb) * ayb
+                vb = -(eb - ceb) * ayb + (nb - cnb) * axb
+                if _ends_both(dgm, ceb, cnb, axb, ayb, ub, vb, zb, cb):
+                    def shift_c(polys, _c=cb):
+                        return [([(q_[0], q_[1], q_[2] + _c) for q_ in ext], [[(q_[0], q_[1], q_[2] + _c) for q_ in hh] for hh in holes])
+                                for ext, holes in polys]
+                    q = dict(p)
+                    q["roofs"], q["walls"], q["ground"] = shift_c(p["roofs"]), shift_c(p["walls"]), shift_c(p["ground"])
+                    q["dom_fix"] = round(cb, 2)
+                    out.append(q)
+                    n_fix += 1
+                    log(f"  Brücke {p['id']}: DOM-Korrektur {cb:+.2f} m (groß, {int(okb.sum())} Pixel, beide Enden vom Gelände bestätigt)")
+                    continue
+        okL = np.isfinite(d) & (d > -6.0) & (d < 25.0)
+        big = _big_smooth(e[okL], n[okL], d[okL], z[top][okL], dgm, pe, pn) if okL.sum() >= 200 else None
+        if big is not None:
+            corr_b, inl_b, c_lo, c_hi, len_b = big
+
+            def shift_b(polys, _f=corr_b):
+                res_ = []
+                for ext, holes in polys:
+                    def mv(ring):
+                        if not ring:
+                            return ring
+                        cz = _f([q_[0] for q_ in ring], [q_[1] for q_ in ring])
+                        return [(q_[0], q_[1], q_[2] + float(c_)) for q_, c_ in zip(ring, cz)]
+                    res_.append((mv(ext), [mv(hh) for hh in holes]))
+                return res_
+            q = dict(p)
+            q["roofs"], q["walls"], q["ground"] = shift_b(p["roofs"]), shift_b(p["walls"]), shift_b(p["ground"])
+            q["dom_fix"] = round(0.5 * (c_lo + c_hi), 2)
+            out.append(q)
+            n_fix += 1
+            log(f"  Brücke {p['id']}: DOM-Korrektur {c_lo:+.2f}..{c_hi:+.2f} m (groß und gleichmäßig, {inl_b*100:.0f} % passend, "
+                f"{int(okL.sum())} Pixel, Länge {len_b:.0f} m, Ende vom Gelände bestätigt)")
+            continue
         if ok.sum() < 15:
             out.append(p)
             continue
@@ -231,9 +355,15 @@ def correct_parts(parts, dom: DomMosaic, tri_fn, log=print, dgm=None):
                 or (float(np.median(corr_v)) < -0.6 and (inl < 0.8 or ok.sum() < 0.5 * len(z))) \
                 or (abs(float(np.median(corr_v))) < 0.6 and np.abs(corr_v).max() < 1.0)):
             # LoD2 ist meist genau: nur grobe Fehler korrigieren
-            pw = _piecewise(u, d)
+            # erst wie bisher (DOM ±6 m), dann mit dem nach oben erweiterten Fenster; genommen wird die Lösung mit
+            # mehr gestützten Stützstellen (Gleichstand: die enge – Fachwerkstäbe über dem Deck stören die weite)
+            rlx = p.get("id") in force_ids
+            pw = _piecewise(u, d, rlx)
+            pw2 = _piecewise((ew - ce) * ax + (nw - cn) * ay, dw, rlx)
+            if pw2 is not None and (pw is None or pw2[2] > pw[2]):
+                pw = pw2
             if pw is not None:
-                ks, cs = pw
+                ks, cs, _ = pw
 
                 def corr_pw(q0, q1, _ks=ks, _cs=cs):
                     return float(np.interp((q0 - ce) * ax + (q1 - cn) * ay, _ks, _cs))

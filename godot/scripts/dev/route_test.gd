@@ -27,6 +27,7 @@ var _li := -1
 var _active := false
 var _results: Array = []
 var _out := ""
+var _len := 0.0
 
 
 func start(m: Node, args: Dictionary) -> void:
@@ -125,13 +126,52 @@ func _physics_process(delta: float) -> void:
 		if _dir < 0:
 			chain.reverse()
 		var road: Dictionary = (t as Tile).city["roads"].filter(func(r): return int(r["id"]) == _wid)[0]
-		var off: float = 0.0 if int(road["oneway"]) != 0 else minf(float(road["width"]) * 0.25, 1.8)
+		# rechte Fahrspur im Fahrband (Parkstreifen pl/pr abgezogen, wie traffic.gd lane_offset)
+		var pl := float(road.get("pl", 0.0))
+		var pr := float(road.get("pr", 0.0))
+		var wc := float(road["width"]) - pl - pr
+		# einspurige Straßen (lanes=1, auch mit Gegenverkehr): mittig fahren
+		var single := int(road.get("lanes", 2)) <= 1
+		var off: float = (pl - pr) * 0.5 * float(_dir) + (0.0 if int(road["oneway"]) != 0 or single else minf(wc * 0.25, 1.8))
 		for i in chain.size():
 			var a: Array = chain[maxi(i - 1, 0)]
 			var b: Array = chain[mini(i + 1, chain.size() - 1)]
 			var d := Vector2(b[0] - a[0], b[1] - a[1]).normalized()
 			var n := Vector2(-d.y, d.x)
 			pts.append(Vector3(float(chain[i][0]) + n.x * off, float(chain[i][2]), float(chain[i][1]) + n.y * off))
+		# nur der Teil im Kachelinneren (8 m Rand): im Test ist nur diese Kachel geladen – am Rand hing das Auto
+		# halb über dem Nichts und blieb stecken, ohne dass die Straße schuld war
+		var ke := int(_tile.split("_")[0])
+		var kn := int(_tile.split("_")[1])
+		var bx0 := (ke - 411) * 1000.0 + 8.0
+		var bx1 := (ke - 409) * 1000.0 - 8.0
+		var bz0 := -((kn + 2) * 1000.0 - 5656200.0) + 8.0
+		var bz1 := -(kn * 1000.0 - 5656200.0) - 8.0
+		var best_a := 0
+		var best_n := 0
+		var a0 := -1
+		for i in pts.size() + 1:
+			var inside: bool = i < pts.size() and pts[i].x > bx0 and pts[i].x < bx1 and pts[i].z > bz0 and pts[i].z < bz1
+			if inside and a0 < 0:
+				a0 = i
+			elif not inside and a0 >= 0:
+				if i - a0 > best_n:
+					best_n = i - a0
+					best_a = a0
+				a0 = -1
+		if best_n < 2:
+			_finish(false, "ROUTETEST %s:%d: Weg liegt nicht im Kachelinneren" % [_tile, _wid])
+			return
+		pts = pts.slice(best_a, best_a + best_n)
+		# Start 5 m hinter dem Wegbeginn (am Beginn liegen Knoten, Portale, Plattenkanten – dort blieb das Auto beim
+		# Absetzen teils hängen, ohne dass die Straße unfahrbar war)
+		var acc0 := 0.0
+		var i0 := 0
+		while i0 < pts.size() - 2 and acc0 < 5.0:
+			acc0 += Vector2(pts[i0 + 1].x - pts[i0].x, pts[i0 + 1].z - pts[i0].z).length()
+			i0 += 1
+		if i0 > 0 and pts.size() - i0 >= 3:
+			pts = pts.slice(i0)
 		var p0: Vector3 = pts[0]
 		var p1: Vector3 = pts[mini(3, pts.size() - 1)]
 		var dir := p1 - p0
@@ -143,12 +183,18 @@ func _physics_process(delta: float) -> void:
 		st.y = p0.y + 0.9
 		player.global_transform = Transform3D(Basis(Vector3.UP, atan2(-dir.x, -dir.z)), st)
 		player.linear_velocity = Vector3.ZERO
+		player.angular_velocity = Vector3.ZERO
+		# Fahrbarkeit prüfen, nicht Unfallschäden: das Absetzen (0,9 m) und Rempler früherer Strecken summierten
+		# sich sonst (Motorleistung, verbogene/abgefallene Räder) – das Auto blieb dann auf freier Straße stehen
+		player.damage_enabled = false
+		player.repair()
 		player.override_input = true
 		_started = true
 		_last = st
 		var L := 0.0
 		for i in pts.size() - 1:
 			L += Vector2(pts[i + 1].x - pts[i].x, pts[i + 1].z - pts[i].z).length()
+		_len = L
 		print("ROUTETEST Start %s:%d %s (%.0f m)" % [_tile, _wid, String(road["name"]), L])
 		return
 	_t += delta
@@ -179,8 +225,21 @@ func _physics_process(delta: float) -> void:
 	var ang := atan2(fwd.cross(to.normalized()).y, fwd.dot(to.normalized()))
 	player.in_steer = clampf(-ang * 2.0, -1.0, 1.0)
 	var v := player.linear_velocity.length()
-	player.in_throttle = _gas if v < 14.0 else 0.0
-	player.in_brake = 0.0
+	# vor engen Kurven langsamer (Richtungsänderung auf den nächsten ~18 m): sonst schoss das Auto mit 14 m/s
+	# über eine 100°-Kehre in die Böschung
+	var turn := 0.0
+	var acc2 := 0.0
+	var k2 := best
+	while k2 < pts.size() - 2 and acc2 < 18.0:
+		var d1 := Vector2(pts[k2 + 1].x - pts[k2].x, pts[k2 + 1].z - pts[k2].z)
+		var d2 := Vector2(pts[k2 + 2].x - pts[k2 + 1].x, pts[k2 + 2].z - pts[k2 + 1].z)
+		if d1.length() > 0.05 and d2.length() > 0.05:
+			turn += absf(d1.angle_to(d2))
+		acc2 += d1.length()
+		k2 += 1
+	var vmax := lerpf(14.0, 4.0, clampf((turn - 0.35) / 1.2, 0.0, 1.0))
+	player.in_throttle = _gas if v < vmax else 0.0
+	player.in_brake = 0.6 if v > vmax + 2.0 else 0.0
 	if bd < 6.0 and best > 0:
 		var dy: float = p.y - (pts[best] as Vector3).y
 		_min_dy = minf(_min_dy, dy)
@@ -190,9 +249,44 @@ func _physics_process(delta: float) -> void:
 	else:
 		_stuck_t = 0.0
 	var done := best >= pts.size() - 2 and bd < 6.0
-	var fail := _stuck_t > 4.0 or _t > 90.0
+	var fail := _stuck_t > 4.0 or _t > maxf(90.0, 20.0 + _len / 9.0)
 	if fail and _why == "":
 		_why = "steckt fest bei (%.1f,%.1f,y=%.1f)" % [p.x, p.z, p.y] if _stuck_t > 4.0 else "Zeit abgelaufen"
+		# seitliche Abweichung von der Sollspur (vorzeichenbehaftet, + = rechts)
+		var j := mini(best, pts.size() - 2)
+		var sd := Vector2(pts[j + 1].x - pts[j].x, pts[j + 1].z - pts[j].z).normalized()
+		var rel := Vector2(p.x - pts[j].x, p.z - pts[j].z)
+		_why += " Spurabweichung %+.2f m" % (rel.x * -sd.y + rel.y * sd.x)
+	if fail:
+		_why += " " + _blockers(player)
 	if done or fail:
 		_finish(done and _resets == 0, "ROUTETEST %s %s:%d: %d/%d Punkte, Rücksetzen %d, Höhe über Profil %.2f … %.2f m %s" % [
 			"DURCHFAHREN" if done and _resets == 0 else "ABBRUCH", _tile, _wid, best, pts.size(), _resets, _min_dy, _max_dy, _why])
+
+
+func _blockers(car: RigidBody3D) -> String:
+	## Fehlerbild: was das Auto berührt (Modul/Bauteil), worauf es steht und wie es liegt
+	var space := car.get_world_3d().direct_space_state
+	var q := PhysicsShapeQueryParameters3D.new()
+	var bx := BoxShape3D.new()
+	bx.size = Vector3(2.4, 1.4, 5.4)
+	q.shape = bx
+	q.transform = Transform3D(car.global_transform.basis, car.global_position + car.global_transform.basis.y * 0.4)
+	q.exclude = [car.get_rid()]
+	var seen := {}
+	for h in space.intersect_shape(q, 24):
+		var o := BridgeAudit.owner_of(h["collider"])
+		if o.begins_with("?") and h["collider"] is Node:
+			o += "(" + str((h["collider"] as Node).get_path()) + ")"
+		seen[o] = true
+	var rq := PhysicsRayQueryParameters3D.create(car.global_position + Vector3(0, 2.0, 0), car.global_position - Vector3(0, 6.0, 0))
+	rq.exclude = [car.get_rid()]
+	rq.hit_back_faces = true
+	var g := space.intersect_ray(rq)
+	var under := "–" if g.is_empty() else "%s y=%.2f" % [BridgeAudit.owner_of(g["collider"]), (g["position"] as Vector3).y]
+	var pc := car as PlayerCar
+	var dmg := ""
+	if pc != null and pc.damage != null:
+		dmg = "; Motor %.2f, Räder ab %s, Bodenkontakt %d" % [pc.engine_health, str(pc.damage.wheel_lost), pc.grounded]
+	return "[berührt %s; Boden %s; oben %.2f; v %.1f%s]" % [",".join(seen.keys()), under,
+		car.global_transform.basis.y.y, car.linear_velocity.length(), dmg]

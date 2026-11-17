@@ -704,10 +704,13 @@ func _bridge(b: Dictionary) -> void:
 			_side_quad(sv, sn, si, faces, prev[0] + d, cur[0] + d, cur[0] + up, prev[0] + up, (prev[0] - prev[3]).normalized())
 			_side_quad(sv, sn, si, faces, prev[3] + up, cur[3] + up, cur[3] + d, prev[3] + d, (prev[3] - prev[0]).normalized())
 			var inl: Vector3 = (prev[3] - prev[0]).normalized() * 0.15
-			if not _near_other_bridge(ml, b) and not _rail_on_road(ml + Vector3(0, raise, 0)):
+			var upv := Vector3(0, raise, 0)
+			if not _near_other_bridge(ml, b) and not _rail_on_road(ml + upv) and not _rail_on_road(prev[0] + upv) \
+					and not _rail_on_road(cur[0] + upv):
 				_slab_rails.append([prev[0].x + inl.x, prev[0].z + inl.z, cur[0].x + inl.x, cur[0].z + inl.z,
 					(prev[0].y + cur[0].y) * 0.5 + raise, "steel", "#8c9294" if drive else "#7a7f84", 1.1])
-			if not _near_other_bridge(mr, b) and not _rail_on_road(mr + Vector3(0, raise, 0)):
+			if not _near_other_bridge(mr, b) and not _rail_on_road(mr + upv) and not _rail_on_road(prev[3] + upv) \
+					and not _rail_on_road(cur[3] + upv):
 				_slab_rails.append([prev[3].x - inl.x, prev[3].z - inl.z, cur[3].x - inl.x, cur[3].z - inl.z,
 					(prev[3].y + cur[3].y) * 0.5 + raise, "steel", "#8c9294" if drive else "#7a7f84", 1.1])
 		prev = cur
@@ -969,7 +972,17 @@ func _bridge_arches(data: Dictionary) -> void:
 			continue
 		var gm: Material
 		if String(gr.get("mat", "")) == "concrete":
-			gm = concrete_mat
+			# nach unten zeigende Flächen wie Deck-Unterseiten dunkel (sonst wirkten die Halbbögen der A17-Talbrücke
+			# von unten hell gelbgrün – heller Beton + Umgebungslicht vom Gras – unter dem dunklen Überbau)
+			var parts := _split_down(gr["tris"], gr.get("n", []))
+			if (parts[2] as Array).size() >= 9:
+				var dm := _tri_mesh(parts[2], parts[3], concrete_dark_mat, 1500.0)
+				_static_faces(dm.get_faces(), "girder")
+			if (parts[0] as Array).size() < 9:
+				continue
+			var cm := _tri_mesh(parts[0], parts[1], concrete_mat, 1500.0)
+			_static_faces(cm.get_faces(), "girder")
+			continue
 		else:
 			var smat := StandardMaterial3D.new()
 			smat.albedo_color = Color(String(gr.get("color", "#4a4846")))
@@ -1034,6 +1047,24 @@ func _static_faces(faces: PackedVector3Array, kind: String) -> void:
 	cs.shape = sh
 	body.add_child(cs)
 	add_child(body)
+
+
+static func _split_down(t: Array, nn: Array) -> Array:
+	## Dreiecksliste nach Normale teilen: [übrige, Normalen, nach unten zeigende (n.y < -0,35), Normalen]
+	var up_t := []
+	var up_n := []
+	var dn_t := []
+	var dn_n := []
+	for i in t.size() / 9:
+		var ny: float = float(nn[i * 3 + 1]) if nn.size() >= (i + 1) * 3 else 0.0
+		var dst_t: Array = dn_t if ny < -0.35 else up_t
+		var dst_n: Array = dn_n if ny < -0.35 else up_n
+		for k in 9:
+			dst_t.append(t[i * 9 + k])
+		if nn.size() >= (i + 1) * 3:
+			for k in 3:
+				dst_n.append(nn[i * 3 + k])
+	return [up_t, up_n, dn_t, dn_n]
 
 
 func _tri_mesh(t: Array, nn: Array, mat: Material, vis: float) -> ArrayMesh:

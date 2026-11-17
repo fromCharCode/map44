@@ -28,7 +28,11 @@ from shapely.geometry import LineString, box
 
 STEP = 2.0          # m, maximaler Abstand der Profilpunkte
 PAD = 320.0         # m, Fensterrand um die Kachel
-W_DECK = 300.0      # Gewicht eines Brückendeck-Punkts (praktisch fest)
+W_DECK = 300.0      # Gewicht eines Brückendeck-Punkts im Löser (weich); exakt aufs Deck setzt danach _pin_decks.
+#                     Ein festes Gewicht (20000) zog über gemeinsame Knoten falsch zugeordnete Nachbarwege mit
+#                     (Leisniger Platz 7 m hoch, Autobahn-Dellen 2 m) – die Korrektur bleibt deshalb örtlich.
+PIN_R = 12.0        # m, Länge der Angleichrampe auf der Zufahrt
+PIN_MAX = 1.0       # m, größere Abweichungen vom Deck gelten als Zuordnungsfehler und werden nicht übertragen
 # Unterführungen: Mindest-Durchfahrtshöhe unter der Deckunterkante (LoD2-Deck 1 m dick). Das DGM ist unter Brücken
 # interpoliert (Laserscan sieht nicht unter das Deck) und kennt kurze Senken der Unterführung nicht.
 W_CLR = 60.0
@@ -225,13 +229,23 @@ class RoadSurface:
             self.dom = np.full(self.n, np.nan)
         self.dom_ok = np.isfinite(self.dom) & (~np.isfinite(self.terr) | ((self.dom > self.terr + 0.5) & (self.dom < self.terr + 15.0)))
         bridge_nodes = np.zeros(self.n, dtype=bool)
+        bridge_lv = {}
         for p in self.pieces:
             if p["bridge"]:
                 bridge_nodes[p["idx"]] = True
-        for p in self.pieces:
+        # Brückenwege zuerst (ihre Deckhöhen – ohne fremde tiefere Decks – braucht die Zufahrtsregel)
+        lv_done = False
+        for p in sorted(self.pieces, key=lambda q: not q["bridge"]):
+            if not p["bridge"] and not lv_done:
+                for q in self.pieces:
+                    if q["bridge"]:
+                        self._bridge_levels(q, bridge_lv)
+                lv_done = True
             idx = p["idx"]
             m = len(idx)
-            hi, lo, ter = self.hi[idx], self.lo[idx], self.terr[idx]
+            hi, lo, ext = self._band_deck(p)
+            p["hi"], p["lo"], p["ext"] = hi, lo, ext
+            ter = self.terr[idx]
             has = np.isfinite(hi)
             # mode: 0 Gelände (oder DOM), 1 Deck (eindeutig), 2 Deck (gestapelt, später entschieden), 3 frei,
             #       4 Brückenweg ohne Deck (DOM, falls zum Verlauf passend, sonst frei)
@@ -239,6 +253,9 @@ class RoadSurface:
             if p["bridge"]:
                 mode[:] = 4
                 mode[has] = np.where((hi[has] - lo[has]) < 1.5, 1, 2)
+                self._foreign_low_decks(p, mode, hi, lo)
+            elif has.any() and p.get("under"):
+                mode[has] = 3          # OSM-"Tunnel" unter einer Brücke: liegt nie auf einem Deck (Coswiger Straße)
             elif has.any():
                 # Läufe mit Deck: Zufahrt (berührt Brückenknoten) -> Deck, sonst Unterführung -> frei
                 k = 0
@@ -247,24 +264,231 @@ class RoadSurface:
                         k += 1
                         continue
                     j = k
-                    while j + 1 < m and has[j + 1]:
+                    # ein Lauf = EIN Deck: bei Höhensprung > 1,5 m beginnt ein neuer (Parkweg unter der Löbtauer
+                    # Brücke lief erst über eine niedrige Parkrampe, dann unter das 8 m höhere Deck – als ein Lauf
+                    # "niedriges Deck" kletterte er am Ende auf die Brücke)
+                    while j + 1 < m and has[j + 1] and abs(float(hi[j + 1]) - float(hi[j])) < 1.5:
                         j += 1
                     a, b = max(k - 1, 0), min(j + 1, m - 1)
                     # Deck kaum über dem Gelände (Bachbrücke auf Straßenhöhe, Rampe auf die Brücke): darunter passt
                     # kein Fahrzeug durch -> der Weg liegt AUF dem Deck, auch ohne Brückenkennzeichnung in OSM
                     dd = (hi[k:j + 1] - ter[k:j + 1])[np.isfinite(ter[k:j + 1])]
-                    low_deck = len(dd) > 0 and float(np.median(dd)) < (2.4 if p["lc"] in ("walk", "steps") else 3.2)
-                    if bridge_nodes[idx[a:b + 1]].any() or low_deck:
+                    thr = 2.4 if p["lc"] in ("walk", "steps") else 3.2
+                    low_deck = len(dd) > 0 and float(np.median(dd)) < thr
+                    if low_deck:
+                        # das DGM ist unter Brücken interpoliert (Damm durchgezogen): niedrig nur, wenn auch das
+                        # Gelände VOR dem Deck entlang des Wegs nahe der Deckhöhe liegt (Wirtschaftsweg unter der
+                        # EÜ in 410_5656 lag sonst auf dem Bahndeck)
+                        ga, gb = self._outside_ground(idx, k, j)
+                        if k > 0 and np.isfinite(ter[k - 1]):
+                            ga = float(ter[k - 1])            # direkter Nachbarpunkt vor dem Deck
+                        if j < m - 1 and np.isfinite(ter[j + 1]):
+                            gb = float(ter[j + 1])
+                        for g_, e_ in ((ga, k), (gb, j)):
+                            if g_ is not None and abs(float(hi[e_]) - g_) >= thr:
+                                low_deck = False
+                    # Deckauffahrt-Regel nur für Fahrwege/Gleise: Fußwege am Bahnhof Pieschen hielt das Bahnsteigniveau
+                    # (Plattform-Raster) für "Gelände auf Deckhöhe" – sie zogen dann über ihren Knoten die Straße hoch
+                    on_top = p["lc"] not in ("walk", "steps") and self._enters_on_deck(idx, k, j, hi)
+                    if low_deck or on_top:
                         mode[k:j + 1] = np.where((hi[k:j + 1] - lo[k:j + 1]) < 1.5, 1, 2)
                     else:
-                        mode[k:j + 1] = 3
+                        mode[k:j + 1] = self._approach_modes(p, a, b, k, j, hi, lo, bridge_nodes, bridge_lv)
                     k = j + 1
+                # Weg auf einem tieferen Deck, das unter einem höheren weiterläuft (gestapelt): bleibt auf dem tieferen,
+                # wenn dessen Höhe nahtlos an den Nachbarpunkt auf Deck anschließt (Parkrampe unter der Löbtauer Brücke)
+                for rng, step in ((range(1, m), 1), (range(m - 2, -1, -1), -1)):
+                    for q in rng:
+                        pq = q - step
+                        if mode[q] != 3 or not np.isfinite(lo[q]) or (hi[q] - lo[q]) < 1.5 or mode[pq] not in (1, 2):
+                            continue
+                        lv = (float(hi[pq]), float(lo[pq])) if mode[pq] == 2 else (float(hi[pq]),)
+                        if min(abs(float(lo[q]) - v) for v in lv) < 1.5:
+                            mode[q] = 2
             mode[(mode == 0) & ~np.isfinite(ter) & ~np.isfinite(self.dom[idx])] = 3
             p["mode"] = mode
             p["deck"] = (mode == 1) | (mode == 2)
             p["has_deck"] = bool(has.any())
             p["wmul"] = np.ones(m)
             p["amul"] = np.ones(m)
+
+    def _foreign_low_decks(self, p, mode, hi, lo):
+        """Brückenweg über einem FREMDEN, tieferen LoD2-Teil (eigener Überbau fehlt in LoD2): das Oberflächenmodell
+        liegt über dem ganzen Lauf gleichmäßig 3–12 m über diesem Deck (glatter Verlauf – kein Fachwerk, keine
+        Bäume) und schließt an mindestens einem Ende an die Höhe des Wegs daneben an. Dann gilt der Lauf als Brücke
+        ohne Deck (Modus 4: Oberflächenmodell). Westliche Rampe der Löbtauer Brücke lag sonst 6 m zu tief auf einem
+        Teil darunter."""
+        if p["kind"] != "road":
+            return                 # Gleise sind zu steif geglättet, um Modus 4 (DOM) zu folgen – sie sanken eher ab
+        idx, s = p["idx"], p["s"]
+        dom = self.dom[idx]
+        m = len(idx)
+        k = 0
+        while k < m:
+            if mode[k] != 1:
+                k += 1
+                continue
+            j = k
+            while j + 1 < m and mode[j + 1] == 1:
+                j += 1
+            n = j - k + 1
+            dm = dom[k:j + 1] - hi[k:j + 1]
+            fin = np.isfinite(dm)
+            if n >= 5 and fin.sum() >= 5 and float(np.mean((dm[fin] > 3.0) & (dm[fin] < 12.0))) > 0.8:
+                sv, dv = s[k:j + 1][fin], dom[k:j + 1][fin]
+                A = np.vstack([sv, np.ones_like(sv)]).T
+                coef, *_ = np.linalg.lstsq(A, dv, rcond=None)
+                smooth = float(np.percentile(np.abs(dv - A @ coef), 80)) < 0.6
+                sup = False
+                for q, e in ((k - 1, k), (j + 1, j)):
+                    if not (0 <= q < m) or not np.isfinite(dom[e]):
+                        continue
+                    if mode[q] in (1, 2):
+                        sup |= min(abs(float(hi[q]) - float(dom[e])), abs(float(lo[q]) - float(dom[e]))) < 1.5
+                    elif mode[q] == 4 and np.isfinite(dom[q]):
+                        sup |= abs(float(dom[q]) - float(dom[e])) < 1.0
+                if smooth and sup:
+                    mode[k:j + 1] = 4
+                    self.log(f"  Brückenweg {p['id']}: {n} Punkte über fremdem tieferem Deck (DOM +{float(np.median(dm[fin])):.1f} m) "
+                             f"-> Brücke ohne Deck")
+            k = j + 1
+
+    def _band_deck(self, p):
+        """Deckhöhe je Punkt (hi, lo) und Maske ext: Straßen, deren Band ein Deck SCHRÄG erreicht (Deckkante nicht
+        quer zur Straße), berühren es an einer Seite schon vor der Mitte. Dort gilt die Deckhöhe der Seite (höchste),
+        sonst entstand an der äußeren Spur eine Stufe bis 0,4 m (Meißner Landstraße). Nur bis 12 m vor/nach einem
+        Punkt mit Deck in der Mitte – Straßen bloß NEBEN einem Deck bleiben unberührt."""
+        idx, s = p["idx"], p["s"]
+        hi = self.hi[idx].astype(float)
+        lo = self.lo[idx].astype(float)
+        ext = np.zeros(len(idx), dtype=bool)
+        cen = np.isfinite(hi)
+        if p["kind"] != "road" or p["lc"] in ("walk", "steps") or p["bridge"] or p.get("under") or cen.all() \
+                or len(idx) < 2:
+            return hi, lo, ext
+        E, N = self.E[idx], self.N[idx]
+        dE, dN = np.gradient(E), np.gradient(N)
+        L = np.maximum(np.hypot(dE, dN), 1e-6)
+        nE, nN = -dN / L, dE / L
+        off = 0.8 * float(p["hw"])
+        hL, lL = self._deck_at(E + nE * off, N + nN * off)
+        hR, lR = self._deck_at(E - nE * off, N - nN * off)
+        side = ~cen & (np.isfinite(hL) | np.isfinite(hR))
+        if not side.any():
+            return hi, lo, ext
+        if cen.any():
+            cs = s[cen]
+            near = np.array([float(np.min(np.abs(cs - sv))) <= 12.0 for sv in s])
+            ext = side & near
+        # niedriges Deck auf Geländehöhe, das seitlich in die Fahrbahn ragt (Brückenecke in einer Einmündung,
+        # Heidemühlweg an der Radeberger Landstraße): auch ohne Deck in der Mitte auf Deckhöhe heben
+        with np.errstate(invalid="ignore"):
+            hs = np.fmax(hL, hR)
+            ext |= side & (np.abs(hs - self.terr[idx]) < 1.0)
+        with np.errstate(invalid="ignore"):
+            hi[ext] = np.fmax(hL[ext], hR[ext])
+            lo[ext] = np.fmin(lL[ext], lR[ext])
+        return hi, lo, ext
+
+    def _bridge_levels(self, p, out):
+        """Deckhöhe eines Brückenwegs an jedem seiner Punkte: nächster Punkt mit EINEM Deck (≤ 30 m entlang des Wegs).
+        Ohne LoD2-Deck: NaN (unbekannt)."""
+        idx, s = p["idx"], p["s"]
+        hi = p["hi"]
+        single = p["mode"] == 1
+        pos = np.nonzero(single)[0]
+        for q in range(len(idx)):
+            lv = np.nan
+            if len(pos):
+                nq = pos[np.argmin(np.abs(s[pos] - s[q]))]
+                if abs(s[nq] - s[q]) <= 30.0:
+                    lv = float(hi[nq])
+            out.setdefault(int(idx[q]), []).append(lv)
+
+    def _approach_modes(self, p, a, b, k, j, hi, lo, bridge_nodes, bridge_lv):
+        """Zufahrt: Punkte des Laufs k..j, die auf DEMSELBEN Deck liegen wie ein berührter Brückenweg (Höhe passt,
+        Toleranz wächst mit dem Abstand: Decks steigen), werden Deck (1 eindeutig, 2 gestapelt); übrige frei (3).
+        Ein Brückenweg auf einem anderen, tieferen Bauwerk (Weißeritzbrücke der Freiberger Straße unter der
+        Löbtauer Brücke) macht aus der Unterführung keine Zufahrt – sonst wurden Straße und Gleis aufs obere Deck
+        gezogen und das Gelände darunter mit aufgeschüttet. Brückenweg ohne LoD2-Deck (Höhe unbekannt): kein Beleg
+        für eine Zufahrt – ein Deck unter dem anschließenden Weg gehört dann zu einem anderen Bauwerk."""
+        idx, s = p["idx"], p["s"]
+        n = j - k + 1
+        out = np.full(n, 3, dtype=np.int8)
+        touch = []
+        for q in range(a, b + 1):
+            if bridge_nodes[idx[q]]:
+                touch += [(q, lv) for lv in bridge_lv.get(int(idx[q]), [np.nan])]
+        touch = [(q, lv) for q, lv in touch if np.isfinite(lv)]
+        if not touch:
+            return out
+        for t in range(n):
+            q = k + t
+            on_hi = on_lo = False
+            for qt, lv in touch:
+                tol = 2.0 + 0.06 * abs(float(s[q] - s[qt]))
+                on_hi |= abs(float(hi[q]) - lv) < tol
+                on_lo |= abs(float(lo[q]) - lv) < tol
+            if on_hi and (hi[q] - lo[q]) < 1.5:
+                out[t] = 1
+            elif on_hi or on_lo:
+                out[t] = 2
+        return out
+
+    def _outside_ground(self, idx, k, j):
+        """Gelände 2–6 m jenseits des Deckrands entlang der Wegrichtung an beiden Laufenden (None = keins)."""
+        E, N = self.E[idx], self.N[idx]
+        m = len(idx)
+
+        def side(i0, i1):
+            dx, dn = E[i0] - E[i1], N[i0] - N[i1]
+            L = math.hypot(dx, dn)
+            if L < 1e-3:
+                return None
+            dx, dn = dx / L, dn / L
+            d = np.arange(1.0, 40.0)
+            h, _ = self._deck_at(E[i0] + dx * d, N[i0] + dn * d)
+            out = np.nonzero(~np.isfinite(h))[0]
+            if not len(out):
+                return None
+            d0 = d[out[0]]
+            g = self.mosaic.sample(E[i0] + dx * (d0 + np.array([2.0, 4.0, 6.0])),
+                                   N[i0] + dn * (d0 + np.array([2.0, 4.0, 6.0])))
+            g = g[np.isfinite(g)]
+            return float(g.max()) if len(g) else None
+
+        return side(k, min(k + 1, m - 1)), side(j, max(j - 1, 0))
+
+    def _enters_on_deck(self, idx, k, j, hi):
+        """Weg ohne Brückenkennzeichnung, der ÜBER ein LoD2-Deck führt: Gelände kurz vor und kurz hinter dem Deck
+        (entlang der Wegrichtung) liegt auf Höhe der Deckkante (Damm/Widerlager) – darunter liegt nur eine Senke,
+        ein Bach oder ein als tunnel=yes erfasster Durchlass (A4 über den Kirchenweg, Autobahnäste über einen
+        Bach). Eine echte Unterführung verläuft dagegen auch vor/hinter der Brücke tief unter dem Deck."""
+        if j - k < 3:
+            return False
+        E, N = self.E[idx], self.N[idx]
+
+        def side(i0, i1):
+            dx, dn = E[i0] - E[i1], N[i0] - N[i1]
+            L = math.hypot(dx, dn)
+            if L < 1e-3:
+                return None
+            dx, dn = dx / L, dn / L
+            d = np.arange(1.0, 40.0)
+            h, _ = self._deck_at(E[i0] + dx * d, N[i0] + dn * d)
+            out = np.nonzero(~np.isfinite(h))[0]
+            if not len(out):
+                return None
+            d0 = d[out[0]]
+            g = self.mosaic.sample(E[i0] + dx * (d0 + np.array([2.0, 4.0, 6.0])),
+                                   N[i0] + dn * (d0 + np.array([2.0, 4.0, 6.0])))
+            g = g[np.isfinite(g)]
+            return float(g.max()) if len(g) else None
+
+        m = len(idx)
+        ga = side(k, min(k + 1, m - 1))
+        gb = side(j, max(j - 1, 0))
+        return ga is not None and gb is not None and abs(ga - float(hi[k])) < 1.5 and abs(gb - float(hi[j])) < 1.5
 
     # --- Krümmungsterme über Wegstöße --------------------------------------
     def _joins(self):
@@ -327,9 +551,10 @@ class RoadSurface:
             ds = np.diff(s)
             h[0], h[-1] = ds[0] / 2, ds[-1] / 2
             h[1:-1] = (ds[:-1] + ds[1:]) / 2
-            ter, hi, lo = self.terr[idx], self.hi[idx].astype(float), self.lo[idx].astype(float)
+            ter, hi, lo = self.terr[idx], p["hi"], p["lo"]
+            wdeck = W_DECK
             tgt = np.where(mode == 1, hi, ter)
-            w = np.where(mode == 0, 1.0, np.where(mode == 1, W_DECK, 0.0))
+            w = np.where(mode == 0, 1.0, np.where(mode == 1, wdeck, 0.0))
             if it == 0:
                 # Brückenweg ohne LoD2-Deck: DOM (Fahrbahn von oben gemessen) als erste Schätzung, wenn es klar
                 # über dem Gelände liegt (Talbrücken zwischen Tunneln haben sonst keinen Anker)
@@ -342,7 +567,7 @@ class RoadSurface:
                 if st.any():
                     yy = y[idx][st]
                     tgt[st] = np.where(np.abs(hi[st] - yy) <= np.abs(lo[st] - yy), hi[st], lo[st])
-                    w[st] = W_DECK
+                    w[st] = wdeck
                 g = mode == 0
                 if g.any():
                     yg = y[idx][g]
@@ -430,6 +655,48 @@ class RoadSurface:
                 if bad == 0 and it >= 2:
                     break
         self.log(f"  Straßenprofil: Restliche Steilstellen {bad}")
+        self._pin_decks()
+
+    def _pin_decks(self):
+        """Fahrbahn auf jedem Deck exakt auf Deckhöhe (der weiche Löser ließ sie an Deckenden bis 0,4 m durchhängen
+        -> Stufe an der Deckkante, Auto blieb hängen); die Differenz läuft auf der Zufahrt über PIN_R m aus.
+        Nur bis PIN_MAX: größere Abweichungen sind Zuordnungsfehler und bleiben dem Löser überlassen."""
+        adj = np.zeros(self.n)
+        cnt = np.zeros(self.n)
+        n_pin = 0
+        for p in self.pieces:
+            mode = p["mode"]
+            dk = (mode == 1) | (mode == 2)
+            if not dk.any():
+                continue
+            idx, s = p["idx"], p["s"]
+            hi, lo = p["hi"], p["lo"]
+            yy = self.y[idx]
+            with np.errstate(invalid="ignore"):
+                tgt = np.where(mode == 1, hi, np.where(np.abs(hi - yy) <= np.abs(lo - yy), hi, lo))
+                delta = tgt - yy
+                ok = dk & np.isfinite(delta) & (np.abs(delta) <= PIN_MAX)
+            if not ok.any():
+                continue
+            sd, dd = s[ok], delta[ok]
+            order = np.argsort(sd)
+            sd, dd = sd[order], dd[order]
+            pos = np.clip(np.searchsorted(sd, s), 1, len(sd) - 1) if len(sd) > 1 else np.zeros(len(s), dtype=int)
+            if len(sd) > 1:
+                left, right = sd[pos - 1], sd[pos]
+                near = np.where(np.abs(s - left) <= np.abs(s - right), pos - 1, pos)
+            else:
+                near = np.zeros(len(s), dtype=int)
+            dist = np.abs(s - sd[near])
+            corr = dd[near] * 0.5 * (1.0 + np.cos(np.pi * np.clip(dist / PIN_R, 0.0, 1.0)))
+            use = (ok | (~dk & (dist <= PIN_R)))
+            corr = np.where(ok, delta, corr)
+            np.add.at(adj, idx[use], corr[use])
+            np.add.at(cnt, idx[use], 1.0)
+            n_pin += int(ok.sum())
+        m = cnt > 0
+        self.y[m] += adj[m] / cnt[m]
+        self.log(f"  Straßenprofil: {n_pin} Deckpunkte exakt aufs Deck gesetzt")
 
     # --- Ausgabe ---------------------------------------------------------
     def crossing_filter(self, segs, to_local, tol_y=2.5):
@@ -524,7 +791,7 @@ class RoadSurface:
             idx = p["idx"]
             m = len(idx)
             mode = p["mode"]
-            conf = ~p["deck"]
+            conf = ~p["deck"] | p["ext"]       # schräge Deckenden: Gelände unter dem Rest des Bandes anheben
             if p["bridge"]:
                 # Brückenweg: nur die Enden ohne Deck (Zufahrt/Widerlager), und nur wenn es ein Deck gibt
                 conf = np.zeros(m, dtype=bool)
@@ -538,6 +805,10 @@ class RoadSurface:
                     while k >= 0 and nd[k]:
                         conf[k] = True
                         k -= 1
+                    # nur Widerlager/Rampe (≤ 2,5 m über dem Gelände): ein Brückenende ohne LoD2-Deck hoch in der Luft
+                    # wurde sonst zum Damm – unter der A4 stand so eine 14 m hohe Wand quer über dem Zubringer
+                    with np.errstate(invalid="ignore"):
+                        conf &= np.abs(self.y[idx] - self.terr[idx]) <= 2.5
             hw = float(p["hw"]) + (0.3 if p["kind"] == "road" else 0.6)
             wgt_kind = 0.35 if p["lc"] == "tram" else 1.0
             if p["bridge"]:
@@ -592,6 +863,54 @@ class RoadSurface:
         target = np.where(ok, num / np.maximum(den, 1e-12), orig)
         out = orig + cov_max * (target - orig)
         terrain[ok] = out[ok]
+        # Brückenwege: Gelände im Fahrbahnband nie über der Fahrbahn (nur absenken, Böschung 1:1,5) –
+        # Helfenberger Grund: OSM-Weg neben dem kleinen LoD2-Deck, auf Deckhöhe gezogen, Waldboden stand 0,5–0,9 m in
+        # der Fahrbahn; die abgesenkte Fläche bekommt danach ein Füllstück (bridge_decks.fill_decks)
+        n_cut = 0
+        for p in self.pieces:
+            if not p["bridge"] or p["kind"] != "road":
+                continue
+            idx = p["idx"]
+            m = len(idx)
+            # alle Punkte des Brückenwegs (auch ohne Deck, Modus 4: dort trägt die OSM-Brückenplatte die Fahrbahn –
+            # Helfenberger Grund: OSM-Brücke 10 m neben dem LoD2-Deck, Profil zum Deck hin abgesenkt)
+            # nur knapp durchstoßendes Gelände (≤ 2,5 m): höher liegt ein Hang/Portal (A17 Coschütz: sonst 20 m tiefer
+            # Einschnitt vor dem Tunnelportal) – das regeln Anschluss und tunnels.py
+            with np.errstate(invalid="ignore"):
+                above = (self.terr[idx] > self.y[idx] + 0.1) & (self.terr[idx] < self.y[idx] + 2.5)
+            if not above.any():
+                continue
+            hw = float(p["hw"]) + 0.3
+            ex = self.E[idx] - min_e
+            ny = max_n - self.N[idx]
+            yy = self.y[idx]
+            for q in range(m - 1):
+                if not (above[q] or above[q + 1]):
+                    continue
+                ax, ay, bx, by = ex[q], ny[q], ex[q + 1], ny[q + 1]
+                pad = hw + 4.0
+                c0 = int(max(math.floor(min(ax, bx) - pad), 0))
+                c1 = int(min(math.ceil(max(ax, bx) + pad), W - 1))
+                r0 = int(max(math.floor(min(ay, by) - pad), 0))
+                r1 = int(min(math.ceil(max(ay, by) + pad), H - 1))
+                if c1 <= c0 or r1 <= r0:
+                    continue
+                gx, gy = np.meshgrid(np.arange(c0, c1 + 1) + 0.5, np.arange(r0, r1 + 1) + 0.5)
+                dx, dy = bx - ax, by - ay
+                l2 = dx * dx + dy * dy
+                if l2 < 1e-8:
+                    continue
+                t = np.clip(((gx - ax) * dx + (gy - ay) * dy) / l2, 0.0, 1.0)
+                d = np.hypot(gx - (ax + t * dx), gy - (ay + t * dy))
+                tgt = yy[q] + t * (yy[q + 1] - yy[q]) - 0.2 + np.maximum(d - hw, 0.0) / 1.5
+                sub = terrain[r0:r1 + 1, c0:c1 + 1]
+                cut = (d <= pad) & (sub > tgt) & (sub < tgt + 2.7)      # je Pixel höchstens ~2,7 m absenken
+                if protect is not None:
+                    cut &= ~protect[r0:r1 + 1, c0:c1 + 1]
+                sub[cut] = tgt[cut]
+                n_cut += int(cut.sum())
+        if n_cut:
+            print(f"  Gelände unter {n_cut} Pixeln von Brückenfahrbahnen abgesenkt", flush=True)
         if deck_lo_tile is not None:
             # Gelände darf nirgends durch ein Deck stoßen; nur knapp unter die Oberkante (nicht 1 m), sonst
             # entsteht an Brückenenden durch die Pixel-Interpolation eine Mulde mit sichtbarer Deckstirn.

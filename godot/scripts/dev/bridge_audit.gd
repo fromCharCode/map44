@@ -20,6 +20,8 @@ var _box := BoxShape3D.new()
 var _box_q := PhysicsShapeQueryParameters3D.new()
 var _deck_box := BoxShape3D.new()
 var _deck_q := PhysicsShapeQueryParameters3D.new()
+var _surf_box := BoxShape3D.new()
+var _surf_q := PhysicsShapeQueryParameters3D.new()
 
 
 func start(m: Node, args: Dictionary) -> void:
@@ -38,6 +40,9 @@ func start(m: Node, args: Dictionary) -> void:
 	_deck_box.size = Vector3(1.8, 0.7, 4.0)
 	_deck_q.shape = _deck_box
 	_deck_q.collision_mask = 1
+	_surf_box.size = Vector3(0.4, 0.4, 0.4)       # Oberfläche ±0,2 m um Soll-0,15
+	_surf_q.shape = _surf_box
+	_surf_q.collision_mask = 1
 
 
 func run() -> void:
@@ -105,16 +110,23 @@ func _offsets(r: Dictionary) -> Array:
 	## Querlagen der Prüfung: Fahrbahnmitte und die Mitten der äußersten Fahrstreifen (dort fährt ein Auto; höchstens
 	## 1,9 m vom Rand) – "befahrbar" heißt: ein Fahrzeug mittig in jeder Spur berührt nichts. Bordstein/Geländer an der
 	## Fahrbahnkante sind kein Hindernis.
-	var w := float(r["width"]) - float(r.get("pl", 0.0)) - float(r.get("pr", 0.0))
+	## Parkstreifen (pl links, pr rechts der Wegrichtung) gehören nicht zum Fahrband: dessen Mitte liegt um
+	## (pl − pr)/2 nach rechts versetzt (wie roads.gd/traffic.gd) – geparkte Autos stehen dort zu Recht.
+	var pl := float(r.get("pl", 0.0))
+	var pr := float(r.get("pr", 0.0))
+	var c := (pl - pr) * 0.5
+	var w := float(r["width"]) - pl - pr
 	if w < 5.0:
-		return [0.0]
+		return [c]
 	var lanes := maxi(int(r.get("lanes", 1)), 1)
+	if lanes <= 1:
+		return [c]                     # einspurig (auch mit Gegenverkehr): man fährt in der Mitte
 	var per := maxi(lanes / 2, 1) if int(r.get("oneway", 0)) == 0 else lanes
 	var lane_w := (w * 0.5) / float(per) if int(r.get("oneway", 0)) == 0 else w / float(lanes)
 	var o := w * 0.5 - minf(lane_w * 0.5, 1.9)
 	if o < 0.6:
-		return [0.0]
-	return [0.0, -o, o]
+		return [c]
+	return [c, c - o, c + o]
 
 
 func _check_over(tile: Tile, st: Dictionary) -> void:
@@ -125,6 +137,7 @@ func _check_over(tile: Tile, st: Dictionary) -> void:
 		var pts: Array = r["pts"]
 		var bad := 0
 		var first := ""
+		var opts: Array = []
 		for i in pts.size() - 1:
 			var a := Vector3(pts[i][0], pts[i][2], pts[i][1])
 			var c := Vector3(pts[i + 1][0], pts[i + 1][2], pts[i + 1][1])
@@ -151,17 +164,33 @@ func _check_over(tile: Tile, st: Dictionary) -> void:
 						break
 					if msg == "":
 						var rq := PhysicsRayQueryParameters3D.create(p + Vector3(0, 1.5, 0), p - Vector3(0, 2.0, 0), 1)
-						rq.hit_back_faces = false
+						rq.hit_back_faces = true      # Fahrzeugkollision trägt beide Seiten (backface_collision)
 						var rh := space.intersect_ray(rq)
+						if rh.is_empty():
+							# Strahlen verfehlen in Jolt teils sehr große Deckdreiecke (A17-Talbrücke, Kanten bis 100 m),
+							# obwohl das Auto darauf fährt (Fahrtest) – dann mit einem flachen Körper an der Oberfläche prüfen
+							_surf_q.transform = Transform3D(Basis.IDENTITY, p - Vector3(0, 0.15, 0))
+							for sh in space.intersect_shape(_surf_q, 4):
+								if not owner_of(sh["collider"]).begins_with("Terrain"):
+									rh = {"position": p}
+									break
 						if rh.is_empty() or absf(float(rh["position"].y) - p.y) > 0.5:
 							msg = "kein Boden (Soll %.1f, ist %s)" % [p.y, "–" if rh.is_empty() else "%.1f" % rh["position"].y]
+							# Fehlerbild: was ein langer Strahl (±25 m) trifft
+							var lq := PhysicsRayQueryParameters3D.create(p + Vector3(0, 25.0, 0), p - Vector3(0, 25.0, 0), 1)
+							lq.hit_back_faces = true
+							var lh := space.intersect_ray(lq)
+							msg += " [lang: %s]" % ("nichts" if lh.is_empty() else "%s y=%.2f" % [owner_of(lh["collider"]), float(lh["position"].y)])
 					if msg != "":
 						bad += 1
 						if first == "":
 							first = "(%.0f,%.0f,y=%.1f, quer %+.1f) %s" % [p.x, p.z, p.y, off, msg]
+						if opts.size() < 80:
+							opts.append([snappedf(p.x, 0.1), snappedf(p.z, 0.1), snappedf(p.y, 0.01), off, msg])
 		if bad > 0:
 			st["over"] += 1
-			report["over"].append({"tile": tile.key, "id": int(r["id"]), "name": r["name"], "cls": r["cls"], "n": bad, "first": first})
+			report["over"].append({"tile": tile.key, "id": int(r["id"]), "name": r["name"], "cls": r["cls"], "n": bad, "first": first,
+				"pts": opts})
 
 
 func _check_under(tile: Tile, st: Dictionary) -> void:

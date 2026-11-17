@@ -26,9 +26,10 @@
  ],
  "skip_bridge_parts_note": "Carolabrücke: Teileinsturz 11.09.2024, Abriss 2025 (data/research/bruecken.md); LoD2-Daten zeigen noch den Altbestand",
  "road_width": {
-  "30129851": 10.2
+  "30129851": 10.2,
+  "254555706": 5.0
  },
- "road_width_note": "Feste Fahrbahnbreiten (OSM-Weg-ID -> m), z. B. Blaues Wunder: 10,20 m zwischen den Fachwerkträgern",
+ "road_width_note": "Feste Fahrbahnbreiten (OSM-Weg-ID -> m), z. B. Blaues Wunder: 10,20 m zwischen den Fachwerkträgern; Loschwitzer Wiesenweg unter dem Blauen Wunder (254555706): 5,0 m (Wohnstraße, maxheight=below_default) statt 7,5 m Flurstücksbreite – sonst reichte die Fahrbahn 1,25 m in den Uferpfeiler",
  "skip_tunnels": [
   "Coventrystraße"
  ],
@@ -36,5 +37,9 @@
  "bridge_part_dip_fix": [
   "DESNATPU10001mWt"
  ],
- "bridge_part_dip_fix_note": "A17-Talbrücke Lockwitztal: LoD2-Deck mit 25-m-Knick in Feldmitte (Datenfehler) -> gerade zwischen den Enden"
+ "bridge_part_dip_fix_note": "A17-Talbrücke Lockwitztal: LoD2-Deck mit 25-m-Knick in Feldmitte (Datenfehler) -> gerade zwischen den Enden",
+ "bridge_part_dom_force": [
+  "DESNATPU10001mWt"
+ ],
+ "bridge_part_dom_force_note": "Nach der Begradigung weicht das A17-Deck Lockwitztal laut DOM abschnittsweise -0,7..+1,3 m ab (Mittel < 0,8 m, sonst abgelehnt): abschnittsweise DOM-Korrektur erzwingen – vorher lagen die Richtungsfahrbahnen bis 1,4 m auseinander"
 }

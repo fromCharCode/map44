@@ -1070,6 +1070,8 @@ def road_width(tags: dict) -> float:
     ov = OVERRIDES.get("road_width", {}).get(str(tags.get("_id")))
     if ov:
         return float(ov)
+    if tags.get("_id") in UNDERPASS_W and not tags.get("width"):
+        return UNDERPASS_W[tags["_id"]]
     w = num(tags.get("width"))
     pl, pr = lane_widths(park_sides(tags)) if cls in DRIVE else (0.0, 0.0)
     oneway = tags.get("oneway") in ("yes", "1", "true", "-1") or tags.get("junction") == "roundabout"
@@ -1275,8 +1277,15 @@ def _dip_fix(part):
         return za + (zb - za) * min(max((u - u0) / L, 0.0), 1.0)
     # Seitenwände, die tiefer als jede Deckdicke unter die Soll-Linie reichen, gehören zum Knick -> weglassen
     walls = [(ext, holes) for ext, holes in part["walls"] if max(target_of(qq) - qq[2] for qq in ext) <= 6.0]
+    def mv_ground(polys):
+        # Unterseite höchstens 4 m unter der Soll-Oberkante (Kastenträger): im Knick reichte sie bis 28 m tiefer
+        # und hing als schräge Fläche unter der Talbrücke (sah aus wie eine schiefe Stütze)
+        def dn(qq):
+            z = qq[2] + delta(qq)
+            return (qq[0], qq[1], max(z, target_of(qq) - 4.0))
+        return [([dn(qq) for qq in ext], [[dn(qq) for qq in hh] for hh in holes]) for ext, holes in polys]
     q = dict(part)
-    q["roofs"], q["walls"], q["ground"] = mv_top(part["roofs"]), mv(walls), mv(part["ground"])
+    q["roofs"], q["walls"], q["ground"] = mv_top(part["roofs"]), mv(walls), mv_ground(part["ground"])
     print(f"  Brücke {part['id']}: Knick im Deck begradigt (Enden {za:.1f} / {zb:.1f} m)", flush=True)
     return q
 
@@ -1312,7 +1321,8 @@ def _clearance_raise(parts, log=print, dry=False):
     for name in ("roads", "rail"):
         for el in load(name):
             t = el.get("tags", {})
-            if el["type"] != "way" or t.get("tunnel") not in (None, "no") or t.get("bridge") not in (None, "no"):
+            if el["type"] != "way" or (t.get("tunnel") not in (None, "no") and el["id"] not in UNDERPASS) \
+                    or t.get("bridge") not in (None, "no"):
                 continue
             if name == "roads":
                 cls = t.get("highway")
@@ -1324,6 +1334,13 @@ def _clearance_raise(parts, log=print, dry=False):
                 if cls not in ("tram", "rail", "light_rail"):
                     continue
                 hw, need = 1.6, CLR_RAISE[cls]
+            # Wege mit layer ≥ 1 liegen auf Damm/Viadukt in Deckhöhe neben der Brücke, nicht darunter (Gleise am
+            # Hauptbahnhof und Bahnhof Neustadt: das DOM sah dort die benachbarte höhere Brücke, Decks 4 m zu hoch)
+            try:
+                if int(str(t.get("layer", "0")).split(";")[0]) >= 1:
+                    continue
+            except ValueError:
+                pass
             c = way_coords(el)
             if len(c) >= 2:
                 lines.append((LineString(c), hw, need))
@@ -1365,14 +1382,14 @@ def _clearance_raise(parts, log=print, dry=False):
             es, ns = np.meshgrid(np.arange(bx0, bx1, 1.0) + 0.5, np.arange(by0, by1, 1.0) + 0.5)
             es, ns = es.ravel(), ns.ravel()
             inside = np.array([band.contains(Point(e_, n_)) for e_, n_ in zip(es, ns)], dtype=bool)
-            if inside.sum() < 4:
+            if inside.sum() < 20:                             # nur gestreift (Weg berührt den Rand des Teils)
                 continue
             es, ns = es[inside], ns[inside]
             cc = np.clip((es - x0).astype(int), 0, w - 1)
             rr = np.clip((ytop - ns).astype(int), 0, h - 1)
             top = hi[rr, cc]
             ok = np.isfinite(top)
-            if ok.sum() < 4:
+            if ok.sum() < 20:
                 continue
             es, ns, top = es[ok], ns[ok], top[ok]
             g = DGM_RAW.sample(es, ns)
@@ -1388,6 +1405,9 @@ def _clearance_raise(parts, log=print, dry=False):
             if higher.mean() < 0.6:
                 continue
             raise_ = float(np.median(d[higher] - top[higher]))
+            q25, q75 = np.percentile(d[higher] - top[higher], [25, 75])
+            if q75 - q25 > 1.0:                               # keine einheitliche Deckfläche (Bäume, Böschung)
+                continue
             new_clr = clr + raise_
             if not (0.5 <= raise_ <= 4.5) or new_clr < need - 0.6:
                 continue
@@ -1427,10 +1447,40 @@ def collect_bridges():
     # Decks – als 1-m-Platte gebaut hingen sie teils bis auf die Straße darunter (A17 über Pesterwitzer Straße).
     # Geländer entstehen ohnehin aus den Deckkanten (bridge_styles.py).
     parts = [p for p in parts if _part_width(p) >= 1.2]
+    UNDERPASS.clear()
+    UNDERPASS.update(find_underpasses(parts))
+    UNDERPASS_W.clear()
+    if UNDERPASS:
+        # Breite: anschließende Fahrwege (gemeinsamer Endpunkt, kein Tunnel); sonst schmaler als die Straße davor und
+        # Pfeiler hielten nur zu diesem schmaleren Band Abstand (Cossebauder Straße: 0,5 m in der Fahrbahn)
+        ends = {}
+        for el in load("roads"):
+            t = el.get("tags", {})
+            if el["type"] != "way" or t.get("highway") not in DRIVE:
+                continue
+            c = way_coords(el)
+            if len(c) < 2:
+                continue
+            for q in (c[0], c[-1]):
+                ends.setdefault((round(q[0]), round(q[1])), []).append(el)
+        for el in load("roads"):
+            if el["id"] not in UNDERPASS or el.get("tags", {}).get("highway") not in DRIVE:
+                continue
+            c = way_coords(el)
+            ws = []
+            for q in (c[0], c[-1]):
+                for nb in ends.get((round(q[0]), round(q[1])), []):
+                    tn = nb.get("tags", {})
+                    if nb["id"] != el["id"] and nb["id"] not in UNDERPASS and tn.get("tunnel") in (None, "no"):
+                        ws.append(road_width(tn))
+            if ws:
+                UNDERPASS_W[el["id"]] = max(max(ws), road_width(el.get("tags", {})))
+    if UNDERPASS:
+        print(f"  {len(UNDERPASS)} OSM-Tunnelwege sind Unterführungen unter Brücken -> normale Straßen", flush=True)
     dip = set(OVERRIDES.get("bridge_part_dip_fix", []))
     if dip:
         parts = [_dip_fix(p) if p.get("id") in dip else p for p in parts]
-    parts = correct_parts(parts, DOM, _oriented_tris, dgm=DGM_RAW)
+    parts = correct_parts(parts, DOM, _oriented_tris, dgm=DGM_RAW, force_ids=set(OVERRIDES.get("bridge_part_dom_force", [])))
     parts = _clearance_raise(parts)
     tris = []
     for p in parts:
@@ -1575,12 +1625,55 @@ def _is_bridge(t: dict) -> bool:
     return "bridge" in t and t["bridge"] not in ("no",)
 
 
-def _road_skipped(t: dict, coords) -> bool:
+UNDERPASS: set = set()     # OSM-"Tunnel", die nur Unterführungen unter Brücken sind (find_underpasses)
+UNDERPASS_W: dict = {}     # deren Breite = breiteste anschließende Straße (gemessen; unter der Brücke misst man nichts)
+
+
+def find_underpasses(parts) -> set:
+    """tunnel=yes/covered-Wegeketten, die keine Tunnel sind, sondern Unterführungen unter einer Brücke: kürzer als
+    40 m oder zu ≥ 50 % unter einem Brückengrundriss (LoD2-Teil oder OSM-Brückenweg). tunnels.py baut für sie keine
+    Röhre (keine Überdeckung) – übersprungen fehlten sie bisher ganz: keine Fahrbahn, und Pfeiler wurden auf sie
+    gestellt (Cossebauder Straße unter der Bahn, Kirchenweg unter der A4). Sie werden normale Straßen."""
+    ways = {}
+    for el in load("roads"):
+        t = el.get("tags", {})
+        if el["type"] != "way" or t.get("tunnel") not in ("yes", "covered") or not t.get("highway") \
+                or t.get("indoor") in ("yes", "room", "area", "corridor"):
+            continue
+        c = way_coords(el)
+        if len(c) >= 2 and LineString(c).length > 0.5:
+            ways[el["id"]] = LineString(c)
+    if not ways:
+        return set()
+    polys = []
+    for prt in parts:
+        _, utm = _oriented_tris(prt["roofs"])
+        for tri in utm:
+            pg = Polygon([(q[0], q[1]) for q in tri])
+            if pg.area > 0.01:
+                polys.append(pg if pg.is_valid else pg.buffer(0))
+    for c, w in bridge_lines():
+        if len(c) >= 2:
+            polys.append(LineString(c).buffer(w * 0.5 + 1.0, cap_style="flat"))
+    cover_u = unary_union(polys) if polys else Polygon()
+    merged = linemerge(list(ways.values()))
+    out = set()
+    for ln in getattr(merged, "geoms", [merged]):
+        if ln.length < 0.5:
+            continue
+        frac = ln.intersection(cover_u).length / ln.length if not cover_u.is_empty else 0.0
+        if ln.length < 40.0 or frac >= 0.5:
+            zone = ln.buffer(0.5)
+            out |= {wid for wid, w in ways.items() if zone.contains(w.interpolate(0.5, normalized=True))}
+    return out
+
+
+def _road_skipped(t: dict, coords, wid=None) -> bool:
     cls = t.get("highway")
     if cls is None or cls in SURF_SKIP:
         return True
     if (t.get("indoor") in ("yes", "room", "area", "corridor") or t.get("tunnel") in ("yes", "culvert", "covered")) \
-            and t.get("tunnel") != "building_passage":
+            and t.get("tunnel") != "building_passage" and wid not in UNDERPASS:
         return True
     if t.get("area") == "yes" and len(coords) >= 4 and np.allclose(coords[0], coords[-1]):
         return True
@@ -1595,10 +1688,10 @@ def build_surface(deck_win) -> RoadSurface:
         if el["type"] != "way":
             continue
         c = way_coords(el)
-        if len(c) < 2 or _road_skipped(t, c):
+        if len(c) < 2 or _road_skipped(t, c, el["id"]):
             continue
         ways.append({"id": el["id"], "kind": "road", "cls": t["highway"], "hw": road_width(t) / 2,
-                     "bridge": _is_bridge(t), "coords": c})
+                     "bridge": _is_bridge(t), "coords": c, "under": el["id"] in UNDERPASS})
     for el in load("rail"):
         t = el.get("tags", {})
         if el["type"] != "way" or t.get("railway") not in ("tram", "rail", "light_rail") or t.get("tunnel") == "yes":
@@ -1664,7 +1757,7 @@ def build_roads(surface: RoadSurface):
         if cls is None or cls in SURF_SKIP:
             continue
         if tags.get("indoor") in ("yes", "room", "area", "corridor") or tags.get("tunnel") in ("yes", "building_passage", "culvert", "covered"):
-            if tags.get("tunnel") != "building_passage":
+            if tags.get("tunnel") != "building_passage" and el["id"] not in UNDERPASS:
                 continue
         coords = way_coords(el)
         if len(coords) < 2:
@@ -1680,7 +1773,7 @@ def build_roads(surface: RoadSurface):
             continue
         w = road_width(tags)
         is_bridge = _is_bridge(tags)
-        pieces = surface.way_pieces(el["id"]) if not _road_skipped(tags, coords) else []
+        pieces = surface.way_pieces(el["id"]) if not _road_skipped(tags, coords, el["id"]) else []
         if not pieces:
             pieces = [{"E": coords[:, 0], "N": coords[:, 1], "y": np.array([ground(e, n) for e, n in coords]),
                        "deck": np.zeros(len(coords), dtype=bool), "has_deck": False, "deck_frac": 0.0}]

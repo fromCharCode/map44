@@ -250,6 +250,10 @@ func _build() -> void:
 		dc.make_current()
 	if args.has("bridgetest"):
 		await _bridge_test()
+	if args.has("proberay"):
+		var pr: Node = load("res://scripts/dev/probe_ray.gd").new()
+		add_child(pr)
+		pr.call_deferred("run", self, String(args["proberay"]))
 	if args.has("bridgeaudit"):
 		var ba := BridgeAudit.new()
 		ba.name = "BridgeAudit"

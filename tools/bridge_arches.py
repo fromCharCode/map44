@@ -255,6 +255,19 @@ def tile_arches(name, bridges):
     groups = {}                                   # (mat, farbe) -> [tris, n]: Blechträger, Gussstützen, Betonstirn
     report = []                                   # Lichtraum nicht erreichbar (Deck zu tief) / Pfeiler verschoben
     under = Under(city, raw_roads(RAW / name / "osm" / "roads.json"), ground, _local)
+    # Wasserflächen (Feldfolge der Balkenbrücken: Richtung mit weniger Pfeilern im Fluss)
+    from shapely.geometry import Polygon as _Poly
+    from shapely.strtree import STRtree as _STR
+    water_polys = []
+    for w_ in city.get("water", []):
+        rg = w_.get("rings") or []
+        if rg and len(rg[0]) >= 3:
+            try:
+                pg_ = _Poly(rg[0], [h_ for h_ in rg[1:] if len(h_) >= 3])
+                water_polys.append(pg_ if pg_.is_valid else pg_.buffer(0))
+            except (ValueError, TypeError):
+                pass
+    wtree = _STR(water_polys) if water_polys else None
 
     def group(mat, col):
         return groups.setdefault((mat, col), [[], []])
@@ -741,10 +754,38 @@ def tile_arches(name, bridges):
                 continue
             k = min(L / S, 1.0)
             st = 0.5 * (L - S * k)
+            # Feldfolge: die Recherche zählt teils vom anderen Ende (A4-Elbebrücke "von Ost nach West") – die Richtung
+            # mit weniger Pfeilern im Wasser gilt (sonst stand ein Pfeiler mitten im 130-m-Stromfeld)
+            if sp != sp[::-1] and wtree is not None:
+                def n_wet(order, _st=st, _k=k):
+                    s_, n_ = _st, 0
+                    for v_ in order[:-1]:
+                        s_ += v_ * _k
+                        q_ = axis.interpolate(s_)
+                        if any(water_polys[int(j_)].contains(q_) for j_ in wtree.query(q_)):
+                            n_ += 1
+                    return n_
+                if n_wet(sp[::-1]) < n_wet(sp):
+                    sp = sp[::-1]
+                    report.append(f"Feldfolge {b.get('name')} umgedreht (weniger Pfeiler im Wasser)")
             wpier = min(max(float(b.get("width_m") or 12.0), 6.0), 30.0) * 0.85
             frame = axis_frame(axis, L)
             bands = under.bands(footprint(axis, L, wpier * 0.5 + 1.5), deck_y)
             added = False
+            # Doppelbrücke mit Pfeilern je Überbau (Recherche pier_shape "je Überbau", "2 nebeneinander je Achse"): je
+            # Achse zwei Pfeiler unter den Überbaumitten statt einer durchgehenden Scheibe (nicht A4-Elbebrücke: dort
+            # durchgehende Pfeilerscheiben unter beiden Überbauten)
+            twin = any(k_ in str(b.get("pier_shape") or "") for k_ in ("je Überbau", "2 nebeneinander", "je Teilbrücke"))
+            bw = min(max(float(b.get("width_m") or 12.0), 6.0), 45.0)
+            twin_iv = None
+            if twin and bw >= 20.0:
+                wp1 = min(8.0, bw * 0.5 * 0.55)
+                twin_iv = [(-bw * 0.25 - wp1 * 0.5, -bw * 0.25 + wp1 * 0.5), (bw * 0.25 - wp1 * 0.5, bw * 0.25 + wp1 * 0.5)]
+            arch_r = _lit(b.get("arch")) if b.get("arch") else None
+            half_arch = isinstance(arch_r, dict) and "Halbb" in str(arch_r.get("shape") or "")
+            ddepth = float(b.get("deck_depth_m") or 1.0) if str(b.get("deck_depth_m") or "").replace(".", "", 1).isdigit() else 1.0
+            cols_b = _lit(b.get("colors")) if b.get("colors") else None
+            pier_col = (cols_b or {}).get("piers") or (cols_b or {}).get("concrete") or "#a4aaaa" if isinstance(cols_b, dict) else "#a4aaaa"
             sts = []
             for v in sp[:-1]:
                 st += v * k
@@ -759,11 +800,13 @@ def tile_arches(name, bridges):
                 gnd = max(ground(p.x, p.y), water_y(p.x, p.y)) - 1.0
                 if yd - gnd < 2.5:
                     continue
+                # Pfeilerstärke längs mit der Höhe (62 m hohe Talbrückenpfeiler wirkten mit 2,2 m wie Stäbe)
+                th = min(max(1.6 + 0.035 * (yd - gnd), 2.2), 4.5)
 
                 def yr(px, pz, _yd=yd):
                     return max(ground(px, pz), water_y(px, pz)) - 1.0, (deck_y(px, pz) or _yd) - 1.2
-                nxt = sts[i + 1][1] if i + 1 < len(sts) else span
-                st2, pcs = best_station(frame, st, 1.5, L - 1.5, 1.1, wpier * 0.5, bands, yr, max(1.0, min(span, nxt) * 0.3))
+                nxt = sts[i + 1][1] if i + 1 < len(sts) else sp[-1] * k
+                st2, pcs = best_station(frame, st, 1.5, L - 1.5, th * 0.5, wpier * 0.5, bands, yr, max(1.0, min(span, nxt) * 0.3))
                 if st2 is None or not pcs:
                     report.append(f"Pfeiler {b.get('name')} bei s={st:.0f} entfällt (Verkehrsband)")
                     continue
@@ -773,10 +816,43 @@ def tile_arches(name, bridges):
                 yd2 = deck_y(px, pz) or yd
                 gnd2 = max(ground(px, pz), water_y(px, pz)) - 1.0
                 yaw = math.atan2(tx, tz)
-                for v0, v1 in pcs:
+                pieces = pcs
+                if twin_iv:
+                    pieces = [(max(v0, a_), min(v1, b_)) for v0, v1 in pcs for a_, b_ in twin_iv if min(v1, b_) - max(v0, a_) >= 0.8]
+                for v0, v1 in pieces:
                     vc = 0.5 * (v0 + v1)
-                    piers_out.append([round(px - tz * vc, 2), round(pz + tx * vc, 2), round(yaw, 3), round(v1 - v0, 2),
-                                      round(yd2 - 1.2, 2), round(gnd2, 2)])
+                    cx_, cz_ = px - tz * vc, pz + tx * vc
+                    top_ = (deck_y(cx_, cz_) or yd2) - 1.2
+                    piers_out.append([round(cx_, 2), round(cz_, 2), round(yaw, 3), round(v1 - v0, 2),
+                                      round(top_, 2), round(gnd2, 2), round(th, 2)])
+                # Halbbögen an den Hauptpfeilern (Lockwitztalbrücke: zwischen den 85/125/125/85-m-Feldern beidseitig je ein
+                # 50 m langer Stahlbeton-Halbbogen, Radius 140 m, Querschnitt 5,5 × 1,6 m, im Überbau verankert)
+                if half_arch and min(span, nxt) >= 80.0:
+                    R_, La = 140.0, 50.0
+                    th_a = La / R_
+                    H_ = R_ * math.sin(th_a)
+                    Ga = group("concrete", pier_col)
+                    centres = [0.5 * (a_ + b_) for a_, b_ in twin_iv] if twin_iv else [0.0]
+                    for sgn in (-1.0, 1.0):
+                        sc = st2 + sgn * H_
+                        if sc < 1.0 or sc > L - 1.0:
+                            continue
+                        for vc in centres:
+                            cxc, czc, txc, tzc = frame(sc)
+                            ycr = deck_y(cxc - tzc * vc, czc + txc * vc)
+                            if ycr is None:
+                                continue
+                            ycr -= ddepth + 0.8                       # Scheitel unter der Überbau-Unterkante
+                            prev = None
+                            for j in range(13):
+                                ph = th_a * (1.0 - j / 12.0)          # Pfeiler (ph = th_a) -> Scheitel (ph = 0)
+                                sv = st2 + sgn * (H_ - R_ * math.sin(ph))
+                                fx, fz, ftx, ftz = frame(sv)
+                                pt = (fx - ftz * vc, ycr - R_ * (1.0 - math.cos(ph)), fz + ftx * vc)
+                                if prev is not None:
+                                    _strut(Ga[0], Ga[1], prev, pt, (-ftz, ftx), 5.5, 1.6)
+                                prev = pt
+                    report.append(f"Halbbögen {b.get('name')} am Pfeiler s={st2:.0f}")
                 added = True
             if added:
                 way_ids.update(ids)

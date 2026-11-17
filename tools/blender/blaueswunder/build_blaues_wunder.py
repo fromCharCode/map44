@@ -589,10 +589,12 @@ def pier(sy):
     m = MATS["stone"]
     cy = sy * YP
     zb, zt = -16.0, -2.35
-    hexa(g, m, [(7.3, cy - 3.8, zb), (7.3, cy + 3.8, zb), (-7.3, cy + 3.8, zb), (-7.3, cy - 3.8, zb)],
-         [(6.9, cy - 3.4, zt), (6.9, cy + 3.4, zt), (-6.9, cy + 3.4, zt), (-6.9, cy - 3.4, zt)])
-    aabb(g, m, (-7.1, cy - 3.6, zt), (7.1, cy + 3.6, -1.92))                                     # Abdeckplatte
-    aabb(g, m, (-7.2, cy - 3.7, -6.2), (7.2, cy + 3.7, -5.9))                                    # Gurtgesims
+    # Länge längs 6,4 m (vorher 7,6): der Loschwitzer Wiesenweg führt dicht am Uferpfeiler vorbei (OSM) und
+    # streifte ihn sonst um 0,4 m
+    hexa(g, m, [(7.3, cy - 3.2, zb), (7.3, cy + 3.2, zb), (-7.3, cy + 3.2, zb), (-7.3, cy - 3.2, zb)],
+         [(6.9, cy - 2.85, zt), (6.9, cy + 2.85, zt), (-6.9, cy + 2.85, zt), (-6.9, cy - 2.85, zt)])
+    aabb(g, m, (-7.1, cy - 3.0, zt), (7.1, cy + 3.0, -1.92))                                     # Abdeckplatte
+    aabb(g, m, (-7.2, cy - 3.1, -6.2), (7.2, cy + 3.1, -5.9))                                    # Gurtgesims
     for sx in SIGNS:
         c = (sx * 7.6, cy)
         frustum(g, m, c, 2.55, 2.35, zb, -3.4, n=16, caps=(False, False))
@@ -613,9 +615,11 @@ def pier(sy):
 def abutment(sy):
     g = geo("Piers")
     m = MATS["stone"]
-    y0, y1 = sorted((sy * (YE - 1.2), sy * (YE + 5.0)))
-    aabb(g, m, (-10.4, y0, -9.0), (10.4, y1, -1.9))
-    aabb(g, m, (-10.6, y0 - 0.15, -2.25), (10.6, y1 + 0.15, -1.88))
+    # Breite ±8,8 m (vorher ±10,4) und Beginn 0,2 m hinter dem Trägerende: der Wiesenweg unter dem Loschwitzer Ende
+    # streifte die Blockecke um 0,8 m
+    y0, y1 = sorted((sy * (YE + 0.2), sy * (YE + 5.0)))
+    aabb(g, m, (-8.8, y0, -9.0), (8.8, y1, -1.9))
+    aabb(g, m, (-9.0, y0 - 0.15, -2.25), (9.0, y1 + 0.15, -1.88))
 
 
 # ------------------------------------------------------------------------------------------------ Leuchten

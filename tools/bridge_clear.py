@@ -71,7 +71,9 @@ class Under:
         cum = [0.0]
         for a, b in zip(pts3[:-1], pts3[1:]):
             cum.append(cum[-1] + math.hypot(b[0] - a[0], b[1] - a[1]))
-        band = ln.buffer(hw + PAD[kind], cap_style="flat")
+        # runde Enden: an Wegstößen mit Breitenwechsel endete das breite Band flach und ein Pfeiler stand am Übergang
+        # 1,8 m in der Fahrbahn (Löbtauer Straße unter der Hochstraße)
+        band = ln.buffer(hw + PAD[kind], cap_style="round")
         self.items.append((band, ln, np.array(cum), np.array([p[2] for p in pts3], dtype=float), kind))
 
     def bands(self, poly, deck_y, gap=2.2):

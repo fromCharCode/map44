@@ -146,8 +146,20 @@ def chains():
             a2, b2 = ln.interpolate(max(sc - 2, 0)), ln.interpolate(min(sc + 2, ln.length))
             if (b1.x - a1.x) * (b2.x - a2.x) + (b1.y - a1.y) * (b2.y - a2.y) < 0:
                 ln = LineString(list(ln.coords)[::-1])
-        out.append((ln, best[1]))
+        zone = ln.buffer(1.0)
+        ids = {wid for wid, (w, _t) in ways.items() if zone.contains(w.interpolate(0.5, normalized=True))}
+        out.append((ln, best[1], ids))
     return out
+
+
+def _in_city(ids, ln):
+    """Kette ist schon als Straße in city.json (build_city.find_underpasses: Unterführung unter einer Brücke)?"""
+    for k in range(5):
+        p = ln.interpolate(k / 4.0, normalized=True)
+        t = _tile(tile_of(p.x, p.y))
+        if t is not None and any(int(r["id"]) in ids for r in t["roads"]):
+            return True
+    return False
 
 
 def build():
@@ -155,7 +167,10 @@ def build():
     per_tile = {}
     graph_add = {}         # Kachel -> [(Kante, Endknoten aus Nachbarkachel oder None)]
     n_ch = 0
-    for ln, tags in chains():
+    for ln, tags, ids in chains():
+        if _in_city(ids, ln):
+            print(f"  (Unterführung als Straße gebaut: {tags.get('name') or tags.get('highway')}, {ln.length:.0f} m)")
+            continue
         a, b = ln.coords[0], ln.coords[-1]
         ra, rb = road_at(*a), road_at(*b)
         if ra is None or rb is None:
