@@ -22,6 +22,7 @@ var trams: Trams
 var boats: Boats
 var peds: Peds
 var tree_lod: TreeLOD
+var taxi: TaxiGame
 var ground_cover: GroundCover
 var pending_graphs: Array = []
 var last_safe := Vector3.ZERO
@@ -543,6 +544,12 @@ func _setup_game() -> void:
 	hud.index = world
 	hud.world = world
 	hud.cam_rig = cam_rig
+	if not args.has("notaxi") and not args.has("routelist") and not args.has("routetest") and not args.has("trafficbench"):
+		taxi = TaxiGame.new()
+		taxi.name = "TaxiGame"
+		add_child(taxi)
+		taxi.setup(player, traffic, hud)
+		hud.taxi = taxi
 	street_picker = StreetPicker.new()
 	street_picker.name = "StreetPicker"
 	add_child(street_picker)

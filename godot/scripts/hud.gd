@@ -17,6 +17,7 @@ var _name_t := 0.0
 var _font: Font
 var minimap: MiniMap
 var show_input := false
+var taxi: TaxiGame
 
 
 func _ready() -> void:
@@ -101,11 +102,39 @@ func _draw() -> void:
 	if cam_rig:
 		_text(CamRig.MODE_NAMES[cam_rig.mode], Vector2(vp.x * 0.5, 30.0), 16, Color(1, 1, 1, 0.45), true)
 	_text("%d FPS" % fps, Vector2(60.0, 28.0), 14, Color(1, 1, 1, 0.4), true)
+	if taxi and taxi.enabled:
+		_draw_taxi(vp)
 	if show_input:
 		_draw_input_test()
 	if info_t > 0.0:
 		_text(info_msg, Vector2(vp.x * 0.5, vp.y * 0.18), 28, Color(1, 1, 1, clampf(info_t, 0.0, 1.0)), true)
 
+
+
+func _draw_taxi(vp: Vector2) -> void:
+	## Taxi: Kasse und Status oben links, Taxameter bei besetzter Fahrt, Richtungspfeil zum Ziel oben Mitte
+	var x0 := 24.0
+	var y0 := 52.0
+	draw_rect(Rect2(Vector2(x0 - 10.0, y0 - 6.0), Vector2(330.0, 62.0)), Color(0, 0, 0, 0.45))
+	_text("TAXI  " + TaxiGame.eur(taxi.money), Vector2(x0, y0 + 16.0), 20, Color(1.0, 0.85, 0.2))
+	_text("%s   (%d Fahrten)" % [taxi.status_line(), taxi.trips], Vector2(x0, y0 + 42.0), 15, Color(1, 1, 1, 0.85))
+	if taxi.state == TaxiGame.BESETZT or taxi.state == TaxiGame.AUSSTEIGEN:
+		draw_rect(Rect2(Vector2(x0 - 10.0, y0 + 62.0), Vector2(330.0, 44.0)), Color(0.05, 0.05, 0.05, 0.7))
+		_text("Taxameter  %s" % TaxiGame.eur(taxi.fare), Vector2(x0, y0 + 92.0), 24, Color(1.0, 0.3, 0.2))
+		_text("%.1f km" % taxi.fare_km, Vector2(x0 + 250.0, y0 + 92.0), 15, Color(1, 1, 1, 0.7))
+	var tg := taxi.target()
+	if tg != Vector3.ZERO and car:
+		var to := tg - car.global_position
+		var dist := Vector2(to.x, to.z).length()
+		var fwd := -car.global_transform.basis.z
+		var ang := atan2(fwd.x * to.z - fwd.z * to.x, fwd.x * to.x + fwd.z * to.z)   # + = Ziel rechts
+		var c := Vector2(vp.x * 0.5, 78.0)
+		var col := Color(1.0, 0.85, 0.1) if taxi.state != TaxiGame.BESETZT else Color(0.3, 1.0, 0.45)
+		var d := Vector2(sin(ang), -cos(ang))
+		var n := Vector2(-d.y, d.x)
+		draw_circle(c, 30.0, Color(0, 0, 0, 0.45))
+		draw_colored_polygon(PackedVector2Array([c + d * 24.0, c - d * 14.0 + n * 13.0, c - d * 6.0, c - d * 14.0 - n * 13.0]), col)
+		_text(("%d m" % int(dist)) if dist < 1000.0 else ("%.1f km" % (dist / 1000.0)), c + Vector2(0, 52.0), 18, Color(1, 1, 1, 0.9), true)
 
 
 func _text(s: String, pos: Vector2, size: int, color: Color, center: bool = false) -> void:
