@@ -1,9 +1,10 @@
 shader_type canvas_item;
 // Leichte Nachbearbeitung im Stil eines "gritty" Stadtspiels: Vignette, Filmkorn, minimale Farbsäume.
 uniform sampler2D screen_tex : hint_screen_texture, filter_linear, repeat_disable;
-uniform float vignette : hint_range(0.0, 1.0) = 0.32;
-uniform float grain : hint_range(0.0, 0.2) = 0.035;
-uniform float aberration : hint_range(0.0, 0.01) = 0.0006;
+uniform float vignette : hint_range(0.0, 1.0) = 0.15;
+uniform float grain : hint_range(0.0, 0.2) = 0.016;
+uniform float aberration : hint_range(0.0, 0.01) = 0.00012;
+uniform float sharpen : hint_range(0.0, 1.5) = 0.55;   // gleicht die Weichheit von TAA/FSR aus
 
 float hash(vec2 p) {
 	vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -20,6 +21,12 @@ void fragment() {
 	col.r = texture(screen_tex, uv + off).r;
 	col.g = texture(screen_tex, uv).g;
 	col.b = texture(screen_tex, uv - off).b;
+	// Nachschärfen (Kreuz aus 4 Nachbarn, begrenzt gegen Überschwinger an harten Kanten)
+	vec2 px = SCREEN_PIXEL_SIZE;
+	vec3 nb = texture(screen_tex, uv + vec2(px.x, 0.0)).rgb + texture(screen_tex, uv - vec2(px.x, 0.0)).rgb
+		+ texture(screen_tex, uv + vec2(0.0, px.y)).rgb + texture(screen_tex, uv - vec2(0.0, px.y)).rgb;
+	vec3 detail = clamp(col - nb * 0.25, vec3(-0.08), vec3(0.08));
+	col += detail * sharpen;
 	float v = 1.0 - vignette * smoothstep(0.12, 0.62, r2 * 1.9);
 	col *= v;
 	float g = hash(floor(FRAGCOORD.xy) + fract(TIME) * 61.0) - 0.5;

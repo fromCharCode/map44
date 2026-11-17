@@ -243,14 +243,17 @@ func set_time(h: float) -> void:
 	var wcfg: Array = WEATHER[weather]
 	sun.light_energy = lerpf(0.0, 4.4, day) * lerpf(0.55, 1.0, smoothstep(0.0, 0.3, elev)) * float(wcfg[3])
 	sun.visible = elev > -0.08
-	moon.light_energy = lerpf(0.35, 0.0, day) * (1.0 if mv.y > 0.0 else 0.0)
+	moon.light_energy = lerpf(0.09, 0.0, day) * (1.0 if mv.y > 0.0 else 0.0)     # Mondlicht schwach: die Stadt leuchtet selbst
 	moon.visible = mv.y > 0.0
 	var night := 1.0 - smoothstep(-0.12, 0.08, elev)
 	night_value = night
 	RenderingServer.global_shader_parameter_set("night", night)
+	# nachts die Belichtungsautomatik begrenzen: sie hellte die dunkle Stadt sonst auf Tageshelligkeit auf
+	cam_attr.auto_exposure_max_sensitivity = lerpf(2500.0, 130.0, night)
 	sky_mat.set_shader_parameter("sun_dir", sv)
 	sky_mat.set_shader_parameter("moon_dir", mv)
-	env.ambient_light_energy = lerpf(0.5, 1.1, day) * float(wcfg[4])
+	# nachts wenig Himmelslicht (vorher 0,5: die ganze Stadt war gleichmäßig blau aufgehellt, Laternen wirkungslos)
+	env.ambient_light_energy = lerpf(0.18, 1.1, day) * float(wcfg[4])
 	env.fog_light_color = Color(0.70, 0.74, 0.80).lerp(Color(0.02, 0.03, 0.06), night)
 	env.fog_density = lerpf(0.0007, 0.0005, day) * float(wcfg[5])
 	sky_mat.set_shader_parameter("cloud_cover", float(wcfg[1]))

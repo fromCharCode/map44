@@ -1,0 +1,8 @@
+[{"name": "altmarkt", "x": -30, "z": 40, "h": 1.7, "yaw": 20, "pitch": 4, "frames": 150, "time": 14},
+ {"name": "elbufer", "x": 560, "z": -470, "h": 1.7, "yaw": 115, "pitch": 3, "frames": 150, "time": 16.5},
+ {"name": "neustadt", "x": 760, "z": -1260, "h": 1.7, "yaw": -20, "pitch": 4, "frames": 150, "time": 11},
+ {"name": "wohnstrasse", "x": 2380, "z": -420, "h": 1.7, "yaw": 60, "pitch": 3, "frames": 150, "time": 14},
+ {"name": "prager", "x": -60, "z": 620, "h": 1.7, "yaw": 185, "pitch": 4, "frames": 150, "time": 13},
+ {"name": "abend", "x": -30, "z": 40, "h": 1.7, "yaw": 20, "pitch": 4, "frames": 150, "time": 19.3},
+ {"name": "nacht", "x": 760, "z": -1260, "h": 1.7, "yaw": -20, "pitch": 4, "frames": 150, "time": 23},
+ {"name": "platte", "x": 3300, "z": 3900, "h": 1.7, "yaw": 30, "pitch": 5, "frames": 150, "time": 15}]
