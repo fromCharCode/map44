@@ -307,6 +307,8 @@ func _update_dfis() -> void:
 	for d in _dfis:
 		var rows: Array = d[3]
 		var dep := Departures.board(String(d[0]), d[1], d[2], rows.size(), d[4])
+		if OS.has_environment("DRESDEN_TTDBG") and not dep.is_empty():
+			print("TTDBG Tafel %s: %s" % [String(d[0]), str(dep)])
 		if dep.is_empty() and OS.has_environment("DRESDEN_DFIDBG"):
 			print("DFIDBG leer: ", d[0], " pos ", d[1], " linien ", d[2], " dir ", d[4], " built ", Departures._built,
 				" idx ", Departures._idx.size(), " name ", Departures._entries(String(d[0]), d[1]).size())

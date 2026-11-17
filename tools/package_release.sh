@@ -49,7 +49,7 @@ for i in 0 1 2 3 4 5; do
     --tiles_src="$ROOT/data/processed/tiles" --tiles_out="$STAGE/data/tiles" --part=$i/6 &
 done
 wait
-cp godot/data/bus_routes.json godot/data/tram_routes.json godot/data/streets.json godot/data/elbe.json "$STAGE/data/"
+cp godot/data/bus_routes.json godot/data/tram_routes.json godot/data/streets.json godot/data/elbe.json godot/data/timetable.json "$STAGE/data/"
 # data/VERSION schreibt der Installer erst nach dem vollständigen Entpacken
 
 echo "==> Spielpakete"

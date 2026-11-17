@@ -102,3 +102,25 @@ static func active(route: Dictionary, now_s: float) -> Array:
 			var f := clampf((tau - t_arr[k]) / maxf(t_arr[k + 1] - t_arr[k], 1.0), 0.0, 1.0)
 			res.append(["%s|%d" % [String(p["id"]), int(d)], lerpf(s_arr[k], s_arr[k + 1], f)])
 	return res
+
+
+static func next_at(route: Dictionary, s_stop: float, now_s: float, horizon_min := 90.0) -> Array:
+	## Nächste Soll-Abfahrten an der Stelle s_stop des Linienwegs: [[minuten, schlüssel], ...] (unsortiert)
+	var res: Array = []
+	for p in route.get("tt", []):
+		var s_arr: PackedFloat32Array = p["s"]
+		var t_arr: PackedFloat32Array = p["t"]
+		if s_stop < s_arr[0] - 60.0 or s_stop > s_arr[s_arr.size() - 1] - 30.0:
+			continue                              # Halt liegt nicht auf diesem Fahrweg bzw. ist dessen Endpunkt
+		var k := 0
+		while k < s_arr.size() - 2 and s_arr[k + 1] < s_stop:
+			k += 1
+		var f := clampf((s_stop - s_arr[k]) / maxf(s_arr[k + 1] - s_arr[k], 1.0), 0.0, 1.0)
+		var t_stop := lerpf(t_arr[k], t_arr[k + 1], f)
+		for d in (p["dep"] as Dictionary).get(day, []):
+			var m := (float(d) + t_stop - now_s) / 60.0
+			if m < -720.0:
+				m += 1440.0
+			if m >= -0.3 and m <= horizon_min:
+				res.append([m, "%s|%d" % [String(p["id"]), int(d)]])
+	return res

@@ -2,8 +2,8 @@ class_name Departures
 extends RefCounted
 ## Abfahrten für Haltestellenanzeiger (DFI): je Haltestelle die nächsten Fahrten aller Linien mit Ziel und Minuten.
 ## Grundlage sind die echten Linienwege mit Haltestellen (godot/data/tram_routes.json, bus_routes.json, OSM).
-## Takt nach Tageszeit wie bei der DVB (Straßenbahn tagsüber 10 min, abends 15, spät 30; Stadtbus 10–20,
-## Regionalbus 30–60), Lage im Takt je Linie fest. Fährt eine echte Bahn der Linie auf die Haltestelle zu, zeigt die
+## Abfahrtszeiten aus dem echten Soll-Fahrplan (Timetable, gtfs.de/DELFI); nur für Linien ohne Fahrplandaten ein
+## Schätztakt nach Tageszeit. Fährt eine echte Bahn der Linie auf die Haltestelle zu, zeigt die
 ## Tafel deren Ankunft (Restweg / Reisegeschwindigkeit) – Anzeige und Straßenbahnen passen dann zusammen.
 
 const V_TRAM := 5.3          # m/s Reisegeschwindigkeit inkl. Halte (≈ 19 km/h)
@@ -141,10 +141,27 @@ static func board(name: String, pos: Vector2, lines: PackedStringArray, max_rows
 		var phase := float(posmod(hash(String(ref) + kind), 9973)) / 9973.0 * hw
 		var m0 := fposmod(phase + s_stop / v / 60.0 - now, hw)
 		var dep: Array = []
-		for k in 3:
-			var t := m0 + hw * k
-			var slot := int(floor((now + t) / hw))
-			dep.append([t, String(vs[posmod(slot, vs.size())][3])])
+		# echter Soll-Fahrplan (Timetable): Abfahrten aller Linienvarianten an diesem Halt, jede Fahrt einmal
+		var have_tt := false
+		var seen_k := {}
+		for vv in vs:
+			var rr := _route(String(vv[0]), int(vv[1]))
+			if (rr.get("tt", []) as Array).is_empty():
+				continue
+			have_tt = true
+			for nx in Timetable.next_at(rr, float(vv[2]), Timetable.now()):
+				if seen_k.has(nx[1]):
+					continue
+				seen_k[nx[1]] = true
+				dep.append([float(nx[0]), String(vv[3])])
+		if not have_tt:
+			# ohne Fahrplandaten: Schätztakt nach Tageszeit
+			for k in 3:
+				var t := m0 + hw * k
+				var slot := int(floor((now + t) / hw))
+				dep.append([t, String(vs[posmod(slot, vs.size())][3])])
+		dep.sort_custom(func(a, b): return float(a[0]) < float(b[0]))
+		dep = dep.slice(0, 4)
 		# echte Bahnen dieser Linie auf dem Weg hierher
 		if kind == "tram" and trams:
 			for vv in vs:
