@@ -83,6 +83,7 @@ func build(t: Terrain, life: Dictionary) -> void:
 	_flush()
 	if OS.has_environment("DRESDEN_TRACE"): print("  T _shops")
 	_shops(life.get("shops", []))
+	_boards(life.get("boards", []))
 	if OS.has_environment("DRESDEN_TRACE"): print("  T _litter")
 	_litter(life.get("litter", []))
 
@@ -184,7 +185,7 @@ static func _load_parts(name: String) -> Array:
 				if nm.begins_with("Paint"):
 					mesh.surface_set_material(i, _paint_mat(m))
 				elif nm.begins_with("SignFace"):
-					mesh.surface_set_material(i, _atlas_mat("signs", "res://assets/textures/street/traffic_signs.png", Vector2(8, 4), true))
+					mesh.surface_set_material(i, _atlas_mat("signs", "res://assets/textures/street/traffic_signs.png", Vector2(8, 8), true))
 					special = "atlas"
 				elif nm.begins_with("Poster"):
 					if name == "billboard":
@@ -353,11 +354,13 @@ func _traffic_sign(s: Array) -> void:
 	var x: float = s[2]
 	var z: float = s[3]
 	var yaw: float = s[4]
-	_add("sign_post", x, z, yaw, 0)
+	var dy: float = float(s[6]) if s.size() > 6 else 0.0      # zweites Zeichen am selben Pfosten (tiefer)
+	if dy == 0.0:
+		_add("sign_post", x, z, yaw, 0)
 	if _sign_cells.is_empty() or not _sign_cells.has(atlas):
 		return
 	plate = _sign_plates.get(atlas, plate)
-	var h := 2.6 if plate in ["plate_triangle", "plate_triangle_down"] else 2.65
+	var h := (2.6 if plate in ["plate_triangle", "plate_triangle_down"] else 2.65) + dy
 	# Platte 5 cm vor dem Pfosten (zur Schildseite)
 	_add(plate, x, z, yaw, 0, h, float(_sign_cells[atlas]), Transform3D(Basis(), Vector3(0, 0, -0.06)))
 
@@ -440,6 +443,95 @@ func _stop_name(x: float, z: float, yaw: float, text: String) -> void:
 		var face := basis * Basis(Vector3.UP, PI * 0.5 * side)
 		lb.transform = Transform3D(face, Vector3(x, gy, z) + basis * Vector3(0.013 * side, 2.835, -0.305))
 		_label_specs.append(lb)
+
+
+# --- Tafeln mit Text (tools/street_life.py boards) ------------------------------------------------
+# art: ort = Ortstafel (gelb, 1,35 × 0,90 m), ausf/vorweg/ankuend = Autobahntafeln (blau, weiße Schrift, zwei
+# Pfosten), wegw = gelber Wegweiser. Tafel schaut dem Verkehr entgegen (Vorderseite -Z wie die Verkehrszeichen).
+const BOARD_BLUE := Color(0.07, 0.22, 0.52)
+const BOARD_YELLOW := Color(0.96, 0.78, 0.04)
+
+
+func _boards(boards: Array) -> void:
+	if boards.is_empty():
+		return
+	# je Zelle ein Mesh: die Sichtweite zählt ab der Mitte des Meshs – ein Mesh für die ganze Kachel war aus der
+	# Nähe unsichtbar
+	var surfs := {}
+	for bd in boards:
+		var kind: String = bd[0]
+		var x: float = bd[1]
+		var z: float = bd[2]
+		var sk := _cell(x, z)
+		if not surfs.has(sk):
+			surfs[sk] = Surf.new()
+		var surf: Surf = surfs[sk]
+		var basis := Basis(Vector3.UP, float(bd[3]))
+		var gy := maxf(terrain.height_at(x, z), float(bd[4]))     # auf Brücken: Fahrbahnhöhe aus der Pipeline
+		var lines: Array = bd[5]
+		if lines.is_empty():
+			continue
+		var maxlen := 1
+		for l in lines:
+			maxlen = maxi(maxlen, String(l).length())
+		var cap := 0.30          # Versalhöhe (m)
+		var w := 1.35
+		var h := 0.90
+		var base_y := 1.6        # Unterkante über Gelände
+		var bg := BOARD_YELLOW
+		var fg := Color(0.05, 0.05, 0.05)
+		var posts := 1
+		match kind:
+			"ort":
+				cap = clampf(1.15 / (0.62 * float(maxlen)), 0.09, 0.19)
+			"wegw":
+				cap = 0.12
+				w = clampf(0.62 * cap * float(maxlen) + 0.30, 0.9, 2.4)
+				h = 0.20 + 0.19 * float(lines.size())
+				base_y = 2.3
+			_:
+				cap = 0.28 if kind == "ausf" else 0.32
+				w = clampf(0.62 * cap * float(maxlen) + 0.8, 3.0, 7.5)
+				h = 0.55 + (cap * 1.75) * float(lines.size())
+				base_y = 2.2 if kind == "ausf" else 2.6
+				bg = BOARD_BLUE
+				fg = Color(0.96, 0.96, 0.94)
+				posts = 2
+		var c := Vector3(x, gy + base_y + h * 0.5, z)
+		# Rahmen (Kontrastfarbe) + Fläche, Rückseite grau
+		surf.box(c, basis, Vector3(w, h, 0.03), Color(0.55, 0.56, 0.57))
+		surf.box(c + basis * Vector3(0, 0, -0.012), basis, Vector3(w, h, 0.012), fg)
+		var fr := 0.035 if posts == 2 else 0.02
+		surf.box(c + basis * Vector3(0, 0, -0.016), basis, Vector3(w - 2.0 * fr, h - 2.0 * fr, 0.012), bg)
+		for pi in posts:
+			var px := 0.0 if posts == 1 else (w * 0.32 * (1.0 if pi == 0 else -1.0))
+			var ph := base_y + h
+			surf.box(Vector3(x, gy + ph * 0.5, z) + basis * Vector3(px, 0, 0.06), basis,
+					Vector3(0.09 if posts == 1 else 0.16, ph, 0.09 if posts == 1 else 0.16), Color(0.6, 0.61, 0.62))
+		var lh := (h - 2.0 * fr) / float(lines.size())
+		for i in lines.size():
+			var text := String(lines[i])
+			var lb := {}
+			lb.text = text
+			lb.font = _font_file()
+			lb.font_size = 96
+			var cap_i := cap
+			var avail := w - 2.0 * fr - 0.12
+			var need := 0.62 * cap_i * float(text.length())
+			if need > avail:
+				cap_i *= avail / need
+			lb.pixel_size = cap_i / 68.0
+			lb.modulate = fg
+			lb.outline_size = 0
+			lb.double_sided = false
+			lb.shaded = true
+			lb.visibility_range_end = 90.0 if posts == 1 else 260.0
+			var ly := h * 0.5 - fr - lh * (float(i) + 0.5)
+			# Label3D ist von +Z lesbar; Tafelvorderseite zeigt -Z -> um 180° drehen
+			lb.transform = Transform3D(basis * Basis(Vector3.UP, PI), c + basis * Vector3(0, ly, -0.024))
+			_label_specs.append(lb)
+	for sk in surfs:
+		(surfs[sk] as Surf).commit(self, 420.0)
 
 
 # --- Läden ---------------------------------------------------------------------

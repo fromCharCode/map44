@@ -2,7 +2,7 @@
  "texture": "res://assets/textures/street/traffic_signs.png",
  "grid": [
   8,
-  4
+  8
  ],
  "cell_px": 256,
  "layout": "Zellindex i: Spalte i % 8, Zeile i // 8, Zeile 0 oben. UV 0..1 der Schildfläche = ganze Zelle (Godot-UV.y=0 oben). Inhalt ist auf das Seitenverhältnis der Platte vorverzerrt. Alpha = Umriss (Kante weich, RGB außerhalb = Randfarbe).",
@@ -391,6 +391,306 @@
     0.6
    ],
    "desc": "Vorgeschriebene Vorbeifahrt rechts vorbei"
+  },
+  "274_10": {
+   "index": 32,
+   "col": 0,
+   "row": 4,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Zulässige Höchstgeschwindigkeit 10"
+  },
+  "274_20": {
+   "index": 33,
+   "col": 1,
+   "row": 4,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Zulässige Höchstgeschwindigkeit 20"
+  },
+  "274_40": {
+   "index": 34,
+   "col": 2,
+   "row": 4,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Zulässige Höchstgeschwindigkeit 40"
+  },
+  "274_60": {
+   "index": 35,
+   "col": 3,
+   "row": 4,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Zulässige Höchstgeschwindigkeit 60"
+  },
+  "274_70": {
+   "index": 36,
+   "col": 4,
+   "row": 4,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Zulässige Höchstgeschwindigkeit 70"
+  },
+  "274_80": {
+   "index": 37,
+   "col": 5,
+   "row": 4,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Zulässige Höchstgeschwindigkeit 80"
+  },
+  "274_100": {
+   "index": 38,
+   "col": 6,
+   "row": 4,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Zulässige Höchstgeschwindigkeit 100"
+  },
+  "274_120": {
+   "index": 39,
+   "col": 7,
+   "row": 4,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Zulässige Höchstgeschwindigkeit 120"
+  },
+  "274_130": {
+   "index": 40,
+   "col": 0,
+   "row": 5,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Zulässige Höchstgeschwindigkeit 130"
+  },
+  "278_60": {
+   "index": 41,
+   "col": 1,
+   "row": 5,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Ende der Höchstgeschwindigkeit 60"
+  },
+  "278_80": {
+   "index": 42,
+   "col": 2,
+   "row": 5,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Ende der Höchstgeschwindigkeit 80"
+  },
+  "278_100": {
+   "index": 43,
+   "col": 3,
+   "row": 5,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Ende der Höchstgeschwindigkeit 100"
+  },
+  "282": {
+   "index": 44,
+   "col": 4,
+   "row": 5,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Ende sämtlicher Streckenverbote"
+  },
+  "241": {
+   "index": 45,
+   "col": 5,
+   "row": 5,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Getrennter Rad- und Gehweg"
+  },
+  "260": {
+   "index": 46,
+   "col": 6,
+   "row": 5,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Verbot für Kraftfahrzeuge"
+  },
+  "253": {
+   "index": 47,
+   "col": 7,
+   "row": 5,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Verbot für Lkw"
+  },
+  "254": {
+   "index": 48,
+   "col": 0,
+   "row": 6,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Verbot für Radverkehr"
+  },
+  "276": {
+   "index": 49,
+   "col": 1,
+   "row": 6,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Überholverbot"
+  },
+  "215": {
+   "index": 50,
+   "col": 2,
+   "row": 6,
+   "plate": "plate_round",
+   "shape": "round",
+   "size_m": [
+    0.6,
+    0.6
+   ],
+   "desc": "Kreisverkehr"
+  },
+  "330.1": {
+   "index": 51,
+   "col": 3,
+   "row": 6,
+   "plate": "plate_rect",
+   "shape": "rect",
+   "size_m": [
+    0.6,
+    0.9
+   ],
+   "desc": "Autobahn"
+  },
+  "330.2": {
+   "index": 52,
+   "col": 4,
+   "row": 6,
+   "plate": "plate_rect",
+   "shape": "rect",
+   "size_m": [
+    0.6,
+    0.9
+   ],
+   "desc": "Ende der Autobahn"
+  },
+  "331.1": {
+   "index": 53,
+   "col": 5,
+   "row": 6,
+   "plate": "plate_rect",
+   "shape": "rect",
+   "size_m": [
+    0.6,
+    0.9
+   ],
+   "desc": "Kraftfahrstraße"
+  },
+  "136": {
+   "index": 54,
+   "col": 6,
+   "row": 6,
+   "plate": "plate_triangle",
+   "shape": "triangle",
+   "size_m": [
+    0.9,
+    0.7794
+   ],
+   "desc": "Kinder"
+  },
+  "102": {
+   "index": 55,
+   "col": 7,
+   "row": 6,
+   "plate": "plate_triangle",
+   "shape": "triangle",
+   "size_m": [
+    0.9,
+    0.7794
+   ],
+   "desc": "Kreuzung mit Vorfahrt von rechts"
+  },
+  "1022-10": {
+   "index": 56,
+   "col": 0,
+   "row": 7,
+   "plate": "plate_oneway",
+   "shape": "rect_oneway",
+   "size_m": [
+    0.9,
+    0.3
+   ],
+   "desc": "Zusatzzeichen Radfahrer frei"
   }
  }
 }

@@ -1,7 +1,7 @@
 """Verkehrszeichen-Atlas (StVO, amtliche Werke § 5 UrhG) prozedural mit PIL zeichnen.
 
 Aufruf:  .venv/bin/python tools/blender/make_traffic_signs.py
-Ausgabe: godot/assets/textures/street/traffic_signs.png (8x4 Zellen a 256 px, RGBA)
+Ausgabe: godot/assets/textures/street/traffic_signs.png (8x8 Zellen a 256 px, RGBA)
          godot/assets/textures/street/traffic_signs.json
 
 Jede Zelle füllt die ganze 256-px-Kachel und ist auf das Seitenverhältnis der Platte vorverzerrt
@@ -26,7 +26,7 @@ F_DIN_B = FONT_DIR + "NotoSans-SemiCondensedSemiBold.ttf"
 F_STOP = FONT_DIR + "NotoSans-SemiCondensedBold.ttf"
 
 CELL = 256
-GRID = (8, 4)
+GRID = (8, 8)
 SS = 1536  # Überabtastung (längste Seite)
 
 WHITE = (243, 243, 240)
@@ -636,6 +636,152 @@ def z222(c):
 
 
 # name, plate, Zeichenfunktion, Beschreibung
+# ---------------------------------------------------------------------------
+# Erweiterung (Bogen 8x8): Tempolimits, Verbote, Gebote, Autobahn
+# ---------------------------------------------------------------------------
+def truck_side(c, cx, cy, w, col):
+    """Lkw von der Seite (253), w = Länge in mm."""
+    k = w / 2.0
+
+    def T(x, y):
+        return (cx + x * k, cy + y * k)
+    c.poly([T(-1.0, -0.55), T(0.30, -0.55), T(0.30, 0.25), T(-1.0, 0.25)], col)          # Aufbau
+    c.poly([T(0.36, -0.30), T(0.72, -0.30), T(1.0, 0.0), T(1.0, 0.25), T(0.36, 0.25)], col)  # Fahrerhaus
+    for wx in (-0.62, 0.62):
+        c.circle(*T(wx, 0.30), 0.17 * k, col)
+
+
+def car_side(c, cx, cy, w, col):
+    """Pkw von der Seite (276/260), w = Länge in mm."""
+    k = w / 2.0
+
+    def T(x, y):
+        return (cx + x * k, cy + y * k)
+    c.poly([T(-1.0, 0.0), T(-0.62, -0.08), T(-0.36, -0.42), T(0.34, -0.42), T(0.62, -0.06), T(1.0, 0.02),
+            T(1.0, 0.28), T(-1.0, 0.28)], col)
+    for wx in (-0.58, 0.58):
+        c.circle(*T(wx, 0.28), 0.19 * k, col)
+
+
+def z241(c):
+    round_blue(c)
+    W = c.wmm
+    c.poly([(0.49 * W, 0.09 * W), (0.51 * W, 0.09 * W), (0.51 * W, 0.91 * W), (0.49 * W, 0.91 * W)], WHITE)
+    bicycle(c, 0.285 * W, 0.56 * W, 0.115 * W, WHITE)
+    woman_child(c, 0.70 * W, 0.50 * W, 0.20 * W, WHITE)
+
+
+def z260(c):
+    round_prohibition(c)
+    W = c.wmm
+    car_side(c, W / 2, 0.60 * W, 0.44 * W, BLACK)
+    # Kraftrad (vereinfacht) darüber
+    for wx in (-0.11, 0.11):
+        c.ring(W / 2 + wx * W, 0.37 * W, 0.050 * W, 0.016 * W, BLACK)
+    c.stroke([(0.39 * W, 0.37 * W), (0.47 * W, 0.30 * W), (0.56 * W, 0.30 * W), (0.61 * W, 0.37 * W)], 0.02 * W, BLACK)
+
+
+def z253(c):
+    round_prohibition(c)
+    W = c.wmm
+    truck_side(c, W / 2, 0.50 * W, 0.50 * W, BLACK)
+
+
+def z254(c):
+    round_prohibition(c)
+    bicycle(c, c.wmm / 2, 0.55 * c.wmm, 0.21 * c.wmm, BLACK)
+
+
+def z276(c):
+    round_prohibition(c)
+    W = c.wmm
+    car_front(c, 0.36 * W, 0.50 * W, 0.25 * W, RED, WHITE)
+    car_front(c, 0.64 * W, 0.50 * W, 0.25 * W, BLACK, WHITE)
+
+
+def z282(c):
+    W = c.wmm
+    c.fill_shape(0, WHITE)
+    c.fill_shape(8, (60, 60, 60))
+    c.fill_shape(8 + 0.012 * W, WHITE)
+    end_stripes(c, 14, n=5, lw=0.022 * W, pitch=0.045 * W)
+
+
+def z278(c, num):
+    speed(c, num, g=True)
+    end_stripes(c, 14, n=5, lw=0.016 * c.wmm, pitch=0.034 * c.wmm)
+
+
+def z215(c):
+    round_blue(c)
+    W = c.wmm
+    cx = cy = W / 2
+    R = 0.24 * W
+    for k in range(3):
+        a0 = math.radians(90 + 120 * k)
+        pts = [(cx + R * math.cos(a0 + math.radians(t)), cy - R * math.sin(a0 + math.radians(t))) for t in range(0, 76, 5)]
+        c.stroke(pts, 0.085 * W, WHITE, caps=False)
+        a1 = a0 + math.radians(75)
+        tx, ty = -math.sin(a1), -math.cos(a1)                      # Tangente (gegen den Uhrzeigersinn, y nach unten)
+        px, py = cx + R * math.cos(a1), cy - R * math.sin(a1)
+        nx, ny = math.cos(a1), -math.sin(a1)
+        h, b = 0.14 * W, 0.105 * W
+        c.poly([(px + tx * h, py + ty * h), (px + nx * b, py + ny * b), (px - nx * b, py - ny * b)], WHITE)
+
+
+def z330(c, end=False):
+    """Autobahn (330.1) / Ende (330.2): blaue Tafel mit Autobahnsymbol."""
+    W, H = c.wmm, c.hmm
+    c.fill_shape(0, WHITE)
+    c.fill_shape(10, BLUE)
+    cx = W / 2
+    # zwei Fahrbahnen perspektivisch + Brücke
+    for sgn in (-1, 1):
+        c.poly([(cx + sgn * 0.045 * W, 0.20 * H), (cx + sgn * 0.085 * W, 0.20 * H), (cx + sgn * 0.26 * W, 0.84 * H),
+                (cx + sgn * 0.13 * W, 0.84 * H)], WHITE)
+    c.poly([(0.14 * W, 0.40 * H), (0.86 * W, 0.40 * H), (0.86 * W, 0.47 * H), (0.14 * W, 0.47 * H)], WHITE)
+    for sgn in (-1, 1):
+        c.poly([(cx + sgn * 0.33 * W, 0.47 * H), (cx + sgn * 0.27 * W, 0.47 * H), (cx + sgn * 0.27 * W, 0.56 * H),
+                (cx + sgn * 0.33 * W, 0.56 * H)], WHITE)
+    if end:
+        lay, ld = c.layer()
+        c.stroke([(0.10 * W, 0.92 * H), (0.90 * W, 0.08 * H)], 0.075 * W, RED + (255,), d=ld, caps=False)
+        c.composite(lay, c.shape_mask(10))
+
+
+def z331(c):
+    """Kraftfahrstraße (331.1): blaue Tafel mit Pkw von vorn."""
+    W, H = c.wmm, c.hmm
+    c.fill_shape(0, WHITE)
+    c.fill_shape(10, BLUE)
+    car_front(c, W / 2, 0.52 * H, 0.62 * W, WHITE, BLUE)
+
+
+def z136(c):
+    triangle_frame(c)
+    W, H = c.wmm, c.hmm
+    child_running(c, 0.42 * W, 0.66 * H, 0.21 * H, BLACK)
+    child_running(c, 0.60 * W, 0.69 * H, 0.17 * H, BLACK)
+
+
+def z102(c):
+    triangle_frame(c)
+    W, H = c.wmm, c.hmm
+    cx, cy, a = W / 2, 0.66 * H, 0.13 * W
+    c.stroke([(cx - a, cy - a), (cx + a, cy + a)], 0.045 * W, BLACK, caps=False)
+    c.stroke([(cx - a, cy + a), (cx + a, cy - a)], 0.045 * W, BLACK, caps=False)
+
+
+def z1022(c):
+    """Zusatzzeichen 'Radfahrer frei' (auf der Einbahn-Platte 900x300 gezeichnet)."""
+    W, H = c.wmm, c.hmm
+    c.fill_shape(0, WHITE)
+    c.fill_shape(8, BLACK)
+    c.fill_shape(20, WHITE)
+    bicycle(c, 0.24 * W, 0.56 * H, 0.42 * H, BLACK)
+    c.text("frei", 0.66 * W, 0.50 * H, 0.42 * H, F_DIN, BLACK, max_w=0.42 * W)
+
+
 SIGNS = [
     ("205", "plate_triangle_down", z205, "Vorfahrt gewähren"),
     ("206", "plate_octagon", z206, "Halt! Vorfahrt gewähren (STOP)"),
@@ -669,6 +815,32 @@ SIGNS = [
     ("325.2", "plate_rect_wide", lambda c: z325(c, end=True), "Ende verkehrsberuhigter Bereich"),
     ("209", "plate_round", z209, "Vorgeschriebene Fahrtrichtung rechts"),
     ("222", "plate_round", z222, "Vorgeschriebene Vorbeifahrt rechts vorbei"),
+    # --- Erweiterung ---
+    ("274_10", "plate_round", lambda c: z274(c, 10), "Zulässige Höchstgeschwindigkeit 10"),
+    ("274_20", "plate_round", lambda c: z274(c, 20), "Zulässige Höchstgeschwindigkeit 20"),
+    ("274_40", "plate_round", lambda c: z274(c, 40), "Zulässige Höchstgeschwindigkeit 40"),
+    ("274_60", "plate_round", lambda c: z274(c, 60), "Zulässige Höchstgeschwindigkeit 60"),
+    ("274_70", "plate_round", lambda c: z274(c, 70), "Zulässige Höchstgeschwindigkeit 70"),
+    ("274_80", "plate_round", lambda c: z274(c, 80), "Zulässige Höchstgeschwindigkeit 80"),
+    ("274_100", "plate_round", lambda c: z274(c, 100), "Zulässige Höchstgeschwindigkeit 100"),
+    ("274_120", "plate_round", lambda c: z274(c, 120), "Zulässige Höchstgeschwindigkeit 120"),
+    ("274_130", "plate_round", lambda c: z274(c, 130), "Zulässige Höchstgeschwindigkeit 130"),
+    ("278_60", "plate_round", lambda c: z278(c, 60), "Ende der Höchstgeschwindigkeit 60"),
+    ("278_80", "plate_round", lambda c: z278(c, 80), "Ende der Höchstgeschwindigkeit 80"),
+    ("278_100", "plate_round", lambda c: z278(c, 100), "Ende der Höchstgeschwindigkeit 100"),
+    ("282", "plate_round", z282, "Ende sämtlicher Streckenverbote"),
+    ("241", "plate_round", z241, "Getrennter Rad- und Gehweg"),
+    ("260", "plate_round", z260, "Verbot für Kraftfahrzeuge"),
+    ("253", "plate_round", z253, "Verbot für Lkw"),
+    ("254", "plate_round", z254, "Verbot für Radverkehr"),
+    ("276", "plate_round", z276, "Überholverbot"),
+    ("215", "plate_round", z215, "Kreisverkehr"),
+    ("330.1", "plate_rect", z330, "Autobahn"),
+    ("330.2", "plate_rect", lambda c: z330(c, end=True), "Ende der Autobahn"),
+    ("331.1", "plate_rect", z331, "Kraftfahrstraße"),
+    ("136", "plate_triangle", z136, "Kinder"),
+    ("102", "plate_triangle", z102, "Kreuzung mit Vorfahrt von rechts"),
+    ("1022-10", "plate_oneway", z1022, "Zusatzzeichen Radfahrer frei"),
 ]
 
 SHAPE = {"plate_round": "round", "plate_triangle": "triangle", "plate_triangle_down": "triangle_down",

@@ -62,6 +62,9 @@ func _load_routes() -> void:
 			to = to.substr(9)
 		var ri := routes.size()
 		routes.append({"ref": String(r["ref"]), "to": to, "pts": pts, "cum": cum, "stops": r.get("stops", [])})
+		Timetable.attach(routes[ri])
+		if not (routes[ri]["tt"] as Array).is_empty():
+			_has_tt = true
 		var s := 0.0
 		while s < cum[cum.size() - 1]:
 			var q := route_point(ri, s)
@@ -154,6 +157,15 @@ func add_rails(t: Terrain, rails: Array, container: Node3D, poles: Array = [], s
 			"pref": int(rl.get("pref", 0)), "stops": rl.get("stops", [])})
 		_link(ka, idx, 0)
 		_link(kb, idx, 1)
+		# 30-m-Zellen der Gleispunkte (Suche des Gleises zu einer Fahrplan-Position)
+		var seen_c := {}
+		for p in pts:
+			var wk := Vector2i(floori(p.x / 30.0), floori(p.z / 30.0))
+			if not seen_c.has(wk):
+				seen_c[wk] = true
+				if not _way_cells.has(wk):
+					_way_cells[wk] = []
+				(_way_cells[wk] as Array).append(idx)
 	_build_wires_and_poles(t, first, container, poles)
 
 
@@ -420,6 +432,96 @@ func next_way(idx: int, end: int, last_dir: Vector2, route := -1, route_s := 0.0
 	return [cands[0][0], cands[0][1]]
 
 
+var _way_cells := {}                # Vector2i (30-m-Zelle) -> Array Gleis-Index
+var _has_tt := false                # Fahrplan vorhanden -> Bahnen erscheinen nach Fahrplan statt zufällig
+var _served := {}                   # Fahrplanfahrt (Schlüssel) -> true, solange sie laut Plan in der Nähe ist
+var _tt_timer := 0.0
+
+
+func _pick_model() -> Dictionary:
+	var mdl: Dictionary = models[0]
+	var wsum := 0.0
+	for m in models:
+		wsum += float(m["weight"])
+	var r := rng.randf() * wsum
+	for m in models:
+		r -= float(m["weight"])
+		if r <= 0.0:
+			mdl = m
+			break
+	return mdl
+
+
+func _spawn_scheduled() -> void:
+	## Für jede Linie in der Nähe: wo laut Soll-Fahrplan gerade eine Bahn unterwegs ist, erscheint eine (einmal).
+	var now_s := Timetable.now()
+	var fc := Vector2i(floori(focus.x / 100.0), floori(focus.z / 100.0))
+	var near := {}
+	for dx in range(-7, 8):
+		for dz in range(-7, 8):
+			for it in _route_cells.get(fc + Vector2i(dx, dz), []):
+				near[int(it[0])] = true
+	var seen := {}
+	for ri in near:
+		for a in Timetable.active(routes[ri], now_s):
+			var key: String = a[0]
+			var s: float = a[1]
+			var q := route_point(ri, s)
+			var dist := q.distance_to(Vector2(focus.x, focus.z))
+			if dist > 750.0:
+				continue
+			seen[key] = true
+			if _served.has(key) or dist < 70.0 or trams.size() >= 24:
+				continue
+			var dirv := (route_point(ri, s + 6.0) - q).normalized()
+			# passendes Gleis: nächste Probe mit Fahrtrichtung der Linie, bevorzugt das Richtungsgleis
+			var best: Array = []
+			var best_c := 12.0
+			var ck := Vector2i(floori(q.x / 30.0), floori(q.y / 30.0))
+			var tried := {}
+			for ix in range(-1, 2):
+				for iz in range(-1, 2):
+					for wi in _way_cells.get(ck + Vector2i(ix, iz), []):
+						if tried.has(wi):
+							continue
+						tried[wi] = true
+						var w: Dictionary = ways[wi]
+						if w["bridge"] and float(w["len"]) < 40.0:
+							continue
+						var sw := _project(wi, q)
+						var wp := way_point(wi, sw)
+						var d := Vector2(wp.x, wp.z).distance_to(q)
+						var wd := way_dir(wi, sw, 1)
+						if absf(wd.dot(dirv)) < 0.7:
+							continue
+						var dir := 1 if wd.dot(dirv) >= 0.0 else -1
+						var pref := int(w.get("pref", 0))
+						var cost := d + (6.0 if pref != 0 and pref != dir else 0.0)
+						if cost < best_c:
+							best_c = cost
+							best = [wi, dir]
+			if best.is_empty():
+				if OS.has_environment("DRESDEN_TTDBG"):
+					print("TTDBG Tram kein Gleis: Linie %s q %s Kandidaten %d dist %.0f" % [String(routes[ri]["ref"]), str(q), tried.size(), dist])
+				continue
+			_served[key] = true
+			var mdl := _pick_model()
+			var offs: Array[float] = []
+			offs.assign(mdl["offsets"])
+			var tu := TramUnit.new()
+			add_child(tu)
+			tu.route = ri
+			tu.route_s = s
+			tu.setup(self, String(mdl["path"]), multi, offs, int(best[0]), int(best[1]), _project(int(best[0]), q))
+			trams.append(tu)
+			return                              # höchstens eine neue Bahn je Durchlauf (Ladezeit)
+	if OS.has_environment("DRESDEN_TTDBG"):
+		print("TTDBG Tram: Linien nah %d, Fahrten in 750 m %d, bedient %d, Bahnen %d" % [near.size(), seen.size(), _served.size(), trams.size()])
+	for key in _served.keys():
+		if not seen.has(key):
+			_served.erase(key)
+
+
 func _spawn() -> void:
 	for attempt in 400:
 		var wi := rng.randi_range(0, ways.size() - 1)
@@ -466,7 +568,14 @@ func _process(_delta: float) -> void:
 		if t.dead or (t.bodies.size() > 0 and (t.bodies[0] as Node3D).global_position.distance_to(focus) > 1500.0):
 			t.queue_free()
 			trams.remove_at(i)
-	if enabled and trams.size() < target_count and ways.size() > 0:
+	if not enabled or ways.is_empty():
+		return
+	if _has_tt:
+		_tt_timer -= _delta
+		if _tt_timer <= 0.0:
+			_tt_timer = 0.5
+			_spawn_scheduled()
+	elif trams.size() < target_count:
 		_spawn()
 
 

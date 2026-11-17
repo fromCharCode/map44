@@ -128,6 +128,7 @@ Die Geodaten stammen aus offenen Quellen und dürfen mit Namensnennung weitergeg
 - © Landeshauptstadt Dresden (Baumkataster, Haltestellen-Barrierefreiheit, Stadtstrukturtypen, Straßenflächen),
   dl-de/by-2-0
 - © Statistische Ämter des Bundes und der Länder, Zensus 2022 (Gebäude nach Baujahr), dl-de/by-2-0
+- Soll-Fahrplandaten des Nahverkehrs: gtfs.de, bereitgestellt von DELFI e.V., CC BY 4.0 (Fahrplan der Bahnen und Busse)
 - Texturen: ambientCG (CC0), Klänge: freesound.org (CC0), Schriften: Noto (SIL OFL 1.1)
 
 Alle 3D-Modelle (Fahrzeuge, Straßenbahnen, Haltestellen, Möbel, Bäume, Wahrzeichen) sind eigens für dieses Projekt

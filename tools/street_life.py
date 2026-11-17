@@ -55,7 +55,47 @@ DE_SIGNS = {"205": ("plate_triangle_down", "205"), "206": ("plate_octagon", "206
             "283": ("plate_round", "283"), "286": ("plate_round", "286"), "237": ("plate_round", "237"),
             "240": ("plate_round", "240"), "357": ("plate_square", "357"), "325.1": ("plate_rect", "325.1"),
             "101": ("plate_triangle", "101"), "123": ("plate_triangle", "123"), "138": ("plate_triangle", "138"),
-            "131": ("plate_triangle", "131")}
+            "131": ("plate_triangle", "131"), "239": ("plate_round", "239"), "241": ("plate_round", "241"),
+            "260": ("plate_round", "260"), "253": ("plate_round", "253"), "254": ("plate_round", "254"),
+            "276": ("plate_round", "276"), "282": ("plate_round", "282"), "215": ("plate_round", "215"),
+            "330.1": ("plate_rect", "330.1"), "330.2": ("plate_rect", "330.2"), "331.1": ("plate_rect", "331.1"),
+            "136": ("plate_triangle", "136"), "102": ("plate_triangle", "102"), "209": ("plate_round", "209"),
+            "222": ("plate_round", "222"), "224": ("plate_round", "224"), "325.2": ("plate_rect_wide", "325.2"),
+            "1022-10": ("plate_oneway", "1022-10")}
+# Tempolimit-Zeichen im Bogen (274_<n>); Ende-Zeichen 278_<n>
+SPEED_SIGNS = (10, 20, 30, 40, 50, 60, 70, 80, 100, 120, 130)
+for _v in SPEED_SIGNS:
+    DE_SIGNS[f"274_{_v}"] = ("plate_round", f"274_{_v}")
+for _v in (60, 80, 100):
+    DE_SIGNS[f"278_{_v}"] = ("plate_round", f"278_{_v}")
+
+
+def sign_codes(ts):
+    """OSM traffic_sign='DE:274-60,1022-10' / 'DE:274[30];DE:239' -> Liste darstellbarer Codes (Haupt- und Zusatzzeichen)."""
+    out = []
+    for part in ts.replace(";", ",").split(","):
+        part = part.strip()
+        if part.startswith("DE:"):
+            part = part[3:]
+        if not part:
+            continue
+        base, val = part, None
+        if "[" in part:
+            base, val = part.split("[", 1)
+            val = val.rstrip("]")
+        elif part.count("-") == 1 and part.split("-")[0] in ("274", "278"):
+            base, val = part.split("-")
+        code = base
+        if base in ("274", "278") and val:
+            try:
+                code = f"{base}_{int(float(val))}"
+            except ValueError:
+                code = base
+        elif base == "274":
+            code = "274_30"
+        if code in DE_SIGNS:
+            out.append(code)
+    return out
 RANK = {"motorway": 9, "trunk": 8, "primary": 7, "secondary": 6, "tertiary": 5, "motorway_link": 6, "trunk_link": 6,
         "primary_link": 5, "secondary_link": 5, "tertiary_link": 4, "unclassified": 3, "residential": 2,
         "living_street": 1, "service": 0, "road": 2, "busway": 3}
@@ -503,10 +543,7 @@ class StreetLife:
             hw = t.get("highway")
             codes = []
             if ts.startswith("DE:"):
-                for c in ts[3:].replace(";", ",").split(","):
-                    c = c.split("[")[0].strip()
-                    if c in DE_SIGNS:
-                        codes.append(c)
+                codes = sign_codes(ts)
             elif hw == "stop":
                 codes = ["206"]
             elif hw == "give_way":
@@ -528,13 +565,181 @@ class StreetLife:
             px, pz = qx + rx * off, qz + rz * off
             if not self.inside(px, pz):
                 continue
-            self._sign(codes[0], px, pz, _yaw_facing(-dx, -dz))
+            # Hauptzeichen oben, Zusatzzeichen/zweites Zeichen darunter am selben Pfosten
+            for k_, code in enumerate(codes[:2]):
+                self._sign(code, px, pz, _yaw_facing(-dx, -dz), -0.62 * k_)
             n_signs += 1
         self.log(f"  Straßenleben: {n_names} Straßennamensschilder, {n_signs} Verkehrszeichen")
 
-    def _sign(self, code, x, z, yaw):
+    # --- Tafeln mit Text: Ortstafeln, Autobahn-Wegweiser, gelbe Wegweiser ---------------------------
+    FAST = ("motorway", "trunk")
+
+    def boards(self, junctions):
+        """city.life.boards: [art, x, z, yaw, y, [zeilen]]
+        'ort'    Ortstafel (Zeichen 310) aus OSM traffic_sign=city_limit,
+        'ausf'   Ausfahrttafel an der Trenninsel (332), 'vorweg' Vorwegweiser 500 m vorher (449),
+        'ankuend' Ankündigungstafel 1000 m vorher (448: Nummer, Name der Anschlussstelle),
+        'wegw'   gelber Wegweiser an Hauptstraßen (Ziele aus OSM destination)."""
+        out = self.out.setdefault("boards", [])
+        n = {"ort": 0, "ausf": 0, "vorweg": 0, "ankuend": 0, "wegw": 0}
+
+        def put(kind, x, z, yaw, lines, road=None):
+            # nie in einer Fahrbahn (Ausfahrttafel stand auf dem Verzögerungsstreifen)
+            nr = self.nearest_road(x, z, 12.0, drive_only=True)
+            if nr is not None and nr[0] < float(nr[2]["width"]) / 2 + 0.5:
+                return
+            if self.inside(x, z) and not self._in_building(x, z):
+                y = self.gy(x, z)
+                if road is not None:
+                    # Fahrbahnhöhe am nächsten Profilpunkt (Tafeln auf Brücken/Dämmen stehen auf Fahrbahnniveau)
+                    q = min(road["pts"], key=lambda p_: (p_[0] - x) ** 2 + (p_[1] - z) ** 2)
+                    y = max(y, float(q[2]))
+                out.append([kind, round(x, 2), round(z, 2), round(yaw, 3), round(y, 2), lines])
+                n[kind] += 1
+
+        # Ortstafeln
+        for el in self.pois:
+            t = el.get("tags", {})
+            if t.get("traffic_sign") != "city_limit" or not t.get("name"):
+                continue
+            x, z = self.to_local(*el["_utm"])
+            nr = self.nearest_road(x, z, 14.0, drive_only=True)
+            if nr is None:
+                continue
+            _d, ln, r = nr
+            dx, dz, qx, qz = self.road_dir_at(ln, x, z)
+            if t.get("direction") == "backward":
+                dx, dz = -dx, -dz
+            off = float(r["width"]) / 2 + 1.2
+            put("ort", qx - dz * off, qz + dx * off, _yaw_facing(-dx, -dz), [t["name"][:28]])
+        # Wege nach Endpunkt (Fahrtrichtung): wer endet/beginnt an welchem Punkt
+        starts, ends = defaultdict(list), defaultdict(list)
+        for ln, r in self.roads:
+            ow = int(r.get("oneway", 0))
+            c = list(ln.coords)
+            a, b = (c[0], c[-1]) if ow >= 0 else (c[-1], c[0])
+            starts[(round(a[0], 1), round(a[1], 1))].append((ln, r, ow))
+            ends[(round(b[0], 1), round(b[1], 1))].append((ln, r, ow))
+
+        def along(ln, ow, s_from_start):
+            """Punkt und Fahrtrichtung s Meter nach dem Anfang (in Fahrtrichtung)"""
+            L = ln.length
+            s = min(max(s_from_start, 0.0), L)
+            sgn = 1.0 if ow >= 0 else -1.0
+            pos = s if ow >= 0 else L - s
+            q = ln.interpolate(pos)
+            dx, dz = self._dir_at(ln, pos, sgn)
+            return q.x, q.y, dx, dz
+
+        fast = [(ln, r, int(r.get("oneway", 0))) for ln, r in self.roads if r["cls"] in self.FAST]
+        ftree = STRtree([f[0] for f in fast]) if fast else None
+
+        def main_at(key):
+            """Autobahn-Fahrbahn, von der am Punkt key abgezweigt wird: (ln, weg, einbahn, Station in Fahrtrichtung)"""
+            if ftree is None:
+                return None
+            pt = Point(key)
+            for i in ftree.query(pt.buffer(1.5)):
+                ln, r, ow = fast[int(i)]
+                if ln.distance(pt) < 1.0:
+                    pos = ln.project(pt)
+                    return ln, r, ow, (pos if ow >= 0 else ln.length - pos)
+            return None
+
+        def upstream(key, dist):
+            """dist Meter stromaufwärts auf der Autobahn ab Abzweig key: (x, z, dx, dz, weg) oder None"""
+            m = main_at(key)
+            if m is None:
+                return None
+            ln, r, ow, s0 = m
+            if s0 >= dist:
+                x, z, dx, dz = along(ln, ow, s0 - dist)
+                return x, z, dx, dz, r
+            left = dist - s0
+            c = list(ln.coords)
+            a = c[0] if ow >= 0 else c[-1]
+            key = (round(a[0], 1), round(a[1], 1))
+            for _ in range(40):
+                cand = [c for c in ends.get(key, []) if c[1]["cls"] in self.FAST]
+                if len(cand) != 1:
+                    return None
+                ln, r, ow = cand[0]
+                if ln.length >= left:
+                    x, z, dx, dz = along(ln, ow, ln.length - left)
+                    return x, z, dx, dz, r
+                left -= ln.length
+                c = list(ln.coords)
+                a = c[0] if ow >= 0 else c[-1]
+                key = (round(a[0], 1), round(a[1], 1))
+            return None
+
+        def dest_lines(r, maxn=3):
+            ls = [d.strip() for d in str(r.get("dest") or "").split(";") if d.strip()][:maxn]
+            if r.get("dref"):
+                ls = [str(r["dref"]).split(";")[0].strip()] + ls
+            return ls
+
+        def ramp_dest(ln, r, ow):
+            """Ziele einer Ausfahrt: eigenes destination oder das des nächsten Rampenstücks (bis 6 Stücke weit)"""
+            for _ in range(6):
+                if r.get("dest"):
+                    return dest_lines(r)
+                c = list(ln.coords)
+                b = c[-1] if ow >= 0 else c[0]
+                nxt = [q for q in starts.get((round(b[0], 1), round(b[1], 1)), []) if q[1]["cls"].endswith("_link")]
+                if len(nxt) != 1:
+                    return []
+                ln, r, ow = nxt[0]
+            return []
+
+        for key, lst in starts.items():
+            for ln, r, ow in lst:
+                if r["cls"] in ("motorway_link", "trunk_link"):
+                    if ow == 0 or main_at(key) is None or ln.length < 12.0:
+                        continue                       # Auffahrt/Verzweigung im Knoten: keine Ausfahrttafel
+                    jn0 = min(junctions, key=lambda j: math.hypot(j[0] - key[0], j[1] - key[1]), default=None)
+                    lines = ramp_dest(ln, r, ow)
+                    if not lines and jn0 and math.hypot(jn0[0] - key[0], jn0[1] - key[1]) < 120.0 and jn0[3]:
+                        lines = [jn0[3]]
+                    if not lines:
+                        continue
+                    # Ausfahrttafel rechts der Rampe, 25–60 m nach dem Abzweig (erste freie Stelle neben der Fahrbahn)
+                    for s_ in (25.0, 40.0, 60.0):
+                        if s_ > ln.length * 0.9:
+                            break
+                        x, z, dx, dz = along(ln, ow, s_)
+                        off = float(r["width"]) / 2 + 1.8
+                        n0 = n["ausf"]
+                        put("ausf", x - dz * off, z + dx * off, _yaw_facing(-dx, -dz), lines, r)
+                        if n["ausf"] > n0:
+                            break
+                    up = upstream(key, 500.0)
+                    if up:
+                        x, z, dx, dz, mr = up
+                        off = float(mr["width"]) / 2 + 2.8
+                        put("vorweg", x - dz * off, z + dx * off, _yaw_facing(-dx, -dz), lines + ["500 m"], mr)
+                    up = upstream(key, 1000.0)
+                    jn = min(junctions, key=lambda j: math.hypot(j[0] - key[0], j[1] - key[1]), default=None)
+                    if up and jn and math.hypot(jn[0] - key[0], jn[1] - key[1]) < 120.0 and jn[3]:
+                        x, z, dx, dz, mr = up
+                        off = float(mr["width"]) / 2 + 2.8
+                        head = (f"({jn[2]}) " if jn[2] else "") + jn[3]
+                        put("ankuend", x - dz * off, z + dx * off, _yaw_facing(-dx, -dz), [head, "1000 m"], mr)
+                elif r.get("dest") and r["cls"] in ("primary", "secondary", "tertiary", "primary_link", "secondary_link", "tertiary_link") \
+                        and ln.length >= 25.0 and len(ends.get(key, [])) + len(lst) >= 3:
+                    # gelber Wegweiser hinter der Kreuzung, rechts
+                    x, z, dx, dz = along(ln, ow, 12.0)
+                    off = float(r["width"]) / 2 + 1.0
+                    if _h(x, z, 31) < 0.7:
+                        put("wegw", x - dz * off, z + dx * off, _yaw_facing(-dx, -dz), dest_lines(r, 2))
+        self.log("  Straßenleben: Tafeln " + ", ".join(f"{v} {k}" for k, v in n.items()))
+
+    def _sign(self, code, x, z, yaw, dy=0.0):
         plate, atlas = DE_SIGNS.get(code, ("plate_round", code))
-        self.out["signs"].append([plate, atlas, round(x, 2), round(z, 2), round(yaw, 3), round(self.gy(x, z), 2)])
+        row = [plate, atlas, round(x, 2), round(z, 2), round(yaw, 3), round(self.gy(x, z), 2)]
+        if dy:
+            row.append(round(dy, 2))            # Höhenversatz (zweites Zeichen am Pfosten)
+        self.out["signs"].append(row)
 
     # --- Einbahnstraßen: echte Einbahn vs. Richtungsfahrbahn ---------------------------
     DUAL_NAMED = 60.0      # max. Abstand gleichnamiger Gegenfahrbahn (St. Petersburger Str. ~45 m)
@@ -674,6 +879,14 @@ class StreetLife:
                     code = "274.1"
                 elif r["cls"] == "living_street" and all(o[0]["cls"] != "living_street" for o in others):
                     code = "325.1"
+                elif r.get("vsign") and int(sp) in SPEED_SIGNS and r["cls"] not in ("service", "living_street") \
+                        and not (int(r.get("oneway", 0)) != 0 and (k == 0) != (int(r["oneway"]) == 1)):
+                    # beschildertes Tempolimit: Zeichen dort, wo es sich gegenüber der durchgehenden Straße ändert
+                    # (gleicher Name oder einzige Fortsetzung), nicht an jeder Einmündung; nicht gegen die Einbahn
+                    cont_sp = [o[0].get("speed", 50) for o in others
+                               if (o[0].get("name") or "") == (r.get("name") or "") or len(others) == 1]
+                    if cont_sp and all(int(v) != int(sp) for v in cont_sp):
+                        code = f"274_{int(sp)}"
                 elif int(r.get("oneway", 0)) != 0 and kinds.get(id(r)) == "real":
                     # Einfahrt in Fahrtrichtung: 220 am Anfang bzw. an Einmündungen; 267 nur am Ende der Einbahnstraße
                     forward_start = (k == 0) == (int(r["oneway"]) == 1)
@@ -691,7 +904,7 @@ class StreetLife:
                             code = "220"
                         elif not cont:
                             code = "267"
-                if code and _h(px, pz, 7) < 0.85:
+                if code and (code.startswith("274_") or _h(px, pz, 7) < 0.85):
                     self._sign(code, px, pz, yaw)
                     n += 1
         return n

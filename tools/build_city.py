@@ -1822,6 +1822,10 @@ def build_roads(surface: RoadSurface):
                     "lanes": int(num(tags.get("lanes"), 2 if w - pl - pr >= 6 else 1) or 1),
                     "oneway": 1 if oneway and not reverse else (-1 if reverse else 0),
                     "speed": speed, "bridge": is_bridge, "pts": _piece_pts(pc),
+                    # beschildertes Tempolimit (Zahl im OSM-Tag, nicht Zone/implizit) -> Zeichen 274 an Wechselstellen
+                    "vsign": bool(num(tags.get("maxspeed"), 0)) and tags.get("source:maxspeed", "sign") in ("sign", "DE:sign")
+                             and tags.get("maxspeed:type", "sign") == "sign" and "zone" not in tags.get("source:maxspeed", ""),
+                    "dest": tags.get("destination", ""), "dref": tags.get("destination:ref", ""), "ref": tags.get("ref", ""),
                     "park": park, "pl": pl, "pr": pr, "prio": prio, "rb": tags.get("junction") in ("roundabout", "circular"),
                     "bus": tags.get("bus") == "designated" or tags.get("highway") == "busway",
                     "surf": SURFACE_CLASS.get(tags.get("surface", ""), ""),
@@ -2154,6 +2158,12 @@ def build_life(buildings, roads, graph, crossings, curb=None):
                 cons_ways.append(LineString([to_local(e, n) for e, n in c]))
     sl.construction(cons_polys, cons_ways)
     sl.names_and_signs()
+    jf = RAW / "osm_extra" / "motorway_junctions.json"
+    juncs = []
+    if jf.exists():
+        for j in json.loads(jf.read_text(encoding="utf-8")):
+            juncs.append((*to_local(j["e"], j["n"]), j.get("ref", ""), j.get("name", "")))
+    sl.boards(juncs)
     sl.litter()
     if curb is not None:
         sl.keep_off_road(curb)

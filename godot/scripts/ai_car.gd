@@ -43,6 +43,10 @@ var on_bridge := false
 var ghost_t := 0.0
 var blocked_t := 0.0
 var _chk_t := 0.0
+var _turn_acc := 0.0             # Kreisfahrt-Erkennung: Summe der Kursänderung seit _turn_pos
+var _turn_pos := Vector3.ZERO
+var circles := 0
+var _ends_here := false          # Route endet in einer Sackgasse (kein Wenden)
 var _chk_pos := Vector3.ZERO
 var _limit := ""              # was die Geschwindigkeit zuletzt begrenzt hat ("", "junction", "obstacle")
 var _brake := false
@@ -252,6 +256,11 @@ func _extend_route() -> void:
 		var pts := traffic.edge_points(ei, dir)
 		var last: Vector3 = route[route.size() - 1]
 		var uturn := ei == cur_edge          # Wende (Sackgasse): Rückwärtspunkte zulassen
+		if uturn and not is_bus and pos.distance_to(traffic.player.global_position) > 90.0:
+			# Sackgasse außer Sichtweite: Fahrt endet dort (wie Parken) statt zu wenden – das Wenden auf engem
+			# Raum war die Hauptquelle der Kreisfahrten
+			_ends_here = true
+			break
 		var added := 0
 		var vl := _cruise_for(traffic.edges[ei])
 		var tan := last_tangent
@@ -398,6 +407,15 @@ func _drive(delta: float) -> void:
 			route_i += 1
 		else:
 			break
+	# Kurve geschnitten: liegt das Fahrzeug schon neben einem der nächsten Segmente, dort weitermachen
+	for k in range(route_i + 1, mini(route_i + 4, route.size() - 1)):
+		var sa: Vector3 = route[k]
+		var sb: Vector3 = route[k + 1]
+		var sab := Vector2(sb.x - sa.x, sb.z - sa.z)
+		var sap := Vector2(pos.x - sa.x, pos.z - sa.z)
+		var st := sap.dot(sab) / maxf(sab.length_squared(), 0.0001)
+		if st > 0.0 and st < 1.0 and (sap - sab * st).length() < 3.0:
+			route_i = k
 	if route_i > 6:
 		route = route.slice(route_i)
 		route_v = route_v.slice(route_i)
@@ -524,15 +542,60 @@ func _drive(delta: float) -> void:
 		_jwait_t = 0.0
 
 	# Lenkung (Pure Pursuit, kinematisch)
+	# Zielpunkt innerhalb des Wendekreises (Kurve geschnitten/überschossen): er ist durch Lenken nicht erreichbar,
+	# das Fahrzeug umkreiste ihn endlos. Dann weiter voraus zielen; hilft das nicht, im Schritttempo eng einlenken.
+	var r_min := 4.2 + length * 0.08
+	var tight := false
+	for k in 6:
+		var fw := Vector2(-sin(heading), -cos(heading))
+		var lat := absf(fw.x * d.y - fw.y * d.x)
+		if lat < 0.3 or d.length_squared() / (2.0 * lat) >= r_min:
+			tight = false
+			break
+		tight = true
+		if k == 5:
+			break
+		tp = _lookahead_point(look + 5.0 * float(k + 1))
+		d = Vector2(tp.x - pos.x, tp.z - pos.z)
+	# Routenende: das letzte Segment wird vom Fortschrittszähler nie abgeschlossen -> Abstand zum Endpunkt prüfen
+	var end_p: Vector3 = route[route.size() - 1]
+	var at_end := route_i >= route.size() - 2 and Vector2(end_p.x - pos.x, end_p.z - pos.z).length() < (6.0 if _ends_here else 3.5)
+	if at_end or (tight and _route_remaining() < 8.0):
+		# Routenende erreicht und keine Fortsetzung (Sackgasse ohne Wendemöglichkeit, Kachelrand): das Fahrzeug
+		# umkreiste sonst den letzten Routenpunkt
+		dead = true
+		death = "routenende"
+		return
 	if d.length() > 0.2:
 		var want := atan2(-d.x, -d.y)
 		var diff := wrapf(want - heading, -PI, PI)
-		var max_rate := maxf(speed, 1.0) / (4.2 + length * 0.08)
+		var max_rate := maxf(speed, 1.0) / r_min
+		if tight:
+			# fast auf der Stelle drehen (Rangieren): Wendekreis 0,4 m statt den Punkt zu umkreisen
+			speed = minf(speed, 0.5)
+			max_rate = 1.2
 		if absf(diff) > 2.0:
-			# Wenden (Sackgasse): Schrittgeschwindigkeit, enger Bogen
-			speed = minf(speed, 1.6)
+			# Wenden (Sackgasse): Schrittgeschwindigkeit, enger Bogen; liegt das Ziel im Wendekreis, rangieren
+			speed = minf(speed, 1.6 if d.length() > 4.0 else 0.5)
 			max_rate = 1.1
-		heading += clampf(diff * 3.2, -max_rate, max_rate) * delta
+		var dh := clampf(diff * 3.2, -max_rate, max_rate) * delta
+		heading += dh
+		# Kreisfahrt: mehr als eine volle Drehung, ohne 40 m vom Fleck zu kommen
+		_turn_acc += dh
+		if Vector2(pos.x - _turn_pos.x, pos.z - _turn_pos.z).length() > 40.0:
+			_turn_acc = 0.0
+			_turn_pos = pos
+		elif absf(_turn_acc) > TAU * 1.05:
+			circles += 1
+			traffic.stats["kreis"] = int(traffic.stats.get("kreis", 0)) + 1
+			if int(traffic.stats["kreis"]) <= 8:
+				print("DBG kreis uid %d bus %s pos (%.0f,%.0f) v %.1f Länge %.1f look %.1f Ziel-d %.1f" % [uid, str(is_bus), pos.x, pos.z, speed, length, look, d.length()])
+			_turn_acc = 0.0
+			_turn_pos = pos
+			if circles >= 2:
+				dead = true                  # Sicherheitsnetz: kreist trotzdem weiter -> entfernen
+				death = "kreis_entfernt"
+				return
 	pos.x += -sin(heading) * speed * delta
 	pos.z += -cos(heading) * speed * delta
 	wheel_roll += speed / wheel_r * delta

@@ -690,6 +690,8 @@ func _process(delta: float) -> void:
 	if env_mgr:
 		Departures.hours = env_mgr.hours
 		Departures.minute_offset = Time.get_ticks_msec() / 60000.0 if env_mgr.time_scale == 0.0 else 0.0
+		Timetable.hours = env_mgr.hours
+		Timetable.clock_offset = Time.get_ticks_msec() / 1000.0 if env_mgr.time_scale == 0.0 else 0.0
 	frame += 1
 	if not ready_to_play:
 		return

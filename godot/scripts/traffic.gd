@@ -241,8 +241,8 @@ func _process(delta: float) -> void:
 	if cars.size() - n_bus < target_count and spawn_timer <= 0.0:
 		spawn_timer = 0.25
 		_try_spawn(ppos)
-	if n_bus < bus_target and bus_timer <= 0.0 and not bus_routes.is_empty():
-		bus_timer = 1.5
+	if (n_bus < bus_target or (_bus_tt and bus_target > 0 and n_bus < 20)) and bus_timer <= 0.0 and not bus_routes.is_empty():
+		bus_timer = 1.5 if not _bus_tt else 0.6
 		_try_spawn_bus(ppos)
 
 
@@ -269,6 +269,8 @@ func _try_spawn(ppos: Vector3) -> void:
 		if ow <= 0:
 			dirs.append(-1)
 		var dir: int = dirs[rng.randi_range(0, dirs.size() - 1)]
+		if _dead_end(ei, dir):
+			continue                        # nicht in eine Sackgasse hinein losfahren
 		var pts := edge_points(ei, dir)
 		# nicht in Kreuzungsbereichen: 12 m Abstand zu beiden Enden
 		var s := rng.randf_range(12.0, maxf(12.5, float(e["len"]) - 12.0))
@@ -348,7 +350,7 @@ func pick_next(node_id: int, from_edge: int, last_tangent: Vector2) -> Array:
 				continue
 			wgt *= 0.3
 		if _dead_end(ei, int(o[1])):
-			wgt *= 0.03                     # Sackgasse (auch über mehrere Kanten)
+			wgt *= 0.004                    # Sackgasse (auch über mehrere Kanten): praktisch nie hineinfahren
 		cand.append(o)
 		weights.append(wgt)
 	if cand.is_empty():
@@ -543,6 +545,9 @@ func _load_bus_routes() -> void:
 		var ri := bus_routes.size()
 		bus_routes.append({"ref": ref, "to": to, "name": nm,
 			"pts": pts, "cum": cum, "stops": r.get("stops", []), "dvb": String(r.get("operator", "")).contains("DVB")})
+		Timetable.attach(bus_routes[ri])
+		if not (bus_routes[ri]["tt"] as Array).is_empty():
+			_bus_tt = true
 		# Zellindex für die Suche nach Linien nahe dem Spieler
 		var s := 0.0
 		var L := cum[cum.size() - 1]
@@ -596,8 +601,61 @@ func route_project(ri: int, p: Vector2, s0: float, s1: float) -> Array:
 	return [best_s, best_d]
 
 
+var _bus_tt := false               # Fahrplan vorhanden -> Busse nach Fahrplan
+var _bus_served := {}
+
+
+func _spawn_bus_scheduled(ppos: Vector3) -> void:
+	## Busse erscheinen dort, wo laut Soll-Fahrplan gerade einer unterwegs ist (jede Fahrt einmal).
+	var now_s := Timetable.now()
+	var pc := Vector2i(floori(ppos.x / 200.0), floori(ppos.z / 200.0))
+	var near := {}
+	for dx in range(-3, 4):
+		for dz in range(-3, 4):
+			for it in _bus_cells.get(pc + Vector2i(dx, dz), []):
+				near[int(it[0])] = true
+	var seen := {}
+	var pp := Vector2(ppos.x, ppos.z)
+	for ri in near:
+		for a in Timetable.active(bus_routes[ri], now_s):
+			var key: String = a[0]
+			var s: float = a[1]
+			var q := route_point(ri, s)
+			var dist := q.distance_to(pp)
+			if dist > 650.0:
+				continue
+			seen[key] = true
+			if _bus_served.has(key) or dist < 90.0:
+				continue
+			var dir2 := (route_point(ri, s + 6.0) - q).normalized()
+			var hit := _edge_near(q, dir2, 8.0)
+			if hit.is_empty():
+				continue
+			var pts := edge_points(hit[0], hit[1])
+			var p := _point_at(pts, hit[2])
+			var pos := Vector3(p.x, p.y, p.z)
+			if not _spawn_ok(pos, ppos, 22.0):
+				continue
+			_bus_served[key] = true
+			var art := ResourceLoader.exists(CarModel.DIR + "bus_articulated.glb") and rng.randf() < 0.45
+			var bus := BusCar.new()
+			add_child(bus)
+			bus.setup_bus(self, "bus_articulated.glb" if art else "bus_solo.glb", ri, s, hit[0], hit[1], hit[2])
+			cars.append(bus)
+			stats["bus_spawn"] = int(stats["bus_spawn"]) + 1
+			return
+	if OS.has_environment("DRESDEN_TTDBG"):
+		print("TTDBG Bus: Linien nah %d, Fahrten in 650 m %d, bedient %d, Uhr %.0f s" % [near.size(), seen.size(), _bus_served.size(), now_s])
+	for key in _bus_served.keys():
+		if not seen.has(key):
+			_bus_served.erase(key)
+
+
 func _try_spawn_bus(ppos: Vector3) -> void:
 	if not ResourceLoader.exists(CarModel.DIR + "bus_solo.glb"):
+		return
+	if _bus_tt:
+		_spawn_bus_scheduled(ppos)
 		return
 	var pc := Vector2i(floori(ppos.x / 200.0), floori(ppos.z / 200.0))
 	var cand: Array = []
