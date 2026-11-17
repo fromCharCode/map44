@@ -122,6 +122,13 @@ func _draw_taxi(vp: Vector2) -> void:
 		draw_rect(Rect2(Vector2(x0 - 10.0, y0 + 62.0), Vector2(330.0, 44.0)), Color(0.05, 0.05, 0.05, 0.7))
 		_text("Taxameter  %s" % TaxiGame.eur(taxi.fare), Vector2(x0, y0 + 92.0), 24, Color(1.0, 0.3, 0.2))
 		_text("%.1f km" % taxi.fare_km, Vector2(x0 + 250.0, y0 + 92.0), 15, Color(1, 1, 1, 0.7))
+	# Tankanzeige
+	if car:
+		var fx := x0 + 200.0
+		var ff := clampf(car.fuel_l / PlayerCar.FUEL_CAP, 0.0, 1.0)
+		draw_rect(Rect2(Vector2(fx, y0 + 4.0), Vector2(110.0, 12.0)), Color(1, 1, 1, 0.18))
+		draw_rect(Rect2(Vector2(fx, y0 + 4.0), Vector2(110.0 * ff, 12.0)), Color(1.0, 0.3, 0.2) if ff < 0.12 else Color(0.85, 0.85, 0.85))
+		_text(("Tanken … %.0f l" % car.fuel_l) if taxi.fueling else ("%.0f l" % car.fuel_l), Vector2(fx, y0 + 30.0), 12, Color(1, 1, 1, 0.7))
 	var tg := taxi.target()
 	if tg != Vector3.ZERO and car:
 		var to := tg - car.global_position

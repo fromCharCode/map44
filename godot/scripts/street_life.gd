@@ -84,6 +84,7 @@ func build(t: Terrain, life: Dictionary) -> void:
 	if OS.has_environment("DRESDEN_TRACE"): print("  T _shops")
 	_shops(life.get("shops", []))
 	_boards(life.get("boards", []))
+	_fuel(life.get("fuel", []))
 	if OS.has_environment("DRESDEN_TRACE"): print("  T _litter")
 	_litter(life.get("litter", []))
 
@@ -532,6 +533,101 @@ func _boards(boards: Array) -> void:
 			_label_specs.append(lb)
 	for sk in surfs:
 		(surfs[sk] as Surf).commit(self, 420.0)
+
+
+# --- Tankstellen (tools/fuel.py) -------------------------------------------------------------------
+# [x, z, gier, y, breite, länge, höhe, marke, name]: offenes Dach auf Stützen, Zapfinseln, Markenblende.
+# Marke -> [Blende, Schrift, Zapfsäule]
+const FUEL_BRAND := {
+	"Aral": [Color(0.0, 0.36, 0.78), Color(1, 1, 1), Color(0.0, 0.36, 0.78)],
+	"TotalEnergies": [Color(0.95, 0.95, 0.95), Color(0.85, 0.1, 0.12), Color(0.85, 0.1, 0.12)],
+	"JET": [Color(0.98, 0.82, 0.0), Color(0.05, 0.25, 0.6), Color(0.98, 0.82, 0.0)],
+	"star": [Color(0.85, 0.08, 0.1), Color(1, 1, 1), Color(0.85, 0.08, 0.1)],
+	"Shell": [Color(0.98, 0.80, 0.05), Color(0.86, 0.1, 0.1), Color(0.98, 0.80, 0.05)],
+	"Esso": [Color(0.95, 0.95, 0.95), Color(0.1, 0.25, 0.65), Color(0.85, 0.1, 0.12)],
+	"HEM": [Color(0.95, 0.95, 0.95), Color(0.0, 0.35, 0.7), Color(0.0, 0.35, 0.7)],
+	"Sprint": [Color(0.9, 0.1, 0.1), Color(1, 1, 1), Color(0.9, 0.1, 0.1)],
+	"Agip": [Color(0.98, 0.82, 0.0), Color(0.05, 0.05, 0.05), Color(0.98, 0.82, 0.0)],
+	"Orlen": [Color(0.85, 0.08, 0.1), Color(1, 1, 1), Color(0.9, 0.9, 0.9)],
+	# Dynamo-Dresden-Fantankstelle (Dohnaer Straße 280): Vereinsfarben Schwarz-Gelb
+	"Dynamo": [Color(1.0, 0.86, 0.0), Color(0.05, 0.05, 0.05), Color(0.08, 0.08, 0.08)],
+}
+static var fuel_sites := {}       # Instanz-ID -> Array [{pos, basis, w, l, brand, name}] (Tanken: TaxiGame)
+const FUEL_PRICE := 1.74          # €/l Super E10 (Richtwert Dresden)
+
+
+func _exit_tree() -> void:
+	fuel_sites.erase(get_instance_id())
+
+
+func _fuel(sites: Array) -> void:
+	if sites.is_empty():
+		return
+	var mine: Array = []
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	add_child(body)
+	for st in sites:
+		var x: float = st[0]
+		var z: float = st[1]
+		var basis := Basis(Vector3.UP, float(st[2]))
+		var gy := terrain.height_at(x, z)
+		var w := float(st[4])
+		var l := float(st[5])
+		var h := float(st[6])
+		var brand := String(st[7])
+		var cols: Array = FUEL_BRAND.get(brand, [Color(0.93, 0.93, 0.93), Color(0.1, 0.1, 0.1), Color(0.75, 0.1, 0.1)])
+		var o := Vector3(x, gy, z)
+		var surf := Surf.new()
+		# Dach: Blende in Markenfarbe, helle Untersicht
+		surf.box(o + Vector3(0, h + 0.38, 0), basis, Vector3(w + 0.08, 0.76, l + 0.08), cols[0])
+		surf.box(o + Vector3(0, h - 0.03, 0), basis, Vector3(w - 0.3, 0.06, l - 0.3), Color(0.92, 0.92, 0.9))
+		# Zapfinseln in Reihe entlang der langen Achse, je Insel eine Stütze und zwei Zapfsäulen
+		var n := maxi(2, int(round(l / 7.0)))
+		var span := l - 5.0
+		var box_p := BoxShape3D.new()
+		box_p.size = Vector3(0.6, 1.9, 0.95)
+		var box_c := BoxShape3D.new()
+		box_c.size = Vector3(0.42, h, 0.42)
+		for i in n:
+			var zi := -span * 0.5 + span * float(i) / float(maxi(n - 1, 1))
+			var ic := o + basis * Vector3(0, 0, zi)
+			surf.box(ic + Vector3(0, 0.09, 0), basis, Vector3(1.25, 0.18, 4.2), Color(0.62, 0.62, 0.6))
+			surf.box(ic + Vector3(0, h * 0.5, 0), basis, Vector3(0.42, h, 0.42), Color(0.9, 0.9, 0.9))
+			var cc := CollisionShape3D.new()
+			cc.shape = box_c
+			cc.transform = Transform3D(basis, ic + Vector3(0, h * 0.5, 0))
+			body.add_child(cc)
+			for sgn in [-1.0, 1.0]:
+				var pc: Vector3 = ic + basis * Vector3(0, 0, 1.35 * sgn)
+				surf.box(pc + Vector3(0, 1.13, 0), basis, Vector3(0.6, 1.9, 0.95), cols[2])
+				surf.box(pc + Vector3(0, 1.55, 0), basis, Vector3(0.64, 0.5, 0.7), Color(0.08, 0.08, 0.09))   # Anzeige
+				var cs := CollisionShape3D.new()
+				cs.shape = box_p
+				cs.transform = Transform3D(basis, pc + Vector3(0, 1.13, 0))
+				body.add_child(cs)
+		surf.commit(self, 520.0)
+		# Schriftzug auf der Blende: beide Längsseiten und beide Stirnseiten
+		var label := "DYNAMO DRESDEN FANTANKSTELLE" if brand == "Dynamo" else (brand.to_upper() if brand != "frei" else String(st[8]).to_upper())
+		for k in 4:
+			var side_b := basis * Basis(Vector3.UP, PI * 0.5 * float(k))
+			var half := (w if k % 2 == 1 else l) * 0.5 + 0.06       # k = 0/2: Stirnseiten (Normale ±z), 1/3: Längsseiten
+			var face_w := l if k % 2 == 1 else w
+			var lb := {}
+			lb.text = label
+			lb.font = _font_file()
+			lb.font_size = 96
+			var cap := minf(0.42, (face_w - 0.6) / (0.62 * float(maxi(label.length(), 1))))
+			lb.pixel_size = cap / 68.0
+			lb.modulate = cols[1]
+			lb.outline_size = 0
+			lb.double_sided = false
+			lb.shaded = true
+			lb.visibility_range_end = 220.0
+			lb.transform = Transform3D(side_b, o + Vector3(0, h + 0.38, 0) + side_b * Vector3(0, 0, half))
+			_label_specs.append(lb)
+		mine.append({"pos": o, "basis": basis, "w": w, "l": l, "brand": brand, "name": String(st[8])})
+	fuel_sites[get_instance_id()] = mine
 
 
 # --- Läden ---------------------------------------------------------------------

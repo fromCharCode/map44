@@ -81,6 +81,8 @@ var _headlights: Array[SpotLight3D] = []
 var _taxi_sign := true
 var _shift_cd := 0.0
 var manual := false
+var fuel_l := 45.0                # Tankinhalt (l), TaxiGame verbraucht und betankt
+const FUEL_CAP := 60.0
 var cruise_on := false            # Tempomat
 var cruise_target := 0.0          # m/s
 var _cruise_i := 0.0
@@ -536,7 +538,7 @@ func _physics_process(delta: float) -> void:
 	var te := _torque(rpm) * 1.12 * throttle * engine_health
 	if tc_on:
 		te *= clampf(1.0 - maxf(_kappa_rear - 0.10, 0.0) * 8.0, 0.2, 1.0)
-	if rpm > REDLINE or _torque_cut > 0.0 or spd_abs > SPEED_LIMIT:
+	if rpm > REDLINE or _torque_cut > 0.0 or spd_abs > SPEED_LIMIT or fuel_l <= 0.0:
 		te = 0.0
 	var eb := 0.0
 	if throttle < 0.15 and launch < 0.6 and gear >= 1:

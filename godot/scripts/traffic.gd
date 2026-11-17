@@ -238,7 +238,7 @@ func _process(delta: float) -> void:
 	for c in cars:
 		if (c as AICar).is_bus:
 			n_bus += 1
-	if cars.size() - n_bus < target_count and spawn_timer <= 0.0:
+	if cars.size() - n_bus < int(round(float(target_count) * day_factor(Timetable.hours))) and spawn_timer <= 0.0:
 		spawn_timer = 0.25
 		_try_spawn(ppos)
 	if (n_bus < bus_target or (_bus_tt and bus_target > 0 and n_bus < 20)) and bus_timer <= 0.0 and not bus_routes.is_empty():
@@ -246,8 +246,25 @@ func _process(delta: float) -> void:
 		_try_spawn_bus(ppos)
 
 
+## Verkehrsstärke im Tagesgang (Anteil der Spitzenstunde; Form wie eine städtische Dauerzählstelle werktags:
+## Nachttal, Frühspitze 7–9 Uhr, Mittagsplateau, Spätspitze 15–18 Uhr, Abklingen am Abend)
+const DAY_CURVE := [0.10, 0.07, 0.05, 0.05, 0.08, 0.22, 0.55, 0.95, 1.0, 0.82, 0.72, 0.72, 0.75, 0.76, 0.80, 0.92,
+	1.0, 1.0, 0.88, 0.68, 0.50, 0.38, 0.28, 0.18]
+# Anteil der Fahrzeuge je Straßenart (Annahmewahrscheinlichkeit beim Erscheinen): Hauptstraßen voll, Wohnstraßen
+# nur gelegentlich
+const CLS_SHARE := {"motorway": 1.0, "trunk": 1.0, "primary": 1.0, "secondary": 0.85, "tertiary": 0.55,
+	"motorway_link": 0.6, "trunk_link": 0.6, "primary_link": 0.6, "secondary_link": 0.5, "tertiary_link": 0.4,
+	"unclassified": 0.3, "residential": 0.16, "living_street": 0.04, "service": 0.04}
+
+
+static func day_factor(h: float) -> float:
+	var hh := fposmod(h, 24.0)
+	var i := int(hh)
+	return lerpf(float(DAY_CURVE[i]), float(DAY_CURVE[(i + 1) % 24]), hh - float(i))
+
+
 func _try_spawn(ppos: Vector3) -> void:
-	for attempt in 24:
+	for attempt in 60:
 		var ang := rng.randf() * TAU
 		var rad := rng.randf_range(80.0, 320.0)
 		var ck := Vector2i(floori((ppos.x + cos(ang) * rad) / 100.0), floori((ppos.z + sin(ang) * rad) / 100.0))
@@ -258,7 +275,7 @@ func _try_spawn(ppos: Vector3) -> void:
 		var e: Dictionary = edges[ei]
 		if float(e["len"]) < 24.0 or String(e["cls"]) in ["footway", "path"]:
 			continue
-		if String(e["cls"]) == "service" and rng.randf() < 0.7:
+		if rng.randf() > float(CLS_SHARE.get(String(e["cls"]), 0.2)):
 			continue
 		if _narrow(e):
 			continue

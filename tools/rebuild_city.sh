@@ -12,3 +12,4 @@ python bridge_arches.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || ec
 python bridge_decks.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "DECKFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python bridge_ramps.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "RAMPFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python platform_rails.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "PRAILFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
+python fuel.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "FUELFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt

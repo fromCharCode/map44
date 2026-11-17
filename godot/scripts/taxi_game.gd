@@ -85,12 +85,15 @@ func _load() -> void:
 		money = float(j.get("money", 0.0))
 		trips = int(j.get("trips", 0))
 		km_total = float(j.get("km", 0.0))
+		if player:
+			player.fuel_l = float(j.get("fuel", player.fuel_l))
 
 
 func save() -> void:
 	var f := FileAccess.open(SAVE, FileAccess.WRITE)
 	if f:
-		f.store_string(JSON.stringify({"money": snappedf(money, 0.01), "trips": trips, "km": snappedf(km_total, 0.01)}))
+		f.store_string(JSON.stringify({"money": snappedf(money, 0.01), "trips": trips, "km": snappedf(km_total, 0.01),
+			"fuel": snappedf(player.fuel_l, 0.1) if player else 45.0}))
 
 
 static func night_tariff(hours: float, sunday := false) -> bool:
@@ -137,6 +140,7 @@ func _process(delta: float) -> void:
 		return
 	var pp := player.global_position
 	var v := absf(player.speed)
+	_fuel(delta, pp, v)
 	match state:
 		FREI:
 			_timer -= delta
@@ -214,6 +218,44 @@ func _process(delta: float) -> void:
 			_timer -= delta
 			if _timer <= 0.0:
 				_reset(rng.randf_range(4.0, 10.0))
+
+
+var fueling := false
+var _fuel_session := 0.0          # getankte Liter am Stück (Anzeige)
+var _fuel_msg_t := 0.0
+
+
+func _fuel(delta: float, pp: Vector3, v: float) -> void:
+	## Verbrauch: Leerlauf 0,8 l/h, Volllast ~40 l/h (≈ 6–8 l/100 km im Stadtverkehr). Tanken: unter dem Dach einer
+	## Tankstelle anhalten, 0,6 l/s (35 l/min wie eine echte Zapfsäule), bezahlt wird aus der Kasse.
+	var lph := 0.8 + 38.0 * player.in_throttle * clampf(player.rpm / 6000.0, 0.15, 1.0)
+	player.fuel_l = maxf(player.fuel_l - lph / 3600.0 * delta, 0.0)
+	_fuel_msg_t -= delta
+	if player.fuel_l <= 0.0 and _fuel_msg_t <= 0.0:
+		_fuel_msg_t = 6.0
+		hud.message("Tank leer!", 3.0)
+	elif player.fuel_l < 6.0 and _fuel_msg_t <= 0.0:
+		_fuel_msg_t = 45.0
+		hud.message("Tankreserve – nächste Tankstelle anfahren", 3.0)
+	var at := false
+	if v < 0.5:
+		for id in StreetLife.fuel_sites:
+			for st in StreetLife.fuel_sites[id]:
+				var loc: Vector3 = (st["basis"] as Basis).inverse() * (pp - (st["pos"] as Vector3))
+				if absf(loc.x) < float(st["w"]) * 0.5 + 1.0 and absf(loc.z) < float(st["l"]) * 0.5 + 1.0:
+					at = true
+	if at and player.fuel_l < PlayerCar.FUEL_CAP - 0.05 and money > -200.0:
+		var add := minf(0.6 * delta, PlayerCar.FUEL_CAP - player.fuel_l)
+		player.fuel_l += add
+		money -= add * StreetLife.FUEL_PRICE
+		_fuel_session += add
+		fueling = true
+	else:
+		if fueling:
+			hud.message("Getankt: %.1f l für %s" % [_fuel_session, eur(_fuel_session * StreetLife.FUEL_PRICE)], 4.0)
+			save()
+		fueling = false
+		_fuel_session = 0.0
 
 
 func _flat_dist(a: Vector3, b: Vector3) -> float:
