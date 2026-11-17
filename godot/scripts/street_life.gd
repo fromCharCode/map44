@@ -7,18 +7,26 @@ extends Node3D
 
 const CELL := 125.0
 const DIRS := ["res://assets/models/street/", "res://assets/models/furniture/", "res://assets/models/props/",
-	"res://assets/models/facade/", "res://assets/models/vegetation/"]
+	"res://assets/models/facade/", "res://assets/models/vegetation/", "res://assets/models/monuments/"]
 # fehlt ein neues Modell, wird ein vorhandenes genommen (oder das Objekt übersprungen)
 const FALLBACK := {"bin_public": "bin", "stop_pole": "sign_pole", "sign_post": "", "glass_containers": "",
 	"paper_container": "", "litfass": "", "billboard": "", "post_box": "", "hydrant": "", "street_cabinet": "",
 	"parking_meter": "", "cafe_set": "", "cafe_parasol": "", "bicycle": "", "e_scooter": "", "cardboard": "",
-	"trash_bags": "", "planter": "", "sandwich_board": ""}
+	"trash_bags": "", "planter": "", "sandwich_board": "", "mon_reiter_gold": "mon_reiter", "mon_reiter": "mon_statue",
+	"mon_war": "mon_stele", "mon_bust": "mon_statue", "mon_fountain_small": "", "mon_sculpture": "", "mon_statue": "",
+	"mon_obelisk": "", "mon_stele": "", "mon_stone": "", "mon_fountain": ""}
 # Sichtweite je Modell (m) und Kollision ("box"/"cyl"/"")
 const RANGE := {"litfass": 380.0, "billboard": 380.0, "bus_stop": 320.0, "stop_pole": 260.0, "street_cabinet": 160.0,
-	"glass_containers": 220.0, "paper_container": 200.0, "cafe_parasol": 220.0, "sign_post": 240.0}
+	"glass_containers": 220.0, "paper_container": 200.0, "cafe_parasol": 220.0, "sign_post": 240.0,
+	"mon_statue": 450.0, "mon_reiter": 600.0, "mon_reiter_gold": 600.0, "mon_obelisk": 500.0, "mon_fountain": 400.0,
+	"mon_war": 350.0, "mon_sculpture": 350.0, "mon_stele": 260.0, "mon_bust": 260.0, "mon_stone": 200.0,
+	"mon_fountain_small": 200.0}
 const COLLIDE := {"litfass": "cyl", "billboard": "box", "bus_stop": "box", "glass_containers": "box",
 	"paper_container": "box", "street_cabinet": "box", "post_box": "box", "hydrant": "cyl", "parking_meter": "box",
-	"bin_public": "cyl", "bollard": "cyl", "stop_pole": "cyl", "sign_post": "cyl"}
+	"bin_public": "cyl", "bollard": "cyl", "stop_pole": "cyl", "sign_post": "cyl",
+	"mon_statue": "box", "mon_reiter": "box", "mon_reiter_gold": "box", "mon_obelisk": "box", "mon_fountain": "cyl",
+	"mon_war": "box", "mon_sculpture": "box", "mon_stele": "box", "mon_bust": "box", "mon_stone": "box",
+	"mon_fountain_small": "cyl"}
 # Umfahrbar (Breakables): Modell -> [Masse kg, Bruchgeschwindigkeit km/h, Sachschaden €]; übrige COLLIDE-Modelle fest
 const BREAK := {"bin_public": [22.0, 6.0, 250.0], "bollard": [35.0, 22.0, 400.0], "stop_pole": [45.0, 22.0, 900.0],
 	"sign_post": [30.0, 18.0, 350.0], "parking_meter": [60.0, 28.0, 3500.0], "post_box": [70.0, 30.0, 1200.0],
@@ -75,6 +83,10 @@ func build(t: Terrain, life: Dictionary) -> void:
 		elif model in ["litfass", "litfass_dresden", "sandwich_board"]:
 			cell = float(posmod(v + int(absf(float(f[2])) * 0.29), 8))
 		_add(model, float(f[1]), float(f[2]), float(f[3]), v, 0.0, cell)
+	# Denkmäler, Standbilder, Brunnen (tools/monuments.py): [modell, x, z, gier, maßstab, name]
+	for m in life.get("monuments", []):
+		var sc := float(m[4])
+		_add(String(m[0]), float(m[1]), float(m[2]), float(m[3]), 0, 0.0, 0.0, Transform3D(Basis().scaled(Vector3(sc, sc, sc)), Vector3.ZERO))
 	for s in life.get("signs", []):
 		_traffic_sign(s)
 	if OS.has_environment("DRESDEN_TRACE"): print("  T _street_names")

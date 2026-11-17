@@ -304,6 +304,43 @@ SST_ZEILE = {"B12", "B11"}
 OLD_TOWN = (410900, 5655500, 412300, 5656800)     # Innere Alt-/Neustadt: Zensus taugt dort nicht (Neumarkt, 50er)
 
 
+_DK = None
+# Merkmale aus dem Denkmaltext (Bitmaske in city.buildings[].dk[1])
+DK_FLAGS = (("klinker", 1), ("sandstein", 2), ("fachwerk", 4), ("jugendstil", 8), ("erker", 16), ("balkon", 32),
+            ("eckturm", 64), ("türmchen", 64), ("villa", 128), ("landhaus", 128), ("mansard", 256), ("stuck", 512),
+            ("reich gegliedert", 512), ("neobarock", 1024), ("neubarock", 1024), ("neorenaissance", 2048),
+            ("reformstil", 4096), ("heimatstil", 4096))
+
+
+def denkmal_for(foot):
+    """Kulturdenkmal im Grundriss (tools/fetch_denkmale.py): (Jahr, Merkmale, Text) oder None.
+    Liefert echtes Baujahr und Fassadenmerkmale für ~9900 Dresdner Gebäude statt der Schätzung aus der Umgebung."""
+    global _DK
+    if _DK is None:
+        from pathlib import Path as _P
+        f = _P(__file__).resolve().parent.parent / "data" / "raw" / "denkmale" / "denkmale.json"
+        items = []
+        if f.exists():
+            for o in json.loads(f.read_text(encoding="utf-8")):
+                if o.get("jahr"):
+                    items.append((Point(o["x"] + ORIGIN_E, ORIGIN_N - o["z"]), o))
+        _DK = (STRtree([p_ for p_, _ in items]) if items else None, items)
+    tree, items = _DK
+    if tree is None or foot.area < 40.0:
+        return None
+    for j in tree.query(foot):
+        p_, o = items[j]
+        if not foot.contains(p_):
+            continue
+        txt = (o["text"] + " " + o["datierung"]).lower()
+        fl = 0
+        for word, bit in DK_FLAGS:
+            if word in txt:
+                fl |= bit
+        return int(o["jahr"]), fl, txt
+    return None
+
+
 def classify_style(tags, poly, levels, eave, btype, shape, attached=None):
     mat = tags.get("building:material", "")
     sd = parse_year(tags.get("start_date"))
@@ -806,6 +843,15 @@ def build_buildings_lod2(mosaic: Image.Image) -> list[dict] | None:
             if osm[j][1].contains(rp):
                 tags = osm[j][0]
                 break
+        dk = denkmal_for(foot) if not stacked else None
+        if dk:
+            tags = dict(tags)
+            tags.setdefault("start_date", str(dk[0]))
+            if not tags.get("building:material") and re.search(
+                    r"klinkerfassade|klinkerbau|klinkerverblend|verklinkert|sichtziegel|ziegelbau|backstein", dk[2]):
+                tags["building:material"] = "brick"
+            if dk[0] < 1800 and ("barock" in dk[2] or "renaissance" in dk[2]) and not tags.get("building:architecture"):
+                tags["building:architecture"] = "baroque"
         btype = tags.get("building", "yes")
         fn = part.get("function") or ""
         if btype == "yes":
@@ -949,6 +995,7 @@ def build_buildings_lod2(mosaic: Image.Image) -> list[dict] | None:
             "name": tags.get("name", ""), "pos": list(to_local(cx, cy_)),
             "hn": str(tags.get("addr:housenumber", ""))[:6] if not stacked else "",
             "pw": _party_edges(part["id"], foot) if not stacked and not elevated else [],
+            "dk": [dk[0], dk[1]] if dk else None,
             "_tags": tags, "_shape": shape, "_foot": foot, "_wall_tag": bool(parse_color(tags.get("building:colour"))),
         })
     unify_group_styles(out, attached)
@@ -970,6 +1017,12 @@ def unify_group_styles(out, attached):
             tot = sum(areas) or 1.0
             pitched_share = sum(a for o, a in zip(lst, areas) if o["_shape"] in PITCHED) / tot
             main = lst[int(np.argmax(areas))]
+            dkv = next((o["dk"] for o in lst if o.get("dk")), None)
+            if dkv:                                   # Denkmalangaben gelten für das ganze Gebäude
+                for o in lst:
+                    o["dk"] = dkv
+                main["_tags"] = dict(main["_tags"])
+                main["_tags"].setdefault("start_date", str(dkv[0]))
             try:
                 union = unary_union([o["_foot"] for o in lst])
                 if not isinstance(union, Polygon):
