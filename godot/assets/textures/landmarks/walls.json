@@ -1,0 +1,22 @@
+[
+ {
+  "name": "fuerstenzug",
+  "a": [
+   657.98,
+   -220.14
+  ],
+  "b": [
+   573.52,
+   -277.23
+  ],
+  "h": 10.3,
+  "y0": 0.0,
+  "rough": 0.42,
+  "tex": [
+   "fuerstenzug_0.jpg",
+   "fuerstenzug_1.jpg",
+   "fuerstenzug_2.jpg",
+   "fuerstenzug_3.jpg"
+  ]
+ }
+]

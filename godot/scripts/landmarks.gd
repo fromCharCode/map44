@@ -35,10 +35,7 @@ const LIST := [
 # h = dargestellte Wandhöhe. Der Fürstenzug (Augustusstraße, 102 m Meißner Porzellan): Foto Gerd Eichmann,
 # CC BY-SA 4.0 (Wikimedia Commons, Dresden-Fuerstenzug-ganz-01-gje.jpg), in vier Teile geschnitten.
 const TEX_DIR := "res://assets/textures/landmarks/"
-const PHOTO_WALLS := [
-	{"name": "Fürstenzug", "a": [657.98, -220.14], "b": [573.52, -277.23], "h": 10.3, "rough": 0.42,
-		"tex": ["fuerstenzug_0.jpg", "fuerstenzug_1.jpg", "fuerstenzug_2.jpg", "fuerstenzug_3.jpg"]},
-]
+# Liste in assets/textures/landmarks/walls.json (schreibt tools/photo_wall.py)
 
 var terrain: Terrain
 var mats := {}
@@ -73,7 +70,13 @@ static func filter_buildings(blds: Array) -> Array:
 
 
 func _photo_walls(t: Terrain) -> void:
-	for pw in PHOTO_WALLS:
+	var wf := TEX_DIR + "walls.json"
+	if not FileAccess.file_exists(wf):
+		return
+	var walls = JSON.parse_string(FileAccess.get_file_as_string(wf))
+	if not (walls is Array):
+		return
+	for pw in walls:
 		var a := Vector2(pw["a"][0], pw["a"][1])
 		var b := Vector2(pw["b"][0], pw["b"][1])
 		var mid := (a + b) * 0.5
@@ -87,7 +90,7 @@ func _photo_walls(t: Terrain) -> void:
 		for k in 9:
 			var q := a.lerp(b, float(k) / 8.0)
 			y0 = minf(y0, terrain.height_at(q.x + n3.x * 1.5, q.y + n3.z * 1.5))
-		y0 -= 0.15
+		y0 += float(pw.get("y0", 0.0)) - 0.15
 		var h := float(pw["h"])
 		for i in texs.size():
 			var path: String = TEX_DIR + String(texs[i])
