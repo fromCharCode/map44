@@ -252,6 +252,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		dir_in.y *= 0.35
 		if _hits.size() < 6:
 			_hits.append({"pos": lp, "dir": dir_in, "sev": dv * 1.05})
+			_burst_req.append([cp, dv])
 		if dv >= 1.5:
 			_crash_rumble = maxf(_crash_rumble, clampf(dv / 9.0, 0.25, 1.0))
 	_v_before = state.linear_velocity
@@ -316,16 +317,107 @@ func _vehicle_contact(state: PhysicsDirectBodyState3D, i: int, col: Object, m2: 
 	if impact_events.size() < 8:
 		impact_events.append(closing)
 	cam_kick = maxf(cam_kick, closing)
+	_burst(cp, closing)
 	if col is AICar:
-		(col as AICar).player_impact(dv_other, w_y)
+		(col as AICar).player_impact(dv_other, w_y, cp, n)
 	elif shape_node != null:
 		var owner_obj: Object = (col as Node).get_meta("parked_owner")
 		if owner_obj != null and owner_obj.has_method("knock"):
 			owner_obj.call_deferred("knock", shape_node, other_v + dv_other, w_y)
 
 
+var _burst_req: Array = []        # [Weltpunkt, Stoßstärke] aus dem Physikschritt
+var _burst_pool: Array = []       # wiederverwendete Partikelgeber
+var _burst_i := 0
+var coolant := 1.0                # Kühlmittelstand 0..1 (läuft nach Frontschaden aus)
+var engine_temp := 0.35           # 0 kalt .. 1 kocht
+var engine_dead := false
+var _engine_msg := 0
+var engine_note := ""             # Hinweis für die Anzeige ("Motor überhitzt", "Motor ausgefallen")
+var _steam: GPUParticles3D
+
+
+func _burst(world_p: Vector3, strength: float) -> void:
+	## Funken und Splitter am Aufprallpunkt (Stoßstärke in m/s)
+	if strength < 2.0:
+		return
+	if _burst_pool.size() < 4:
+		var cp3 := CPUParticles3D.new()
+		cp3.emitting = false
+		cp3.one_shot = true
+		cp3.explosiveness = 0.95
+		cp3.lifetime = 0.9
+		cp3.direction = Vector3.UP
+		cp3.spread = 75.0
+		cp3.gravity = Vector3(0, -9.8, 0)
+		cp3.damping_min = 0.6
+		cp3.damping_max = 1.6
+		cp3.scale_amount_min = 0.5
+		cp3.scale_amount_max = 1.3
+		var bm := BoxMesh.new()
+		bm.size = Vector3(0.035, 0.035, 0.11)
+		var mat := StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.vertex_color_use_as_albedo = true
+		bm.material = mat
+		cp3.mesh = bm
+		var ramp := Gradient.new()
+		ramp.set_color(0, Color(1.0, 0.85, 0.45))
+		ramp.set_color(1, Color(0.9, 0.3, 0.05, 0.0))
+		cp3.color_ramp = ramp
+		cp3.top_level = true
+		add_child(cp3)
+		_burst_pool.append(cp3)
+	var p: CPUParticles3D = _burst_pool[_burst_i % _burst_pool.size()]
+	_burst_i += 1
+	p.global_position = world_p
+	p.amount = clampi(int(strength * 7.0), 10, 70)
+	p.initial_velocity_min = 1.5 + strength * 0.25
+	p.initial_velocity_max = 3.0 + strength * 0.7
+	p.restart()
+	p.emitting = true
+
+
+func _engine_think(delta: float) -> void:
+	## Kühler: ab deutlichem Frontschaden läuft Kühlmittel aus; ohne Kühlung steigt die Motortemperatur mit der
+	## Last, der Motor verliert Leistung und fällt bei Überhitzung aus (F5 repariert).
+	if damage == null or not damage_enabled:
+		return
+	var leak := clampf((damage.front - 0.35) / 0.5, 0.0, 1.0)
+	if leak > 0.0:
+		coolant = maxf(coolant - leak * delta / 45.0, 0.0)           # leer nach 45 s bis einigen Minuten
+	var load := clampf(absf(in_throttle) * 0.7 + rpm / 9000.0, 0.0, 1.2)
+	var cooling := (0.25 + clampf(absf(speed) / 20.0, 0.0, 1.0) * 0.75) * coolant
+	var target := clampf(0.35 + load * 0.25 + (1.0 - coolant) * (0.35 + load * 0.5) - cooling * 0.1, 0.2, 1.3)
+	engine_temp = move_toward(engine_temp, target, delta * (0.02 if target > engine_temp else 0.035))
+	var hot := clampf((engine_temp - 0.8) / 0.25, 0.0, 1.0)
+	if not engine_dead and engine_temp >= 1.05:
+		engine_dead = true
+	var base := clampf(1.0 - 0.7 * damage.front - 0.1 * damage.total, 0.2, 1.0)
+	engine_health = 0.0 if engine_dead else base * (1.0 - 0.6 * hot)
+	var stage := 3 if engine_dead else (2 if hot > 0.05 else (1 if leak > 0.0 and coolant < 0.6 else 0))
+	if stage != _engine_msg:
+		_engine_msg = stage
+		engine_note = ["", "Kühlmittel läuft aus", "Motor überhitzt – anhalten!", "Motor ausgefallen (F5 = reparieren)"][stage]
+	if _steam == null and (leak > 0.0 or hot > 0.0):
+		_steam = _smoke.duplicate() as GPUParticles3D
+		var q := (_steam.draw_pass_1 as QuadMesh).duplicate() as QuadMesh
+		var sm := (q.material as StandardMaterial3D).duplicate() as StandardMaterial3D
+		sm.albedo_color = Color(0.92, 0.93, 0.95, 0.42)               # weißer Dampf statt dunklem Rauch
+		q.material = sm
+		_steam.draw_pass_1 = q
+		add_child(_steam)
+	if _steam:
+		_steam.emitting = (leak > 0.0 and coolant > 0.02) or hot > 0.3
+		_steam.amount = 10 + int(hot * 30.0)
+
+
 func _process(delta: float) -> void:
 	_update_rumble(delta)
+	_engine_think(delta)
+	while not _burst_req.is_empty():
+		var br: Array = _burst_req.pop_back()
+		_burst(br[0], float(br[1]) * 1.6)
 	if damage == null:
 		return
 	if not _hits.is_empty():
@@ -361,7 +453,8 @@ func _update_rumble(delta: float) -> void:
 
 
 func _apply_damage_effects() -> void:
-	engine_health = clampf(1.0 - 0.7 * damage.front - 0.1 * damage.total, 0.2, 1.0)
+	if not engine_dead:
+		engine_health = clampf(1.0 - 0.7 * damage.front - 0.1 * damage.total, 0.2, 1.0)
 	for k in wheels:
 		var w: Dictionary = wheels[k]
 		w["dmg_grip"] = 1.0 - 0.3 * float(damage.wheel_dmg[k])
@@ -413,6 +506,9 @@ func repair() -> void:
 		damage.repair()
 		_apply_damage_effects()
 		engine_health = 1.0
+		coolant = 1.0
+		engine_temp = 0.35
+		engine_dead = false
 
 
 func _read_input(delta: float) -> void:

@@ -34,7 +34,14 @@ func message(text: String, secs: float = 2.5) -> void:
 	info_t = secs
 
 
+var _engine_note := ""
+
+
 func _process(delta: float) -> void:
+	if car and car.engine_note != _engine_note:
+		_engine_note = car.engine_note
+		if _engine_note != "":
+			message(_engine_note, 5.0)
 	minimap.car = car
 	minimap.traffic = traffic
 	minimap.world = world

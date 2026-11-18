@@ -87,7 +87,7 @@ func _make_shapes() -> void:
 	add_child(rear_shape)
 
 
-func player_impact(_dv: Vector3, _w_y: float) -> void:
+func player_impact(_dv: Vector3, _w_y: float, _at: Vector3 = Vector3.INF, _n: Vector3 = Vector3.ZERO) -> void:
 	# 11 t: der Bus bleibt stehen (kein Wrack), Warnblinker, kurze Pause
 	hold_t = 5.0
 	speed = 0.0

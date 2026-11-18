@@ -1780,12 +1780,75 @@ func velocity() -> Vector3:
 
 
 ## Vom Spieler gemeldeter Stoß: dv = Geschwindigkeitsänderung dieses Autos, w_y = Drehimpuls-Anteil (rad/s).
-func player_impact(dv: Vector3, w_y: float) -> void:
+var damage: CarDamage             # Verformung (erst beim ersten Treffer angelegt)
+var crash_sev := 0.0              # aufsummierte Stoßstärke (m/s Geschwindigkeitsänderung)
+var disabled := false             # nicht mehr fahrbereit: bleibt mit Warnblinker liegen
+var _shock_t := 0.0               # Schrecksekunden nach einem Unfall, bevor es weitergeht
+var _wreck_smoke: CPUParticles3D
+
+
+func player_impact(dv: Vector3, w_y: float, at: Vector3 = Vector3.INF, n: Vector3 = Vector3.ZERO) -> void:
+	var sev := dv.length()
+	crash_sev += sev
+	_dent(at, n, sev)
+	# leichter Rempler: kurzer Schreck; mittlerer Unfall: 8–25 s stehen; schwer (ab 5 m/s oder mehrfach getroffen):
+	# nicht mehr fahrbereit
+	_shock_t = maxf(_shock_t, 1.0 + sev * traffic.rng.randf_range(2.0, 4.5))
+	if sev > 5.0 or crash_sev > 9.0:
+		disabled = true
+		_smoke_on()
+	if honker and sev < 3.0 and _honk_t <= 0.0:
+		_honk_now()
 	if wrecked:
 		if wreck != null:
 			wreck.apply_central_impulse(dv * MASS)
 		return
 	_make_wreck(velocity() + dv, w_y)
+
+
+func _dent(at: Vector3, n: Vector3, sev: float) -> void:
+	## Beule an der Aufprallstelle (at: Weltpunkt, n: Stoßrichtung von mir zum Spieler)
+	if at == Vector3.INF or sev < 0.8 or model_root == null or is_bus:
+		return
+	if damage == null:
+		damage = CarDamage.new()
+		damage.setup(self, model_root, {})
+	var inv := model_root.global_transform.affine_inverse()
+	var lp := inv * at
+	var ldir := inv.basis * (-n)
+	ldir.y *= 0.3
+	if ldir.length() < 0.01:
+		ldir = -lp
+	damage.impact(lp, ldir, clampf(sev * 2.6, 2.0, 30.0))
+	if OS.has_environment("DRESDEN_EVADE"):
+		print("DENT uid %d sev %.1f bei %s, Summe %.1f, liegengeblieben %s, Schreck %.0f s" % [uid, sev, str(lp), crash_sev, str(disabled), _shock_t])
+
+
+func _smoke_on() -> void:
+	if _wreck_smoke != null or model_root == null:
+		return
+	_wreck_smoke = CPUParticles3D.new()
+	_wreck_smoke.amount = 18
+	_wreck_smoke.lifetime = 2.2
+	_wreck_smoke.direction = Vector3.UP
+	_wreck_smoke.spread = 20.0
+	_wreck_smoke.initial_velocity_min = 0.8
+	_wreck_smoke.initial_velocity_max = 1.8
+	_wreck_smoke.gravity = Vector3(0, 0.4, 0)
+	_wreck_smoke.scale_amount_min = 0.5
+	_wreck_smoke.scale_amount_max = 1.5
+	var q := QuadMesh.new()
+	q.size = Vector2(1.0, 1.0)
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	m.albedo_color = Color(0.75, 0.76, 0.78, 0.4)
+	m.albedo_texture = Boats._puff_tex()
+	q.material = m
+	_wreck_smoke.mesh = q
+	_wreck_smoke.position = Vector3(0, 0.9, -front_ext * 0.75)
+	model_root.add_child(_wreck_smoke)
 
 
 func _make_wreck(v: Vector3, w_y: float) -> void:
@@ -1851,7 +1914,8 @@ func _wreck_process(delta: float) -> void:
 			best = dd
 			best_t = ab.normalized()
 	var want := atan2(-best_t.x, -best_t.y)
-	if upright and best < 2.6 and absf(wrapf(want - h, -PI, PI)) < 0.8 and wreck_t > 3.0:
+	_shock_t = maxf(_shock_t - delta, 0.0)
+	if upright and not disabled and _shock_t <= 0.0 and best < 2.6 and absf(wrapf(want - h, -PI, PI)) < 0.8 and wreck_t > 3.0:
 		# weiterfahren
 		model_root.reparent(self, true)
 		global_transform = Transform3D(Basis(Vector3.UP, h), wp)
