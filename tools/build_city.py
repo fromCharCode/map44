@@ -1120,7 +1120,10 @@ def osm_elevated_buildings(existing):
 DRIVE = {"motorway", "trunk", "primary", "secondary", "tertiary", "unclassified", "residential", "living_street",
          "service", "motorway_link", "trunk_link", "primary_link", "secondary_link", "tertiary_link"}
 WALK = {"footway", "path", "pedestrian", "cycleway", "steps", "bridleway", "track"}
-WIDTH = {"motorway": 14, "trunk": 12, "primary": 11, "secondary": 9.5, "tertiary": 7.5, "unclassified": 6.0,
+# Regelbreiten ohne Messung/Tag. Hauptstraßen: Median der in Dresden gemessenen zweistreifigen Fahrbahnen
+# (tools/strassenraum.py: secondary meist 6–8 m, tertiary 6–7 m); vorher 11/9,5/7,5 m – auf unvermessenen
+# Abschnitten und kurzen Brücken rund 2 m zu breit. Radfahrstreifen auf der Fahrbahn kommen in road_width dazu.
+WIDTH = {"motorway": 14, "trunk": 12, "primary": 7.5, "secondary": 7.0, "tertiary": 6.5, "unclassified": 6.0,
          "residential": 6.0, "living_street": 5.0, "service": 3.5, "motorway_link": 6, "trunk_link": 6,
          "primary_link": 5.5, "secondary_link": 5.5, "tertiary_link": 5, "footway": 2.0, "path": 1.5,
          "pedestrian": 5.0, "cycleway": 2.0, "steps": 2.0, "bridleway": 2.0, "track": 3.0}
@@ -1149,6 +1152,11 @@ def road_width(tags: dict) -> float:
     base = WIDTH.get(cls, 4.0)
     if lanes and cls in DRIVE:
         base = max(base, lanes * 3.1)
+    if cls in ("primary", "secondary", "tertiary"):
+        # Radfahrstreifen/Schutzstreifen liegen auf der Fahrbahn (zwischen den Borden)
+        both = tags.get("cycleway") == "lane" or tags.get("cycleway:both") == "lane"
+        base += 1.5 * ((2 if both and not oneway else 1 if both else 0)
+                       + (0 if both else int(tags.get("cycleway:left") == "lane") + int(tags.get("cycleway:right") == "lane")))
     if lanes and oneway and cls in ("primary", "secondary", "tertiary", "primary_link", "secondary_link", "tertiary_link"):
         # Richtungsfahrbahn mit erfasster Streifenzahl: Streifen 3,5 m + Randstreifen; vorher galt die Breite der
         # ganzen Straße mit Gegenverkehr (z. B. 11 m für zwei Streifen in einer Richtung)

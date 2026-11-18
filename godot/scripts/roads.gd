@@ -371,7 +371,13 @@ static func _kappe_mat() -> Material:
 static func masonry_mat() -> Material:
 	## patinierter Elbsandstein der historischen Brücken (#7a6a5c, dunkler als Fassaden-Sandstein)
 	if _masonry == null:
-		_masonry = TexLib.tri_material("sandstone", 0.6)
+		var sm := ShaderMaterial.new()
+		sm.shader = load("res://shaders/bridge_stone.gdshader")
+		sm.set_shader_parameter("stone_albedo", TexLib.texture("sandstone", "albedo"))
+		sm.set_shader_parameter("stone_normal", TexLib.texture("sandstone", "normal"))
+		sm.set_shader_parameter("stone_rough", TexLib.texture("sandstone", "rough"))
+		sm.set_shader_parameter("tile_m", TexLib.tile_size("sandstone"))
+		_masonry = TexLib.shared_material("bridge_stone", sm)
 	return _masonry
 
 
@@ -433,7 +439,7 @@ func _bridge_rails(rails: Array) -> void:
 	var faces := PackedVector3Array()
 	for art in walls:
 		if not (walls[art] as Array).is_empty():
-			_rail_walls(walls[art], 1.05 if art == "stone" else 0.9, 0.18, stone_mat if art == "stone" else _concrete_mat(), faces)
+			_rail_walls(walls[art], 1.05 if art == "stone" else 0.9, 0.18, masonry_mat() if art == "stone" else _concrete_mat(), faces)
 	if not steel.is_empty():
 		_rail_steel(steel, faces)
 	if faces.is_empty():
