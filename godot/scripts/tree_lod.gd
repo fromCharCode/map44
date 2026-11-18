@@ -8,8 +8,8 @@ extends Node3D
 ## dem Import – ein Baum in 120 m Entfernung wird mit wenigen hundert statt 15 000 Dreiecken gezeichnet.
 ## Der Knoten läuft ohne Physik-Interpolation (sonst gleiten umgesetzte Instanzen einen Physikschritt lang).
 
-var NEAR := 150.0
-var NEAR_OUT := 170.0
+var NEAR := 190.0
+var NEAR_OUT := 210.0
 const MAXN := 1600              # je Art
 const CELL := 40.0
 
@@ -73,7 +73,7 @@ func _key(d: Dressing, e: int) -> int:
 
 
 func set_quality(q: int) -> void:
-	var n: float = [70.0, 110.0, 150.0][clampi(q, 0, 2)]
+	var n: float = [80.0, 130.0, 190.0][clampi(q, 0, 2)]
 	if n != NEAR:
 		NEAR = n
 		NEAR_OUT = n + 20.0

@@ -57,7 +57,8 @@ static func setup() -> void:
 	_key("gear_up", KEY_E)
 	_key("gear_down", KEY_Q)
 	_key("toggle_manual", KEY_F)
-	_key("horn", KEY_H)
+	_key("horn", KEY_X)                                # Hupe (H ist die Befehlsübersicht)
+	_key("help", KEY_H)
 	_key("taxi_mode", KEY_K)                           # Taxi-Modus / freier Modus
 	_key("taxi_1", KEY_1)                              # Auftrag 1–3 annehmen
 	_key("taxi_2", KEY_2)

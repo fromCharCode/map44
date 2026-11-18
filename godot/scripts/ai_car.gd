@@ -656,7 +656,7 @@ func _drive(delta: float) -> void:
 	_limit = ""
 	# Fahrstreifenwechsel: Versatz weich nachführen (erst blinken, dann ziehen)
 	_lane_t += delta
-	var tgt_shift := float(lane_tgt) * lane_w + _evade
+	var tgt_shift := float(lane_tgt) * lane_w + _evade + _yield_shift
 	if lane_shift != tgt_shift:
 		if _lane_hold > 0.0 and _evade <= 0.0:
 			_lane_hold -= delta
@@ -973,8 +973,36 @@ func _honk_now() -> void:
 	get_tree().create_timer(dur).timeout.connect(func(): if is_instance_valid(_honk): _honk.stop())
 
 
+var _yield_shift := 0.0       # Versatz nach rechts, um einem Einsatzfahrzeug Platz zu machen (negativ = rechts)
+
+
 func _special_limit(_delta: float) -> float:
-	return INF                     # Busse: Haltestellen
+	return _emergency_yield()      # Busse: Haltestellen (eigene Fassung)
+
+
+func _emergency_yield() -> float:
+	## Nähert sich von hinten ein Einsatzfahrzeug mit Blaulicht (≤ 75 m, gleiche Richtung, gleiche Fahrbahn):
+	## rechts heranfahren und fast anhalten, bis es vorbei ist.
+	_yield_shift = 0.0
+	if traffic == null or traffic.emergency.is_empty():
+		return INF
+	var fwd := Vector3(-sin(heading), 0.0, -cos(heading))
+	for e in traffic.emergency:
+		if e == self or not is_instance_valid(e):
+			continue
+		var ec: AICar = e
+		var d := pos - ec.pos
+		d.y = 0.0
+		var dist := d.length()
+		if dist > 75.0 or dist < 0.5:
+			continue
+		var ef := Vector3(-sin(ec.heading), 0.0, -cos(ec.heading))
+		if d.dot(ef) < 0.0 or absf(d.cross(ef).y) > 7.0 or fwd.dot(ef) < 0.3:
+			continue
+		_yield_shift = -1.3
+		_ind = 1
+		return 1.5 if dist < 45.0 else 5.0
+	return INF
 
 
 func _aim(dist: float) -> Vector3:

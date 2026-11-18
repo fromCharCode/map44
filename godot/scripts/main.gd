@@ -29,6 +29,7 @@ var last_safe := Vector3.ZERO
 var street_picker: StreetPicker
 var route_guide: RouteGuide
 var speed_cams: SpeedCams
+var help_overlay: HelpOverlay
 var _teleporting := false
 var env_mgr: EnvManager
 var traffic: Traffic
@@ -561,6 +562,11 @@ func _setup_game() -> void:
 	route_guide.name = "RouteGuide"
 	add_child(route_guide)
 	route_guide.setup(player, traffic, taxi, world)
+	help_overlay = HelpOverlay.new()
+	help_overlay.name = "Help"
+	add_child(help_overlay)
+	if hud:
+		hud.message("H zeigt alle Befehle", 7.0)
 	speed_cams = SpeedCams.new()
 	speed_cams.name = "SpeedCams"
 	add_child(speed_cams)
@@ -791,7 +797,15 @@ func _process(delta: float) -> void:
 		hud.show_input = not hud.show_input
 	_check_player_bounds()
 	# Spiel-Eingaben
+	if traffic and traffic.radio != "" and hud:
+		hud.message(traffic.radio, 7.0)
+		traffic.radio = ""
+	if Input.is_action_just_pressed("help"):
+		help_overlay.toggle()
 	if Input.is_action_just_pressed("pause"):
+		if help_overlay.is_open():
+			help_overlay.close()
+			return
 		_toggle_pause()
 	if Input.is_action_just_pressed("weather") and hud:
 		env_mgr.set_weather(env_mgr.weather + 1)

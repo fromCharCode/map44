@@ -310,9 +310,9 @@ func _trees(trees: Array) -> void:
 		RenderUtil.fill_multimesh(mm, bx)
 		var inst := MultiMeshInstance3D.new()
 		inst.multimesh = mm
-		inst.visibility_range_end = 420.0
-		inst.visibility_range_end_margin = 40.0
-		inst.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+		inst.visibility_range_end = 950.0                 # Baumkronen früh sichtbar (vorher 420 m: ploppten ins Bild)
+		inst.visibility_range_end_margin = 120.0
+		inst.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 		inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(inst)
 	# räumliches Gitter (32 m) für TreeLOD
@@ -448,7 +448,7 @@ func _lamps(lamps: Array) -> void:
 		# dünne Masten: keine Schatten (tausende Leuchten je Kachel)
 		# Mast fest, ab 45 km/h umfahrbar (Kandelaber/Gaslaterne aus Guss: schwerer, erst ab 55)
 		var cast: bool = name in ["streetlamp_old", "streetlamp_gas"]
-		_spawn(name, groups[name], 300.0, false, [], [0.11 if cast else 0.08, 3.5, 260.0 if cast else 170.0, 55.0 if cast else 45.0, 4500.0])
+		_spawn(name, groups[name], 560.0, false, [], [0.11 if cast else 0.08, 3.5, 260.0 if cast else 170.0, 55.0 if cast else 45.0, 4500.0])
 	_light_pools()
 
 
@@ -482,8 +482,8 @@ func _light_pools() -> void:
 		var inst := MultiMeshInstance3D.new()
 		inst.multimesh = mm
 		inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		inst.visibility_range_end = 260.0
-		inst.visibility_range_end_margin = 30.0
+		inst.visibility_range_end = 520.0                 # Lichtkegel der Laternen (vorher 260 m)
+		inst.visibility_range_end_margin = 60.0
 		inst.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 		add_child(inst)
 
@@ -580,7 +580,7 @@ func _signal_heads(heads: Array, ctls: Array) -> void:
 			RenderUtil.fill_multimesh(mm, sx, part["xf"], [], sc)
 			var inst := MultiMeshInstance3D.new()
 			inst.multimesh = mm
-			inst.visibility_range_end = 260.0
+			inst.visibility_range_end = 420.0
 			inst.visibility_range_end_margin = 30.0
 			inst.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 			add_child(inst)
@@ -622,7 +622,7 @@ func _signals(sigs: Array) -> void:
 		groups[group][cell].append(xf)
 		signal_nodes.append({"pos": p, "group": group})
 	for g in 2:
-		_spawn("traffic_light", groups[g], 260.0, true, _signal_parts(g))
+		_spawn("traffic_light", groups[g], 420.0, true, _signal_parts(g))
 
 
 func _props(props: Array) -> void:

@@ -60,6 +60,12 @@ var _player_cache := {}    # node_id -> Dictionary (je Physik-Frame)
 var _player_frame := -1
 var ignore_player := false     # Prüfstand: Spieler zählt nicht als Verkehrsteilnehmer
 var stats := {"spawn": 0, "bus_spawn": 0}
+# Sonderfahrzeuge und Fremdunfälle
+var emergency: Array = []      # ServiceCar auf Einsatzfahrt (Blaulicht) – die anderen machen Platz
+var accident := {}             # laufender Unfall: {"pos", "t", "cars", "units", "name"}
+var accident_timer := 150.0    # bis zum nächsten Fremdunfall (s)
+var accidents_enabled := true
+var radio := ""                # Verkehrsmeldung für das HUD (main.gd holt sie ab)
 
 
 func setup(t, dress: Dressing, player_node: Node3D, camera: Camera3D) -> void:
@@ -269,9 +275,14 @@ func _process(delta: float) -> void:
 			c.queue_free()
 			cars.remove_at(i)
 	var n_bus := 0
+	emergency.clear()
 	for c in cars:
 		if (c as AICar).is_bus:
 			n_bus += 1
+		elif c is ServiceCar and (c as ServiceCar).mission and not (c as ServiceCar).on_scene:
+			emergency.append(c)
+	if accidents_enabled:
+		_accident_tick(delta, ppos)
 	if cars.size() - n_bus < int(round(float(target_count) * day_factor(Timetable.hours))) and spawn_timer <= 0.0:
 		spawn_timer = 0.25
 		_try_spawn(ppos)
@@ -416,6 +427,19 @@ func _try_spawn(ppos: Vector3) -> void:
 			# Freiraum zu anderen Fahrzeugen wächst mit dem Tempo der Straße (50: 14 m, 100: 42 m, 130: 58 m)
 		if not _spawn_ok(pos, ppos, 14.0 + maxf(float(e["speed"]) / 3.6 - 14.0, 0.0) * 2.0):
 			continue
+		# Anteil im Straßenbild: 3 % Taxis, 0,7 % Streifenwagen, 0,5 % Rettungswagen, 0,25 % Feuerwehr;
+		# jedes fünfte Einsatzfahrzeug ist gerade mit Blaulicht unterwegs
+		var u := rng.randf()
+		if u < 0.0445 and String(e["cls"]) != "service":
+			var kind := ServiceCar.Service.TAXI if u < 0.03 else (ServiceCar.Service.POLICE if u < 0.037 else (ServiceCar.Service.AMBULANCE if u < 0.042 else ServiceCar.Service.FIRE))
+			var sc := ServiceCar.new()
+			add_child(sc)
+			var with_m := kind != ServiceCar.Service.TAXI and rng.randf() < 0.2
+			var far_t := Vector2(pos.x, pos.z) + Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(1500.0, 3000.0)
+			sc.setup_service(self, kind, ei, dir, s, with_m, far_t if with_m else Vector2.INF)
+			cars.append(sc)
+			stats["service"] = int(stats.get("service", 0)) + 1
+			return
 		var car := AICar.new()
 		add_child(car)
 		var model := _pick_model()
@@ -423,6 +447,119 @@ func _try_spawn(ppos: Vector3) -> void:
 		cars.append(car)
 		stats["spawn"] = int(stats["spawn"]) + 1
 		return
+
+
+func _spawn_service_near(kind: int, at: Vector3, r0: float, r1: float, target: Vector2) -> ServiceCar:
+	## Einsatzfahrzeug auf einer Straße im Abstand r0..r1 um at, Ziel target
+	for attempt in 80:
+		var ang := rng.randf() * TAU
+		var rad := rng.randf_range(r0, r1)
+		var ck := Vector2i(floori((at.x + cos(ang) * rad) / 100.0), floori((at.z + sin(ang) * rad) / 100.0))
+		var cell: Array = edge_cells.get(ck, [])
+		if cell.is_empty():
+			continue
+		var ei: int = cell[rng.randi_range(0, cell.size() - 1)]
+		var e: Dictionary = edges[ei]
+		if float(e["len"]) < 30.0 or String(e["cls"]) in ["footway", "path", "service", "living_street"] or _narrow(e):
+			continue
+		var pts1 := edge_points(ei, 1)
+		var mid := _point_at(pts1, float(e["len"]) * 0.5)
+		var ow := int(e["oneway"])
+		# Richtung zum Einsatzort
+		var a0 := _point_at(pts1, 2.0)
+		var toward := Vector2(target.x - mid.x, target.y - mid.z).dot(Vector2(mid.x - a0.x, mid.z - a0.z)) >= 0.0
+		var dir := 1 if toward else -1
+		if (dir == 1 and ow < 0) or (dir == -1 and ow > 0):
+			dir = -dir
+		var pts := edge_points(ei, dir)
+		var s := float(e["len"]) * 0.5
+		var p := _point_at(pts, s)
+		var pos := Vector3(p.x, p.y, p.z)
+		if not _spawn_ok(pos, player.global_position, 14.0):
+			continue
+		var sc := ServiceCar.new()
+		add_child(sc)
+		sc.setup_service(self, kind, ei, dir, s, true, target)
+		cars.append(sc)
+		return sc
+	return null
+
+
+func _accident_tick(delta: float, ppos: Vector3) -> void:
+	## Fremdunfälle: alle paar Minuten verunglücken zwei Fahrzeuge in der weiteren Umgebung. Sie bleiben liegen,
+	## der Verkehr staut sich und umfährt die Stelle, Polizei und Rettungswagen rücken mit Blaulicht an.
+	if not accident.is_empty():
+		accident["t"] = float(accident["t"]) + delta
+		var apos: Vector3 = accident["pos"]
+		var gone := apos.distance_to(ppos) > 700.0
+		if float(accident["t"]) > 210.0 or gone:
+			for c in accident["cars"]:
+				if is_instance_valid(c) and not (c as AICar).dead:
+					(c as AICar).dead = true
+					(c as AICar).death = "unfall"
+			for u in accident["units"]:
+				if is_instance_valid(u):
+					(u as ServiceCar).end_mission()
+			if not gone:
+				radio = "Verkehrsfunk: Unfallstelle %s geräumt" % String(accident["name"])
+			accident = {}
+			accident_timer = rng.randf_range(240.0, 540.0)
+		return
+	if OS.has_environment("DRESDEN_UNFALL") and int(stats.get("unfall", 0)) == 0 and accident_timer > 30.0:
+		accident_timer = 25.0                   # Diagnose: erster Unfall bald
+	accident_timer -= delta
+	if accident_timer > 0.0:
+		return
+	accident_timer = 20.0                       # kein geeignetes Fahrzeug: gleich noch einmal versuchen
+	var cand: Array = []
+	for c in cars:
+		var ac: AICar = c
+		if ac.is_bus or ac is ServiceCar or ac.wrecked or ac.dead or ac.speed < 5.0:
+			continue
+		var d := ac.pos.distance_to(ppos)
+		if d > 170.0 and d < 420.0:
+			cand.append(ac)
+	if cand.is_empty():
+		return
+	var a: AICar = cand[rng.randi_range(0, cand.size() - 1)]
+	var fwd := Vector3(-sin(a.heading), 0.0, -cos(a.heading))
+	var other: AICar = null
+	var best := 34.0
+	for c in cars:
+		var oc: AICar = c
+		if oc == a or oc.is_bus or oc is ServiceCar or oc.wrecked or oc.dead:
+			continue
+		var dd := oc.pos.distance_to(a.pos)
+		if dd < best:
+			best = dd
+			other = oc
+	var hit := a.pos + fwd * a.front_ext + Vector3(0, 0.6, 0)
+	a.player_impact(-fwd * rng.randf_range(6.0, 8.5) + Vector3(fwd.z, 0, -fwd.x) * rng.randf_range(-2.0, 2.0), rng.randf_range(-1.6, 1.6), hit, fwd)
+	var involved: Array = [a]
+	if other != null:
+		var of := Vector3(-sin(other.heading), 0.0, -cos(other.heading))
+		other.player_impact(of * rng.randf_range(-5.8, -5.2), rng.randf_range(-1.0, 1.0), other.pos + of * other.front_ext + Vector3(0, 0.6, 0), of)
+		involved.append(other)
+	var nm := ""
+	if a.cur_edge >= 0 and a.cur_edge < edges.size():
+		nm = String(edges[a.cur_edge].get("name", ""))
+	if nm == "":
+		nm = "in der Nähe"
+	var tgt := Vector2(a.pos.x, a.pos.z)
+	var units: Array = []
+	for k in [ServiceCar.Service.POLICE, ServiceCar.Service.AMBULANCE]:
+		var u2 := _spawn_service_near(k, a.pos, 260.0, 520.0, tgt)
+		if u2 != null:
+			units.append(u2)
+	if rng.randf() < 0.35:
+		var u3 := _spawn_service_near(ServiceCar.Service.FIRE, a.pos, 320.0, 560.0, tgt)
+		if u3 != null:
+			units.append(u3)
+	accident = {"pos": a.pos, "t": 0.0, "cars": involved, "units": units, "name": nm}
+	radio = "Verkehrsfunk: Unfall %s – mit Behinderungen rechnen" % nm
+	stats["unfall"] = int(stats.get("unfall", 0)) + 1
+	if OS.has_environment("DRESDEN_UNFALL"):
+		print("UNFALL %s bei (%.0f, %.0f), %d Fahrzeuge, %d Einsatzfahrzeuge" % [nm, a.pos.x, a.pos.z, involved.size(), units.size()])
 
 
 func _pick_model() -> String:

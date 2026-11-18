@@ -19,3 +19,4 @@ python clear_roads.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo
 python blitzer.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "BLITZFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python allotments.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "ALLOTFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python facade_eras.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "ERAFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
+python stops_fix.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "STOPFIXFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
