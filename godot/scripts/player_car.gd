@@ -1,7 +1,8 @@
 class_name PlayerCar
 extends RigidBody3D
-## Spielerfahrzeug: Raycast-Fahrwerk (Feder/Dämpfer), Reifenreibung mit Reibkreis,
-## Motorkennlinie mit Automatikgetriebe, Handbremse, Lichter.
+## Spielerfahrzeug: Raycast-Fahrwerk (Feder/Dämpfer, mehrere Strahlen je Rad), Reifenreibung mit Reibkreis,
+## Motorkennlinie mit Automatikgetriebe (Kickdown), ABS/Traktions-/Stabilitätskontrolle, Handbremse, Lichter.
+## Kennwerte prüfen: godot --headless --fixed-fps 90 --path . -s res://scripts/dev/physics_bench.gd
 
 # Geometrie (Taxi-Modell)
 const WHEEL_X := 0.79
@@ -12,13 +13,20 @@ const SUSP_REST := 0.26         # Länge Strahlursprung -> Radmitte in Ruhe
 const SUSP_DROOP := 0.20        # zusätzlicher Ausfederweg
 # Fahrwerk „GTA-4/BeamNG-Gefühl“: weicher (1,4 Hz statt 1,85 Hz), sichtbare Gewichtsverlagerung (Wanken ~4°/g,
 # Eintauchen beim Bremsen, Aufbäumen beim Anfahren), getrennte Zug-/Druckstufe. Vorspannung hält die Fahrhöhe.
-const SPRING_K := 30000.0
+const MASS := 1650.0            # kg fahrfertig (obere Mittelklasse)
+const SPRING_K := 32000.0       # N/m je Rad -> Aufbaueigenfrequenz ~1,4 Hz
 const SPRING_PRE := 0.057       # Vorspannweg (m): statischer Einfederweg bleibt wie beim alten 52-kN-Fahrwerk
-const DAMP_BUMP := 2300.0       # Druckstufe (Einfedern)  ζ ≈ 0,34
-const DAMP_REB := 3600.0        # Zugstufe (Ausfedern)    ζ ≈ 0,53
-const BUMP_START := 0.12        # Anschlagpuffer ab diesem Einfederweg
-const ARB_F := 8000.0           # Wankstütze vorn  (vorn steifer -> sicheres Untersteuern im Grenzbereich)
-const ARB_R := 3000.0           # Wankstütze hinten
+const DAMP_BUMP := 2450.0       # Druckstufe (Einfedern)  ζ ≈ 0,34
+const DAMP_REB := 3850.0        # Zugstufe (Ausfedern)    ζ ≈ 0,53
+const DAMP_KNEE := 0.30         # m/s: darüber öffnet der Dämpfer (degressiv) -> Bordsteine schlagen nicht durch
+const DAMP_HIGH := 0.35         # Steigung der Kennlinie oberhalb des Knicks (Anteil)
+const BUMP_START := 0.14        # Anschlagpuffer ab diesem Einfederweg (7 cm Federweg ab Ruhelage)
+const ARB_F := 8500.0           # Wankstütze vorn  (vorn steifer -> sicheres Untersteuern im Grenzbereich)
+const ARB_R := 3200.0           # Wankstütze hinten
+# Reifenaufstandsfläche: mehrere Strahlen längs unter dem Rad. Jeder Strahl begrenzt die Radmitte so, dass der
+# Radkreis den getroffenen Punkt gerade berührt -> das Rad rollt eine Kante (Bordstein) hinauf statt zu springen.
+const RAY_OFFS: Array[float] = [0.0, 0.09, -0.09, 0.17, -0.17, 0.25, -0.25]
+const RAY_CLIMB := 0.20         # Hindernisse, die höher über dem Rad-Aufstandspunkt liegen, erklimmt das Rad nicht
 const A_AXLE := 1.36            # Schwerpunkt -> Vorderachse (m)
 const B_AXLE := 1.56            # Schwerpunkt -> Hinterachse (m)
 const RELAX_LEN := 0.35         # Einlauflänge der Seitenkraft (m)
@@ -31,7 +39,8 @@ const REVERSE := 3.3
 const FINAL := 3.3
 const IDLE_RPM := 850.0
 const REDLINE := 6200.0
-const SPEED_LIMIT := 68.0       # m/s (Abregelung 245 km/h; erreichbar sind ~235)
+const KICK_RPM := 5000.0        # Kickdown wählt den niedrigsten Gang unterhalb dieser Drehzahl
+const SPEED_LIMIT := 68.0       # m/s (Abregelung 245 km/h; erreichbar sind ~230)
 const CRUISE_MIN := 30.0 / 3.6  # Tempomat ab 30 km/h (wie Serienfahrzeuge)
 const DRAG_K := 0.40            # 0.5*rho*Cd*A  [N/(m/s)^2]
 const ROLL_RES := 140.0         # N
@@ -41,9 +50,15 @@ const KAPPA_PEAK := 0.12        # Längsschlupf bei maximaler Kraft
 const ALPHA_PEAK := 0.15        # tan(Schlupfwinkel) bei maximaler Seitenkraft (~8.5°)
 const I_WHEEL := 1.3            # kg m² (Rad + Bremse)
 const I_ENG_REFL := 0.26        # kg m² Motor-Trägheit je Antriebsrad bei Übersetzung 1:1 (wird mit i² skaliert)
-const BRAKE_FORCE := 15800.0    # N maximale Bremskraft gesamt (≈1.04 g)
-const BRAKE_FRONT := 0.64
+const MU_LONG := 1.10           # Längshaftung relativ zur Querhaftung (Reifen übertragen längs etwas mehr)
+const BRAKE_FORCE := 21500.0    # N maximale Bremskraft gesamt (≈1,33 g: die Anlage ist stärker als die Reifen, ABS regelt)
+const BRAKE_FRONT := 0.66
+const HOLD_W := 14.0            # 1/s Eigenkreisfrequenz der Haltefeder im Stand
+const STEER_RATIO := 15.0       # Lenkübersetzung Lenkrad : Rad (nur Anzeige im Cockpit)
 
+const MODEL_FILE := "taxi_player.glb"   # Karosserie; das Cockpit dazu heißt interior/<name>_cockpit.glb
+
+var cockpit: CarCockpit         # Innenraum für die Fahrerperspektive (null, wenn keiner gebaut ist)
 var wheels := {}                # "FL" -> {node, local, steer, drive, rear, ...}
 var model: Node3D
 var emit := {}
@@ -80,6 +95,7 @@ var _comp := {"FL": 0.0, "FR": 0.0, "RL": 0.0, "RR": 0.0}
 var _headlights: Array[SpotLight3D] = []
 var _taxi_sign := true
 var _shift_cd := 0.0
+var _kd_t := 0.0                 # Zeit mit durchgetretenem Gas (Kickdown-Erkennung)
 var manual := false
 var fuel_l := 45.0                # Tankinhalt (l), TaxiGame verbraucht und betankt
 const FUEL_CAP := 60.0
@@ -113,7 +129,7 @@ var _kappa_rear := 0.0
 
 
 func setup(paint: Color = Color(0.93, 0.89, 0.74)) -> void:
-	mass = 1550.0
+	mass = MASS
 	can_sleep = false
 	collision_layer = 2
 	collision_mask = 1 | 4
@@ -124,7 +140,7 @@ func setup(paint: Color = Color(0.93, 0.89, 0.74)) -> void:
 	angular_damp = 0.5
 	center_of_mass_mode = RigidBody3D.CENTER_OF_MASS_MODE_CUSTOM
 	center_of_mass = Vector3(0, 0.52, -0.10)
-	inertia = Vector3(750, 2700, 2900)
+	inertia = Vector3(800, 2870, 3090)
 
 	var cs1 := CollisionShape3D.new()
 	var b1 := BoxShape3D.new()
@@ -139,11 +155,15 @@ func setup(paint: Color = Color(0.93, 0.89, 0.74)) -> void:
 	cs2.position = Vector3(0, 1.18, 0.15)
 	add_child(cs2)
 
-	var made := CarModel.make("taxi_player.glb", paint, true)
+	var made := CarModel.make(MODEL_FILE, paint, true)
 	model = made["root"]
 	emit = made["emit"]
 	paint_mat = made["paint"]
 	add_child(model)
+	# Cockpit für die Fahrerperspektive (falls es zum Karosseriemodell eines gibt)
+	cockpit = CarCockpit.create(self, MODEL_FILE, model)
+	if cockpit:
+		add_child(cockpit)
 	for k in ["FL", "FR", "RL", "RR"]:
 		var w: Node3D = made["wheels"].get(k)
 		if w == null:
@@ -183,8 +203,8 @@ func setup(paint: Color = Color(0.93, 0.89, 0.74)) -> void:
 
 
 func _torque(r: float) -> float:
-	## Taxi der oberen Mittelklasse (Vorbild E 220 d: 143 kW, 1,8 t = 80 W/kg) auf die 1550 kg des Modells
-	## umgerechnet: ~125 kW ab 3400/min, 0–100 in ~8,5 s, Spitze ~235 km/h (vorher 195 kW, 283 km/h)
+	## Taxi der oberen Mittelklasse (Vorbild E 220 d: 143 kW, 1,8 t = 80 W/kg) auf die 1650 kg des Modells
+	## umgerechnet: ~125 kW ab 3400/min, 0–100 in ~8 s, Spitze ~230 km/h (Prüfstand: physics_bench.gd A und J)
 	if r < 1100.0:
 		return lerpf(190.0, 330.0, clampf((r - 700.0) / 400.0, 0.0, 1.0))
 	if r < 3400.0:
@@ -399,13 +419,11 @@ func _read_input(delta: float) -> void:
 	if override_input:
 		return
 	var st := Input.get_axis("steer_left", "steer_right")
-	var digital := absf(st) > 0.98 or st == 0.0
-	if not digital:
-		# Gamepad: feinfühlig um die Mitte, voller Einschlag außen (wie Forza/GTA)
-		st = signf(st) * pow(absf(st), 1.45)
-	in_steer = move_toward(in_steer, st, (4.2 if digital else 14.0) * delta)
-	in_throttle = move_toward(in_throttle, Input.get_action_strength("throttle"), 7.0 * delta)
-	in_brake = move_toward(in_brake, Input.get_action_strength("brake"), 9.0 * delta)
+	in_steer = move_toward(in_steer, steer_curve(st), steer_rate(st, in_steer, absf(speed)) * delta)
+	var th := Input.get_action_strength("throttle")
+	var br := Input.get_action_strength("brake")
+	in_throttle = move_toward(in_throttle, pedal_curve(th, 1.25), pedal_rate(th, in_throttle, 5.0, 9.0) * delta)
+	in_brake = move_toward(in_brake, pedal_curve(br, 1.5), pedal_rate(br, in_brake, 4.5, 12.0) * delta)
 	in_handbrake = Input.is_action_pressed("handbrake")
 	horn_pressed = Input.is_action_pressed("horn")
 	# LB gehalten + A/X/Y/B wählt Taxi-Aufträge (TaxiGame) – dann nicht schalten
@@ -417,6 +435,41 @@ func _read_input(delta: float) -> void:
 	if Input.is_action_just_pressed("toggle_manual"):
 		manual = not manual
 	_cruise(delta)
+
+
+static func steer_curve(st: float) -> float:
+	## Gamepad-Stick -> Lenkwunsch: feinfühlig um die Mitte (Exponent 1,45), voller Einschlag außen.
+	## Tastatur (0 oder ±1) bleibt unverändert.
+	if absf(st) > 0.98 or st == 0.0:
+		return signf(st)
+	return signf(st) * pow(absf(st), 1.45)
+
+
+static func steer_rate(st: float, cur: float, v: float) -> float:
+	## Geschwindigkeit, mit der der Lenkwunsch der Eingabe folgt (1/s).
+	## Stick: nahezu direkt (kurze Glättung gegen Zittern). Tastatur: zügiger Aufbau in der Stadt (voll in 0,25 s),
+	## bei hohem Tempo ruhiger (130 km/h: 0,45 s); Zurücklenken zur Mitte immer schneller als Einlenken.
+	var digital := absf(st) > 0.98 or st == 0.0
+	if not digital:
+		return 12.0
+	var back := st == 0.0 or signf(st) != signf(cur)
+	if back:
+		return 6.5
+	return lerpf(4.2, 2.2, clampf((v - 14.0) / 22.0, 0.0, 1.0))
+
+
+static func pedal_curve(x: float, expo: float) -> float:
+	## Trigger -> Pedalstellung: leicht progressiv (feine Dosierung am Anfang). Taste (0/1) unverändert.
+	if x <= 0.0 or x >= 0.98:
+		return clampf(x, 0.0, 1.0)
+	return pow(x, expo)
+
+
+static func pedal_rate(x: float, cur: float, up_digital: float, down: float) -> float:
+	## Trigger folgen fast direkt; Tasten bauen das Pedal über ~0,2 s auf und lassen schneller los.
+	if x > 0.0 and x < 0.98:
+		return 14.0
+	return up_digital if x > cur else down
 
 
 func _cruise(delta: float) -> void:
@@ -469,8 +522,13 @@ func _physics_process(delta: float) -> void:
 		reversing = true
 		throttle = brake
 		brake = 0.0
-	elif throttle > 0.05 and brake < 0.05 and speed > -1.2 and gear == 0:
-		gear = 1
+	elif throttle > 0.05 and brake < 0.05 and gear == 0:
+		if speed > -1.2:
+			gear = 1
+		else:
+			# rollt noch rückwärts: Gas wirkt als Bremse bis zum Stillstand (Gegenstück zu „Bremse im Stand = rückwärts“)
+			brake = throttle
+			throttle = 0.0
 	braking = brake > 0.05
 
 	# Lenkwinkel (geschwindigkeitsabhängig, griplimitiert)
@@ -512,9 +570,24 @@ func _physics_process(delta: float) -> void:
 	_shift_cd -= delta
 	_torque_cut = maxf(_torque_cut - delta, 0.0)
 	if gear >= 1 and _shift_cd <= 0.0 and not manual:
-		var up_rpm := lerpf(2900.0, 5700.0, pow(throttle, 0.7))
-		var dn_rpm := 1250.0 + throttle * 1500.0
-		if gear < NGEARS and rpm_w > up_rpm and rpm_w * GEARS[gear] / GEARS[gear - 1] > 1700.0:
+		# Schaltkennfeld: bei wenig Gas früh hoch (Stadt 50 km/h im 4., Landstraße 100 im 6. Gang bei ~2000/min),
+		# mit mehr Gas später; Rückschaltschwelle liegt immer unter der Drehzahl nach dem Hochschalten (kein Pendeln)
+		var up_rpm := 2000.0 + 3700.0 * pow(throttle, 1.3)
+		var dn_rpm := 1050.0 + throttle * 1500.0
+		# Kickdown: bei durchgetretenem Gas direkt in den niedrigsten Gang, der unter KICK_RPM bleibt
+		# (ein Schaltvorgang über mehrere Gänge wie bei einer Wandlerautomatik)
+		# Erst nach 0,3 s Vollgas (ein kurzer Tastendruck schaltet nicht zurück), in den 1. Gang nur unter 25 km/h.
+		var kd_gear := gear
+		_kd_t = _kd_t + delta if (throttle > 0.92 and not reversing) else 0.0
+		if _kd_t > 0.3:
+			var g_min := 1 if spd_abs < 7.0 else 2
+			while kd_gear > g_min and rpm_w * GEARS[kd_gear - 2] / GEARS[gear - 1] < KICK_RPM:
+				kd_gear -= 1
+		if kd_gear < gear:
+			gear = kd_gear
+			_shift_cd = 0.6
+			_torque_cut = 0.16
+		elif gear < NGEARS and rpm_w > up_rpm and rpm_w * GEARS[gear] / GEARS[gear - 1] > 1200.0:
 			gear += 1
 			_shift_cd = 0.4
 			_torque_cut = 0.14
@@ -537,9 +610,9 @@ func _physics_process(delta: float) -> void:
 		_shift_req = 0
 	if manual and gear >= 1 and rpm_w < 700.0 and spd_abs < 2.5 and gear > 1:
 		gear = 1
-	var te := _torque(rpm) * 1.12 * throttle * engine_health
+	var te := _torque(rpm) * throttle * engine_health
 	if tc_on:
-		te *= clampf(1.0 - maxf(_kappa_rear - 0.10, 0.0) * 8.0, 0.2, 1.0)
+		te *= clampf(1.0 - maxf(_kappa_rear - 0.085, 0.0) * 20.0, 0.05, 1.0)
 	if rpm > REDLINE or _torque_cut > 0.0 or spd_abs > SPEED_LIMIT or fuel_l <= 0.0:
 		te = 0.0
 	var eb := 0.0
@@ -555,8 +628,8 @@ func _physics_process(delta: float) -> void:
 	var brk_front := 0.0
 	var brk_rear := 0.0
 	if braking:
-		brk_front = in_brake * BRAKE_FORCE * BRAKE_FRONT * 0.5 * WHEEL_R
-		brk_rear = in_brake * BRAKE_FORCE * (1.0 - BRAKE_FRONT) * 0.5 * WHEEL_R
+		brk_front = brake * BRAKE_FORCE * BRAKE_FRONT * 0.5 * WHEEL_R
+		brk_rear = brake * BRAKE_FORCE * (1.0 - BRAKE_FRONT) * 0.5 * WHEEL_R
 
 	# Aero
 	if spd_abs > 0.3:
@@ -574,16 +647,36 @@ func _physics_process(delta: float) -> void:
 		var local: Vector3 = w["local"]
 		var origin := global_transform * (local + Vector3(0, SUSP_REST, 0))
 		var ray_len := SUSP_REST + SUSP_DROOP + WHEEL_R
+		var roll_dir := fwd_body.rotated(up_body, steer_angle) if w["steer"] else fwd_body
 		var q := PhysicsRayQueryParameters3D.create(origin, origin - up_body * ray_len, 1)
 		q.exclude = [get_rid()]
-		var hit := space.intersect_ray(q)
+		# kleinste zulässige Strecke Strahlursprung -> Radmitte über alle Strahlen der Aufstandsfläche
+		var best := INF
+		var best_n := up_body
+		var n0 := Vector3.ZERO
+		var prev_c: float = w["comp"]
+		for ri in RAY_OFFS.size():
+			var d: float = RAY_OFFS[ri]
+			var o := origin + roll_dir * d
+			q.from = o
+			q.to = o - up_body * ray_len
+			var hit := space.intersect_ray(q)
+			if hit.is_empty():
+				continue
+			var l := o.distance_to(hit["position"]) - sqrt(WHEEL_R * WHEEL_R - d * d)
+			if ri == 0:
+				n0 = hit["normal"]
+			elif SUSP_REST - l > maxf(prev_c, 0.0) + RAY_CLIMB:
+				continue                       # Mauer/hohe Kante vor dem Rad: nicht erklimmen
+			if l < best:
+				best = l
+				best_n = hit["normal"]
 		var c := -SUSP_DROOP
-		if hit:
-			var dist := origin.distance_to(hit["position"])
-			c = SUSP_REST - (dist - WHEEL_R)
+		if best <= SUSP_REST + SUSP_DROOP:
+			c = SUSP_REST - best
 			w["contact"] = true
-			w["pos"] = hit["position"]
-			w["normal"] = hit["normal"]
+			w["pos"] = origin - up_body * (best + WHEEL_R)
+			w["normal"] = n0 if n0 != Vector3.ZERO else best_n
 		else:
 			w["contact"] = false
 		comps[k] = c
@@ -650,8 +743,11 @@ func _physics_process(delta: float) -> void:
 		else:
 			arb = arb_r if k.ends_with("L") else -arb_r
 		var bump := maxf(c - BUMP_START, 0.0)
-		var damp := (DAMP_BUMP if c_vel > 0.0 else DAMP_REB) * c_vel
-		var fs := maxf(SPRING_K * maxf(c + SPRING_PRE, 0.0) + 120000.0 * bump + 2.5e6 * bump * bump + damp + arb, 0.0)
+		# Druckstufe degressiv (schnelle Stöße – Bordstein – öffnen den Dämpfer), Zugstufe linear (kein Nachspringen)
+		var damp := DAMP_REB * c_vel
+		if c_vel > 0.0:
+			damp = DAMP_BUMP * (c_vel if c_vel < DAMP_KNEE else DAMP_KNEE + (c_vel - DAMP_KNEE) * DAMP_HIGH)
+		var fs := maxf(SPRING_K * maxf(c + SPRING_PRE, 0.0) + 90000.0 * bump + 2.0e6 * bump * bump + damp + arb, 0.0)
 		fs = minf(fs, 30000.0)
 		loads[k] = fs
 		var wv := v_cm + angular_velocity.cross(pos - com_world)
@@ -663,11 +759,6 @@ func _physics_process(delta: float) -> void:
 		var vf := wv.dot(f_dir)
 		var vs := wv.dot(s_dir)
 		_slip_acc += absf(vs)
-		# ABS: Bremsmoment zurücknehmen, wenn das Rad zu blockieren droht
-		var kappa_pre := (om * WHEEL_R - vf) / maxf(absf(vf), 2.0)
-		if abs_on and t_brk > 0.0 and not (in_handbrake and rear) and absf(vf) > 3.0 and kappa_pre < -0.17:
-			t_brk *= 0.25
-			abs_active = true
 		# Schlupf
 		var kappa := (om * WHEEL_R - vf) / maxf(absf(vf), 2.5)
 		var alpha_raw := vs / maxf(absf(vf), 3.5)
@@ -683,32 +774,69 @@ func _physics_process(delta: float) -> void:
 		var fx := 0.0
 		var fy := 0.0
 		if sl > 0.0001:
-			fx = fmag * sk / sl
+			fx = fmag * sk / sl * MU_LONG
 			fy = -fmag * sa / sl * 0.96
-		# kein Überschwingen bei kleinen Geschwindigkeiten (Impulsgrenze)
+		# ABS/EBD: Bremsmoment je Rad auf das begrenzen, was der Reifen knapp unter dem Haftungsgipfel überträgt
+		# (in der Kurve bleibt Seitenführung reserviert, hinten etwas mehr -> stabiles Bremsen in der Kurve)
+		if abs_on and t_brk > 0.0 and not (in_handbrake and rear) and absf(vf) > 2.0:
+			var lat_use := minf(absf(sa), 1.0)
+			var cap := mu * MU_LONG * fs * maxf(sqrt(1.0 - lat_use * lat_use), 0.45) * WHEEL_R * (0.88 if rear else 0.97)
+			if t_brk > cap:
+				t_brk = cap
+				abs_active = true
 		var m4 := mass * 0.25
-		fy = clampf(fy, -m4 * absf(vs) / delta * 0.8, m4 * absf(vs) / delta * 0.8)
-		if fx * vf < 0.0:
-			fx = clampf(fx, -m4 * absf(vf) / delta * 0.8, m4 * absf(vf) / delta * 0.8)
-		# Haltekraft im Stand (Hang)
-		if spd_abs < 0.9 and throttle < 0.03 and in_brake < 0.03:
-			fx += clampf(-vf * m4 / delta * 0.5, -mu * fs * 0.9, mu * fs * 0.9)
-		# Rad-Drehzahl integrieren
-		# halb-implizit: Reifen-Längssteifigkeit dämpft die Raddrehzahl-Dynamik (verhindert Aufschwingen)
-		var c_kappa := mu * fs * 2.85 / KAPPA_PEAK * WHEEL_R / maxf(absf(vf), 2.5)
-		var om_new := om + delta * (t_drive - fx * WHEEL_R) / (iw + delta * c_kappa * WHEEL_R * WHEEL_R)
+		# Ausrollen ohne Eingabe: unter Schritttempo sanft bis zum Stillstand bremsen (~2,5 m/s², kein Anhalteruck);
+		# darunter übernimmt die Haltefeder (siehe unten)
+		var idle := spd_abs < 0.9 and throttle < 0.03 and in_brake < 0.03
+		if idle and spd_abs > 0.12:
+			t_brk = maxf(t_brk, m4 * 2.5 * WHEEL_R)
+		# --- Längsdynamik Rad <-> Aufbau, implizit ---------------------------------------------------------
+		# Zustand ist die Schlupfgeschwindigkeit s = ω·R − v. Reifenkraft linear um den Arbeitspunkt (Sekantensteifigkeit
+		# k = Fx/s, damit auch im gesättigten Bereich richtig), dann ein impliziter Schritt für Rad UND Aufbauviertel:
+		#   s_neu = (s + dt·M·R/J) / (1 + dt·k·(R²/J + 1/m))
+		# Stabil bei jedem Tempo (vorher pendelten Kraft und Geschwindigkeit bei Schritttempo im 45-Hz-Takt), das
+		# Gleichgewicht liegt exakt bei Reifenkraft × Radius = Antriebs-/Bremsmoment, die Radträgheit bleibt echt.
+		var s_slip := om * WHEEL_R - vf
+		var t_net := t_drive
+		var locked := false
 		if t_brk > 0.0:
-			var dec := delta * t_brk / iw
-			om_new = 0.0 if absf(om_new) <= dec else om_new - signf(om_new) * dec
+			if absf(om) < 0.02 and absf(t_drive - fx * WHEEL_R) <= t_brk:
+				locked = true                  # Rad steht und die Bremse hält es
+			else:
+				t_net -= signf(om) * t_brk
+		var k_sec := mu * MU_LONG * fs * 3.86 / (KAPPA_PEAK * maxf(absf(vf), 2.5))
+		if absf(s_slip) > 0.02:
+			k_sec = absf(fx) / absf(s_slip)
+		var g_inv := 1.0 / m4 + (0.0 if locked else WHEEL_R * WHEEL_R / iw)
+		var s_new := (s_slip + (0.0 if locked else delta * t_net * WHEEL_R / iw)) / (1.0 + delta * k_sec * g_inv)
+		fx = k_sec * s_new
+		var om_new := 0.0
+		if not locked:
+			om_new = om + delta * (t_net - fx * WHEEL_R) / iw
+			if t_brk > 0.0 and om_new * om < 0.0:
+				om_new = 0.0                   # Bremse kehrt die Drehrichtung nicht um: Rad blockiert
 		if in_handbrake and rear:
 			om_new = 0.0
-		var k_new := om_new * WHEEL_R - vf
-		if t_brk <= 0.0 and k_new * (om * WHEEL_R - vf) < 0.0 and absf(t_drive) < 1.0:
+		# kein Überschwingen der Seitenkraft bei kleinen Geschwindigkeiten (Impulsgrenze)
+		fy = clampf(fy, -m4 * absf(vs) / delta * 0.8, m4 * absf(vs) / delta * 0.8)
+		# Haltekraft im Stand: Feder-Dämpfer um den Haltepunkt je Rad (steht auch am Hang und in Querneigung,
+		# ohne zu kriechen); das Rad steht mit dem Wagen
+		if idle and spd_abs <= 0.12:
+			var lim := mu * fs * 0.9
+			var hx: float = float(w.get("hold_x", 0.0)) + vf * delta
+			var hy: float = float(w.get("hold_y", 0.0)) + vs * delta
+			w["hold_x"] = hx
+			w["hold_y"] = hy
+			fx = clampf(-hx * m4 * HOLD_W * HOLD_W - vf * m4 * 2.0 * HOLD_W, -lim, lim)
+			fy = clampf(-hy * m4 * HOLD_W * HOLD_W - vs * m4 * 2.0 * HOLD_W, -lim, lim)
 			om_new = vf / WHEEL_R
+		else:
+			w["hold_x"] = 0.0
+			w["hold_y"] = 0.0
 		if rear:
 			kappa_acc += maxf(kappa, absf(alpha) / ALPHA_PEAK * 0.12)
 			kappa_n += 1
-			if tc_on and kappa > 0.12 and t_drive > 50.0:
+			if tc_on and kappa > 0.10 and t_drive > 50.0:
 				tc_active = true
 		w["omega"] = om_new
 		w["kappa"] = kappa                 # für Reifenspuren/Qualm (SkidFX)

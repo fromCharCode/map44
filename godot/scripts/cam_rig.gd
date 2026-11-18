@@ -23,6 +23,10 @@ var last_shake := 0.0              # Messwerte für DriveBench
 var last_hit := false
 
 const MODE_NAMES := ["Verfolger", "Verfolger weit", "Cockpit", "Stoßstange"]
+const COCKPIT_FOV := 60.0                   # senkrechter Bildwinkel der Fahrerperspektive
+const COCKPIT_PITCH := deg_to_rad(-6.0)     # Grundneigung des Blicks (Instrumente und Lenkradkranz im Bild)
+var _head := Vector3.ZERO                   # Kopfversatz durch Beschleunigungen (Fahrzeugkoordinaten)
+var _head_yaw := 0.0                        # Blick in die Kurve
 
 
 func setup(t: PlayerCar) -> void:
@@ -128,19 +132,36 @@ func _process(delta: float) -> void:
 				cam.rotate_object_local(Vector3.RIGHT, nx * shake_amp * 2.2)
 				cam.rotate_object_local(Vector3.UP, ny * shake_amp * 1.4)
 		2:
-			var head := xf * Vector3(-0.36, 1.2, -0.15)
-			cam.global_position = head
+			# Fahrerperspektive: Augpunkt des Cockpits, dezente Kopfbewegung mit den Fahrzeugbeschleunigungen
+			# (Bremsen: nach vorn, Beschleunigen: in den Sitz, Kurve: nach außen), Blick wandert leicht in die Kurve.
+			var eye := target.cockpit.eye if target.cockpit else Vector3(-0.36, 1.2, -0.15)
+			var yaw_rate := target.angular_velocity.dot(xf.basis.y)
+			var a_lat := clampf(target.speed * yaw_rate, -10.0, 10.0)          # + = Linkskurve
+			var k := 1.0 - exp(-5.0 * delta)
+			if not _started:
+				_head = Vector3.ZERO
+				_head_yaw = 0.0
+			_head = _head.lerp(Vector3(clampf(a_lat * 0.0032, -0.03, 0.03), -absf(_acc_s) * 0.0006, clampf(_acc_s * 0.0042, -0.045, 0.03)), k)
+			_head_yaw = lerpf(_head_yaw, clampf(yaw_rate * 0.16, -0.13, 0.13) * clampf(absf(target.speed) / 6.0, 0.0, 1.0), 1.0 - exp(-3.0 * delta))
 			var yaw_off := look_yaw + back
-			var b := xf.basis * Basis(Vector3.UP, yaw_off) * Basis(Vector3.RIGHT, look_pitch)
+			# Umsehen: der Kopf dreht sich nicht um einen Punkt – beim Blick nach rechts/hinten zur Wagenmitte lehnen
+			var turn := (1.0 - cos(yaw_off)) * 0.5                               # 0 = vorn, 1 = hinten
+			var side := 1.0 if yaw_off <= 0.0 else lerpf(0.25, 1.0, smoothstep(0.6, 0.95, turn))
+			var lean := Vector3(0.17 * turn * side, 0.0, -0.05 * turn)
+			cam.global_position = xf * (eye + _head + lean)
+			var fwd_w := 1.0 - turn
+			var b := xf.basis * Basis(Vector3.UP, yaw_off + _head_yaw * fwd_w) * Basis(Vector3.RIGHT, look_pitch + COCKPIT_PITCH * fwd_w) * Basis(Vector3.BACK, -a_lat * 0.0022 * fwd_w)
 			cam.global_transform.basis = b
-			cam.near = 0.04
+			cam.near = 0.05
 		3:
 			var bp := xf * Vector3(0, 0.62, -2.5)
 			cam.global_position = bp
 			cam.global_transform.basis = xf.basis * Basis(Vector3.UP, look_yaw + back)
 	if mode != 2:
 		cam.near = 0.1
-	cam.fov = _fov if mode != 2 else 62.0
+	cam.fov = _fov if mode != 2 else COCKPIT_FOV
+	if target.cockpit:
+		target.cockpit.set_active(mode == 2)
 	_started = true
 
 

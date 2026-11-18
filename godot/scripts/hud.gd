@@ -57,32 +57,34 @@ func _draw() -> void:
 	# Tacho unten rechts
 	var c := Vector2(vp.x - 150.0, vp.y - 140.0)
 	var r := 92.0
-	draw_circle(c, r + 8.0, Color(0, 0, 0, 0.45))
 	var a0 := deg_to_rad(135.0)
 	var a1 := deg_to_rad(405.0)
-	draw_arc(c, r, a0, a1, 48, Color(1, 1, 1, 0.18), 6.0, true)
-	var frac := clampf(kmh / 220.0, 0.0, 1.0)
-	var col := Color(0.95, 0.85, 0.3).lerp(Color(1.0, 0.3, 0.2), clampf((kmh - 130.0) / 90.0, 0.0, 1.0))
-	draw_arc(c, r, a0, a0 + (a1 - a0) * frac, 48, col, 6.0, true)
-	# Drehzahl innen
-	var rf := clampf((car.rpm - 800.0) / 4200.0, 0.0, 1.0)
-	draw_arc(c, r - 14.0, a0, a0 + (a1 - a0) * rf, 40, Color(0.5, 0.8, 1.0, 0.85), 3.0, true)
-	var sp := str(int(round(kmh)))
-	_text(sp, c + Vector2(0, 14), 52, Color.WHITE, true)
-	_text("km/h", c + Vector2(0, 40), 16, Color(1, 1, 1, 0.7), true)
-	if car.cruise_on:
-		# Tempomat: grüne Marke am Tachobogen + gesetzter Wert
-		var cf := clampf(car.cruise_target * 3.6 / 220.0, 0.0, 1.0)
-		var ca := a0 + (a1 - a0) * cf
-		var cd := Vector2(cos(ca), sin(ca))
-		draw_line(c + cd * (r - 9.0), c + cd * (r + 9.0), Color(0.3, 1.0, 0.45), 4.0, true)
-		_text("TEMPOMAT %d" % int(round(car.cruise_target * 3.6)), c + Vector2(0, 62), 15, Color(0.3, 1.0, 0.45), true)
-	var g := "R" if car.gear == 0 else str(car.gear)
-	if car.manual:
-		g += "M"
-	if absf(car.speed) < 0.3 and car.in_throttle < 0.05 and car.in_brake < 0.05:
-		g = "N"
-	_text(g, c + Vector2(0, -34), 30, Color(1, 1, 1, 0.9), true)
+	# in der Cockpit-Ansicht zeigt das Kombiinstrument Tempo, Gang und Tempomat – der Rundtacho wäre doppelt
+	if not (cam_rig != null and cam_rig.mode == 2):
+		draw_circle(c, r + 8.0, Color(0, 0, 0, 0.45))
+		draw_arc(c, r, a0, a1, 48, Color(1, 1, 1, 0.18), 6.0, true)
+		var frac := clampf(kmh / 220.0, 0.0, 1.0)
+		var col := Color(0.95, 0.85, 0.3).lerp(Color(1.0, 0.3, 0.2), clampf((kmh - 130.0) / 90.0, 0.0, 1.0))
+		draw_arc(c, r, a0, a0 + (a1 - a0) * frac, 48, col, 6.0, true)
+		# Drehzahl innen
+		var rf := clampf((car.rpm - 800.0) / 4200.0, 0.0, 1.0)
+		draw_arc(c, r - 14.0, a0, a0 + (a1 - a0) * rf, 40, Color(0.5, 0.8, 1.0, 0.85), 3.0, true)
+		var sp := str(int(round(kmh)))
+		_text(sp, c + Vector2(0, 14), 52, Color.WHITE, true)
+		_text("km/h", c + Vector2(0, 40), 16, Color(1, 1, 1, 0.7), true)
+		if car.cruise_on:
+			# Tempomat: grüne Marke am Tachobogen + gesetzter Wert
+			var cf := clampf(car.cruise_target * 3.6 / 220.0, 0.0, 1.0)
+			var ca := a0 + (a1 - a0) * cf
+			var cd := Vector2(cos(ca), sin(ca))
+			draw_line(c + cd * (r - 9.0), c + cd * (r + 9.0), Color(0.3, 1.0, 0.45), 4.0, true)
+			_text("TEMPOMAT %d" % int(round(car.cruise_target * 3.6)), c + Vector2(0, 62), 15, Color(0.3, 1.0, 0.45), true)
+		var g := "R" if car.gear == 0 else str(car.gear)
+		if car.manual:
+			g += "M"
+		if absf(car.speed) < 0.3 and car.in_throttle < 0.05 and car.in_brake < 0.05:
+			g = "N"
+		_text(g, c + Vector2(0, -34), 30, Color(1, 1, 1, 0.9), true)
 	if car.damage and car.damage.total > 0.01:
 		var dx := c + Vector2(-60.0, -r - 52.0)
 		draw_rect(Rect2(dx, Vector2(120.0, 7.0)), Color(0, 0, 0, 0.5))
