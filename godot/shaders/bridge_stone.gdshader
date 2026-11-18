@@ -12,7 +12,7 @@ uniform sampler2D stone_albedo : source_color, filter_linear_mipmap_anisotropic,
 uniform sampler2D stone_normal : filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D stone_rough : filter_linear_mipmap_anisotropic, repeat_enable;
 uniform float tile_m = 2.0;
-uniform vec3 tint : source_color = vec3(0.72, 0.70, 0.66);
+uniform vec3 tint : source_color = vec3(0.94, 0.90, 0.82);
 uniform vec2 block_m = vec2(1.15, 0.52);     // Quaderlänge, Schichthöhe
 uniform float fresh = 0.1;                   // Anteil erneuerter (heller) Quader
 
@@ -57,7 +57,7 @@ void fragment() {
 	vec2 f = vec2(fract(uv.x / block_m.x + 0.5 * mod(row, 2.0)), fract(uv.y / block_m.y));
 	float h1 = hash21(cell);
 	float h2 = hash21(cell + 17.3);
-	float tone = mix(0.72, 1.22, h1);
+	float tone = mix(0.78, 1.18, h1);
 	vec3 col = tex * tint * tone;
 	// erneuerte Quader: hell und gelblich
 	float is_new = step(1.0 - fresh, h2);
@@ -73,6 +73,19 @@ void fragment() {
 	col *= mix(0.78, 1.08, blot) * (1.0 - 0.28 * smoothstep(0.55, 0.9, streak));
 	ALBEDO = col * mix(1.0, 0.72, wetness);
 	ROUGHNESS = clamp(rough * mix(1.0, 0.55, wetness), 0.3, 1.0);
-	NORMAL_MAP = nrm;
-	NORMAL_MAP_DEPTH = 1.2;
+	// Normalenkarte im Weltraum auswerten: die Brückennetze haben keine Tangenten – NORMAL_MAP ergab damit
+	// falsche Beleuchtung (Brüstungen fast schwarz). Tangente = entlang der Wand bzw. x, Bitangente = oben bzw. z.
+	vec3 tw;
+	vec3 bw;
+	if (wall > 0.5) {
+		vec2 hh = normalize(n.xz + vec2(0.0001));
+		tw = vec3(-hh.y, 0.0, hh.x);
+		bw = vec3(0.0, 1.0, 0.0);
+	} else {
+		tw = vec3(1.0, 0.0, 0.0);
+		bw = vec3(0.0, 0.0, 1.0);
+	}
+	vec2 d = (nrm.xy * 2.0 - 1.0) * 0.9;
+	vec3 wn = normalize(n + tw * d.x + bw * d.y);
+	NORMAL = normalize((VIEW_MATRIX * vec4(wn, 0.0)).xyz);
 }
