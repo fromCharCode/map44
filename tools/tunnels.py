@@ -408,7 +408,52 @@ def build():
                     if not (dd < bx[:, 2]).any():
                         keep.append(tr)
                 city["trees"] = keep
+        if troughs.get(d.name):
+            _trough_terrain(d, troughs[d.name])
         cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
+
+
+def _trough_terrain(d, trs):
+    """Gelände im Trog bis an die Wände auf die Fahrbahnhöhe absenken (sichtbar und Kollision): das Geländemodell
+    hat dort eine gezackte Böschung, die vor den senkrechten Wänden in die Fahrbahn ragte."""
+    x0, z0 = tile_origin(d.name)
+    for fn, n, off in (("terrain.f32", 2000, 0.5), ("terrain_col.f32", 2001, 0.0)):
+        f = d / fn
+        if not f.exists():
+            continue
+        arr = np.frombuffer(f.read_bytes(), dtype="<f4").reshape(n, n).copy()
+        ch = 0
+        for tr in trs:
+            pts = tr["pts"]
+            e = tr["w"] * 0.5 + 1.45                    # bis hinter die Wand (1,4 m stark): kein Geländekeil davor
+            for a, b in zip(pts[:-1], pts[1:]):
+                dx, dz = b[0] - a[0], b[1] - a[1]
+                L = math.hypot(dx, dz)
+                if L < 0.05:
+                    continue
+                tx, tz = dx / L, dz / L
+                nx, nz = -tz, tx
+                lo = -e if max(a[3], b[3]) > 0 else 0.0     # nur zur Seite mit Wand
+                hi = e if max(a[4], b[4]) > 0 else 0.0
+                if hi - lo < 0.5:
+                    continue
+                c0 = int(max(min(a[0], b[0]) - x0 - e - 2, 0)); c1 = int(min(max(a[0], b[0]) - x0 + e + 3, n))
+                r0 = int(max(min(a[1], b[1]) - z0 - e - 2, 0)); r1 = int(min(max(a[1], b[1]) - z0 + e + 3, n))
+                if c1 <= c0 or r1 <= r0:
+                    continue
+                gx, gz = np.meshgrid(np.arange(c0, c1) + off + x0, np.arange(r0, r1) + off + z0)
+                s_ = (gx - a[0]) * tx + (gz - a[1]) * tz
+                v_ = (gx - a[0]) * nx + (gz - a[1]) * nz
+                m = (s_ >= -0.6) & (s_ <= L + 0.6) & (v_ >= lo) & (v_ <= hi)
+                if not m.any():
+                    continue
+                y = a[2] + (b[2] - a[2]) * np.clip(s_ / L, 0.0, 1.0)
+                sub = arr[r0:r1, c0:c1]
+                low = m & (sub > y + 0.04)
+                sub[low] = y[low]
+                ch += int(low.sum())
+        f.write_bytes(arr.astype("<f4").tobytes())
+        print(f"  {d.name}: Trog-Gelände {fn}: {ch} Punkte abgesenkt")
 
 
 def _clear_objects(d, city, tl):

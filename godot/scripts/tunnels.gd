@@ -233,7 +233,7 @@ func build_troughs(data: Array) -> void:
 				if h0 <= 0.0 and h1 <= 0.0:
 					continue
 				var o := nr * e * sd
-				var th := nr * 0.45 * sd
+				var th := nr * 1.4 * sd
 				var dn := Vector3(0, 0.4, 0)
 				var a0 := a + o - dn
 				var b0 := b + o - dn
