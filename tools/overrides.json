@@ -46,17 +46,17 @@
   "_hinweis": "Aussehen ganzer Gebäude (alle Teile einer GML-Gebäude-ID): wall/roof = Farbe, plain = ohne Gesimse/Balkone",
   "DESNATPU1000EjsO": {
    "wall": "#a79e8c",
-   "roof": "#7a4c3f",
+   "roof": "#5e3a31",
    "plain": true
   },
   "DESNATPU1000Fpnt": {
    "wall": "#a79e8c",
-   "roof": "#7a4c3f",
+   "roof": "#5e3a31",
    "plain": true
   },
   "DESNATP1gB0001CU": {
    "wall": "#a79e8c",
-   "roof": "#7a4c3f",
+   "roof": "#5e3a31",
    "plain": true
   }
  }

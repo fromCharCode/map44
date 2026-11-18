@@ -204,6 +204,15 @@ def tex_ok(tex, ppm=28.0):
     return 2.4 <= fh <= 5.2, f"Geschosshöhe {fh:.1f} m"
 
 
+def brighten(tex):
+    """Belichtung angleichen: Fotos zeigen die Wand oft im Schatten; im Spiel wird sie ohnehin noch einmal beleuchtet
+    bzw. verschattet. Helle Wandteile (90. Perzentil) auf ~0,74 anheben, höchstens ×1,9."""
+    f = tex.astype(np.float32) / 255.0
+    p90 = float(np.percentile(f.max(2), 90))
+    gain = min(max(0.74 / max(p90, 0.05), 1.0), 1.9)
+    return np.clip(f * gain * 255.0, 0, 255).astype(np.uint8)
+
+
 def good(info):
     """strenge Annahme: beide Hauskanten deutlich und Trauflinie gefunden"""
     return min(info["kanten"]) >= 0.55 and info["traufe"] >= 0.15
@@ -287,7 +296,7 @@ def tile_facades(name, max_cand=4):
                 except Exception as ex:                              # noqa: BLE001
                     print("  Fehler (Original)", im["id"], ex, flush=True)
                 fn = f"{len(res):04d}.dds"
-                dds_bc1.save_dds(Image.fromarray(tex), out_dir / fn)
+                dds_bc1.save_dds(Image.fromarray(brighten(tex)), out_dir / fn)
                 res.append({"a": [round(float(p0[0]), 2), round(float(p0[1]), 2)], "b": [round(float(p1[0]), 2), round(float(p1[1]), 2)],
                             "h": round(H, 2), "tex": fn, "gid": b.get("gid") or b["id"], "bild": im["id"],
                             "von": (im.get("creator") or {}).get("username", "")})
