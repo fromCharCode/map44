@@ -422,6 +422,8 @@ func _bridge_test() -> void:
 
 
 func _on_tile_added(tile: Tile) -> void:
+	if taxi:
+		taxi.add_stands(tile)
 	var t0 := Time.get_ticks_usec()
 	var tr := OS.get_cmdline_user_args().has("--attachtrace")
 	peds.add_tile(tile)
@@ -447,6 +449,8 @@ func _on_tile_added(tile: Tile) -> void:
 
 
 func _on_tile_removed(tile: Tile) -> void:
+	if taxi:
+		taxi.remove_stands(tile)
 	peds.remove_tile(tile)
 	tree_lod.unregister(tile.dressing)
 	ground_cover.remove_terrain(tile.terrain)
@@ -558,6 +562,8 @@ func _setup_game() -> void:
 		add_child(taxi)
 		taxi.setup(player, traffic, hud)
 		hud.taxi = taxi
+		for tk in world.tiles:
+			taxi.add_stands(world.tiles[tk])
 	route_guide = RouteGuide.new()
 	route_guide.name = "RouteGuide"
 	add_child(route_guide)
