@@ -1149,6 +1149,14 @@ def road_width(tags: dict) -> float:
     base = WIDTH.get(cls, 4.0)
     if lanes and cls in DRIVE:
         base = max(base, lanes * 3.1)
+    if lanes and oneway and cls in ("primary", "secondary", "tertiary", "primary_link", "secondary_link", "tertiary_link"):
+        # Richtungsfahrbahn mit erfasster Streifenzahl: Streifen 3,5 m + Randstreifen; vorher galt die Breite der
+        # ganzen Straße mit Gegenverkehr (z. B. 11 m für zwei Streifen in einer Richtung)
+        base = min(base, lanes * 3.5 + 1.0)
+    if lanes and cls in ("motorway", "trunk"):
+        # Richtungsfahrbahn der Autobahn: Fahrstreifen 3,75 m + Standstreifen 2,5 m + Randstreifen 0,75 + 0,5 m
+        # (2 Streifen: 11,25 m, 3 Streifen: 15 m). Vorher pauschal 14 m – für zweistreifige Abschnitte zu breit.
+        base = lanes * 3.75 + 3.75
     if oneway and cls in DRIVE and not lanes:
         base = max(3.2, base * 0.7)
     est = base + pl + pr
