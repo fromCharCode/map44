@@ -4,11 +4,11 @@ extends RigidBody3D
 ## Motorkennlinie mit Automatikgetriebe (Kickdown), ABS/Traktions-/Stabilitätskontrolle, Handbremse, Lichter.
 ## Kennwerte prüfen: godot --headless --fixed-fps 90 --path . -s res://scripts/dev/physics_bench.gd
 
-# Geometrie (Taxi-Modell)
-const WHEEL_X := 0.79
-const WHEEL_Z := 1.46
-const WHEEL_R := 0.34
-const HUB_REST := 0.34          # Radmitte über Boden im Ruhezustand
+# Geometrie (Taxi-Modell taxi_limousine.glb: Radstand 2,96 m, Spur 1,62 m; die Radpositionen selbst kommen aus den
+# Wheel_*-Knoten des Modells)
+const WHEELBASE := 2.96
+const WHEEL_R := 0.345
+const HUB_REST := 0.345         # Radmitte über Boden im Ruhezustand
 const SUSP_REST := 0.26         # Länge Strahlursprung -> Radmitte in Ruhe
 const SUSP_DROOP := 0.20        # zusätzlicher Ausfederweg
 # Fahrwerk „GTA-4/BeamNG-Gefühl“: weicher (1,4 Hz statt 1,85 Hz), sichtbare Gewichtsverlagerung (Wanken ~4°/g,
@@ -27,8 +27,8 @@ const ARB_R := 3200.0           # Wankstütze hinten
 # Radkreis den getroffenen Punkt gerade berührt -> das Rad rollt eine Kante (Bordstein) hinauf statt zu springen.
 const RAY_OFFS: Array[float] = [0.0, 0.09, -0.09, 0.17, -0.17, 0.25, -0.25]
 const RAY_CLIMB := 0.20         # Hindernisse, die höher über dem Rad-Aufstandspunkt liegen, erklimmt das Rad nicht
-const A_AXLE := 1.36            # Schwerpunkt -> Vorderachse (m)
-const B_AXLE := 1.56            # Schwerpunkt -> Hinterachse (m)
+const A_AXLE := 1.38            # Schwerpunkt -> Vorderachse (m)
+const B_AXLE := 1.58            # Schwerpunkt -> Hinterachse (m)
 const RELAX_LEN := 0.35         # Einlauflänge der Seitenkraft (m)
 const LAT_GAIN := 0.32       # Seitenführung: kleiner = ruhiger, größer = direkter (zu groß: Zittern)
 
@@ -56,7 +56,7 @@ const BRAKE_FRONT := 0.66
 const HOLD_W := 14.0            # 1/s Eigenkreisfrequenz der Haltefeder im Stand
 const STEER_RATIO := 15.0       # Lenkübersetzung Lenkrad : Rad (nur Anzeige im Cockpit)
 
-const MODEL_FILE := "taxi_player.glb"   # Karosserie; das Cockpit dazu heißt interior/<name>_cockpit.glb
+const MODEL_FILE := "taxi_limousine.glb"   # Karosserie; das Cockpit dazu heißt interior/<name>_cockpit.glb
 
 var cockpit: CarCockpit         # Innenraum für die Fahrerperspektive (null, wenn keiner gebaut ist)
 var wheels := {}                # "FL" -> {node, local, steer, drive, rear, ...}
@@ -144,15 +144,15 @@ func setup(paint: Color = Color(0.93, 0.89, 0.74)) -> void:
 
 	var cs1 := CollisionShape3D.new()
 	var b1 := BoxShape3D.new()
-	b1.size = Vector3(1.8, 0.62, 4.55)
+	b1.size = Vector3(1.82, 0.62, 4.8)       # Karosserie reicht von z = −2,37 (Bug) bis +2,63 (Heck)
 	cs1.shape = b1
-	cs1.position = Vector3(0, 0.62, 0)
+	cs1.position = Vector3(0, 0.62, 0.13)
 	add_child(cs1)
 	var cs2 := CollisionShape3D.new()
 	var b2 := BoxShape3D.new()
-	b2.size = Vector3(1.55, 0.52, 2.2)
+	b2.size = Vector3(1.55, 0.52, 2.4)        # Fahrgastzelle (sitzt bei diesem Modell weiter hinten)
 	cs2.shape = b2
-	cs2.position = Vector3(0, 1.18, 0.15)
+	cs2.position = Vector3(0, 1.18, 0.62)
 	add_child(cs2)
 
 	var made := CarModel.make(MODEL_FILE, paint, true)
@@ -190,7 +190,7 @@ func setup(paint: Color = Color(0.93, 0.89, 0.74)) -> void:
 	_make_smoke()
 	for sx in [-0.62, 0.62]:
 		var sl := SpotLight3D.new()
-		sl.position = Vector3(sx, 0.72, -2.3)
+		sl.position = Vector3(sx, 0.68, -2.26)
 		sl.spot_range = 60.0
 		sl.spot_angle = 32.0
 		sl.spot_angle_attenuation = 0.7
@@ -532,7 +532,7 @@ func _physics_process(delta: float) -> void:
 	braking = brake > 0.05
 
 	# Lenkwinkel (geschwindigkeitsabhängig, griplimitiert)
-	var wb := 2.92
+	var wb := WHEELBASE
 	var max_a := atan(10.0 * wb / maxf(spd_abs * spd_abs, 1.0)) * 2.3
 	max_a = clampf(max_a, deg_to_rad(2.5), deg_to_rad(34.0))
 	var target := -in_steer * max_a   # +Y-Drehung = nach links, daher Vorzeichen umkehren
@@ -861,7 +861,7 @@ func _physics_process(delta: float) -> void:
 	if esp_on and grounded >= 3 and spd_abs > 6.0 and not in_handbrake:
 		# Soll-Gierrate: kinematisch, aber höchstens was die Reifen tragen (µ·g/v)
 		var r_max := MU * grip * 9.81 * 0.9 / maxf(spd_abs, 1.0)
-		var yaw_target := clampf(speed * tan(steer_angle) / 2.92, -r_max, r_max)
+		var yaw_target := clampf(speed * tan(steer_angle) / WHEELBASE, -r_max, r_max)
 		var yaw_err := angular_velocity.y - yaw_target
 		var bx2 := global_transform.basis
 		var beta := atan2(linear_velocity.dot(bx2.x), maxf(absf(speed), 1.0))

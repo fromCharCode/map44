@@ -1,6 +1,7 @@
 extends SceneTree
 ## Cockpit-Prüfbilder ohne Stadt (schnell):
-##   godot --path . --resolution 1920x1080 -s res://scripts/dev/cockpit_shot.gd -- --out=<ordner> [--night]
+##   godot --path . --resolution 1920x1080 -s res://scripts/dev/cockpit_shot.gd -- --out=<ordner> [--night] [--aussen]
+## --aussen: statt der Fahrerperspektive zwei Außenbilder (schräg vorn, Seite) – sitzen Räder und Karosserie stimmig?
 ## Stellt das Spielerauto auf eine Ebene mit Himmel, Sonne und ein paar Quadern und speichert die Fahrerperspektive
 ## aus mehreren Blickrichtungen (vorn, links, rechts, hinten, unten, Lenkeinschlag).
 
@@ -18,6 +19,7 @@ var shots := [
 ]
 var si := 0
 var night := false
+var aussen := false
 
 
 func _initialize() -> void:
@@ -26,6 +28,9 @@ func _initialize() -> void:
 			out_dir = a.substr(6)
 		if a == "--night":
 			night = true
+		if a == "--aussen":
+			aussen = true
+			shots = [["aussen_schraeg_vorn", 2.55, 0.05, -0.3], ["aussen_seite", 1.57, 0.0, 0.0]]
 	Controls.setup()
 	var env := WorldEnvironment.new()
 	var e := Environment.new()
@@ -102,7 +107,7 @@ func _initialize() -> void:
 	rig = CamRig.new()
 	root.add_child(rig)
 	rig.setup(car)
-	rig.mode = 2
+	rig.mode = 0 if aussen else 2
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	process_frame.connect(_frame)
 

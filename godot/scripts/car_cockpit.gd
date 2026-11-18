@@ -30,7 +30,11 @@ var _main: Node
 
 ## Baut das Cockpit zu einem Karosseriemodell; null, wenn es dafür keines gibt (dann bleibt alles wie bisher).
 static func create(p_car: PlayerCar, model_file: String, model_root: Node3D) -> CarCockpit:
-	var path := DIR + model_file.get_basename() + "_cockpit.glb"
+	# Dateiname folgt dem Karosseriemodell (<modell>_cockpit.glb), sonst Rückfall auf taxi_cockpit.glb
+	var base := model_file.get_basename()
+	if not ResourceLoader.exists(DIR + base + "_cockpit.glb"):
+		base = "taxi"
+	var path := DIR + base + "_cockpit.glb"
 	if not ResourceLoader.exists(path):
 		return null
 	var ps := load(path) as PackedScene
@@ -40,7 +44,7 @@ static func create(p_car: PlayerCar, model_file: String, model_root: Node3D) -> 
 	ck.name = "Cockpit"
 	ck.car = p_car
 	ck._old_interior = model_root.find_child("Interior", true, false) as Node3D
-	ck._build(ps, DIR + model_file.get_basename() + "_cockpit.json")
+	ck._build(ps, DIR + base + "_cockpit.json")
 	return ck
 
 

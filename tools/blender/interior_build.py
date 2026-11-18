@@ -35,7 +35,9 @@ OUT_DIR = os.path.join(CARS, "interior")
 # Je Karosserie: Sitzposition des Fahrers (Augpunkt) – alles andere wird gemessen oder relativ dazu gebaut.
 CFG = {
     "taxi_player": {"eye": (-0.37, 0.12, 1.23)},
+    "taxi_limousine": {"eye": (-0.37, -0.27, 1.25)},
 }
+REF_EYE_Y = 0.12      # Armaturenbrett/Konsole sind für diesen Augpunkt (vorn = +Y) bemaßt und wandern mit dem Auge mit
 DEFAULT_CFG = {"eye": (-0.37, 0.10, 1.22)}
 
 
@@ -115,11 +117,14 @@ class Mesh:
         self.name = name
         self.bm = bmesh.new()
         self.bm.loops.layers.uv.new("UVMap")
+        self.off = Vector((0.0, 0.0, 0.0))     # Versatz für alles, was gerade gebaut wird (siehe REF_EYE_Y)
 
     def _add(self, tmp, mat, M=None):
         idx = MAT_ORDER.index(mat)
         if M is not None:
             tmp.transform(M)
+        if self.off.length > 0.0:
+            tmp.transform(Matrix.Translation(self.off))
         me = bpy.data.meshes.new("tmp")
         tmp.to_mesh(me)
         tmp.free()
@@ -214,7 +219,7 @@ class Mesh:
     def quad(self, pts, mat, uv=True):
         """Viereck (Punkte: unten links, unten rechts, oben rechts, oben links aus Betrachtersicht) mit UV 0..1."""
         layer = self.bm.loops.layers.uv["UVMap"]
-        f = self.bm.faces.new([self.bm.verts.new(p) for p in pts])
+        f = self.bm.faces.new([self.bm.verts.new(Vector(p) + self.off) for p in pts])
         f.material_index = MAT_ORDER.index(mat)
         if uv:
             # glTF/Godot: v läuft von oben nach unten -> oben = 0 nach dem Export (Blender v = 1)
@@ -268,7 +273,10 @@ def components(ob):
 
 
 def measure(body, glass, eye):
-    comps = [c for c in components(glass) if len(c) > 20]
+    comps = [c for c in components(glass) if len(c) >= 3]
+    if os.environ.get("INTERIOR_DEBUG"):
+        for c in comps:
+            print("GLAS", len(c), [round(min(p[k] for p in c), 2) for k in range(3)], [round(max(p[k] for p in c), 2) for k in range(3)])
 
     def span(c, k):
         return max(p[k] for p in c) - min(p[k] for p in c)
@@ -277,13 +285,20 @@ def measure(body, glass, eye):
     ws = max(wide, key=lambda c: sum(p.y for p in c) / len(c))
     rw = min(wide, key=lambda c: sum(p.y for p in c) / len(c))
     side = [c for c in comps if span(c, 0) <= 1.0]
-    near = [p for p in ws if abs(p.x - eye[0]) < 0.15]
+    near = []
+    for tol in (0.15, 0.3, 0.5, 2.0):          # grobe Netze: Streifen um die Fahrerposition schrittweise weiten
+        near = [p for p in ws if abs(p.x - eye[0]) < tol]
+        if len(near) >= 4:
+            break
     base = max(near, key=lambda p: p.y)
     top = max(near, key=lambda p: p.z)
     belt = min(p.z for c in side for p in c)
     wg = max(abs(p.x) for c in side for p in c if p.z < belt + 0.06)
     rb = min(rw, key=lambda p: p.y)
     floor = 0.21
+    if "Interior" in bpy.data.objects:
+        it = bpy.data.objects["Interior"]
+        floor = min((it.matrix_world @ v.co).z for v in it.data.vertices) + 0.005
     m = {
         "cowl_y": base.y, "cowl_z": base.z, "head_y": top.y, "head_z": top.z,
         "belt": belt, "wg": wg, "rear_y": rb.y, "rear_z": rb.z, "floor": floor,
@@ -327,10 +342,12 @@ def inner_skin(ck, body, m):
 # --------------------------------------------------------------------------------------------------
 def build_dash(ck, m, eye):
     ex = eye[0]
-    cy, cz = m["cowl_y"], m["cowl_z"]
+    d = eye[1] - REF_EYE_Y
+    ck.off = Vector((0.0, d, 0.0))
+    cy, cz = m["cowl_y"] - d, m["cowl_z"]
     w = m["wg"] + 0.10
     top = cz - 0.022
-    prof = [(cy + 0.05, top - 0.005), (cy - 0.12, top), (1.02, top - 0.004), (0.91, top - 0.012), (0.862, top - 0.03),
+    prof = [(cy + 0.05, top - 0.005), (max(cy - 0.12, 1.03), top), (1.02, top - 0.004), (0.91, top - 0.012), (0.862, top - 0.03),
             (0.842, 0.905), (0.84, 0.86), (0.84, 0.80), (0.825, 0.765), (0.80, 0.70), (0.83, 0.56), (0.93, 0.38),
             (1.08, 0.2)]
     prof = chaikin(prof, 2)
@@ -435,11 +452,13 @@ def build_dash(ck, m, eye):
     ck.quad([tuple(p) for p in q], "ScreenMeter")
     for i in range(4):
         ck.box((-0.054 + i * 0.036, -0.028, -0.017), (0.024, 0.006, 0.009), "ButtonGrey", M=Mt, r=0.002)
+    ck.off = Vector((0.0, 0.0, 0.0))
     return top
 
 
-def build_console(ck, m):
+def build_console(ck, m, eye):
     zf = m["floor"]
+    ck.off = Vector((0.0, eye[1] - REF_EYE_Y, 0.0))
     path = [(0.83, 0.67), (0.70, 0.60), (0.56, 0.555), (0.40, 0.535), (0.16, 0.535), (0.15, 0.535), (-0.36, 0.535),
             (-0.37, 0.45)]
     hw = 0.135
@@ -460,6 +479,7 @@ def build_console(ck, m):
     # Armlehne
     ck.box((0, -0.13, 0.575), (0.25, 0.44, 0.075), "SeatLeather", r=0.022)
     ck.box((0, -0.13, 0.612), (0.20, 0.38, 0.008), "SeatInsert", r=0.003)
+    ck.off = Vector((0.0, 0.0, 0.0))
 
 
 def build_wheel(wheel, ck, eye, top):
@@ -494,8 +514,9 @@ def build_wheel(wheel, ck, eye, top):
     return Mw, c, tilt
 
 
-def build_doors(ck, m):
+def build_doors(ck, m, eye):
     zf, belt = m["floor"], m["belt"]
+    yd = 0.92 + eye[1] - REF_EYE_Y            # vorderes Ende der Türverkleidung (kurz vor der Armaturenbrettfront)
     wd = m["wg"] - 0.035
     y0, y1 = m["rear_y"] + 0.12, m["cowl_y"] + 0.12
     bp = m.get("bpil", (0.30, 0.42))
@@ -508,14 +529,14 @@ def build_doors(ck, m):
         prof = chaikin(prof, 1)
         ck.loft([[(s * x, y, z) for x, z in prof] for y in (y0, y1)], "DashSoft", toward=(0, 0, 1.5))
         # Zierleiste durchgehend (setzt die Linie des Armaturenbretts fort)
-        ck.box((s * (wd - 0.004), (bp[1] + 0.92) / 2 + 0.02, 0.853), (0.008, 0.92 - bp[1] + 0.06, 0.03), "TrimAlu", r=0.003)
+        ck.box((s * (wd - 0.004), (bp[1] + yd) / 2 + 0.02, 0.853), (0.008, yd - bp[1] + 0.06, 0.03), "TrimAlu", r=0.003)
         ck.box((s * (wd - 0.004), (y0 + 0.25 + bp[0]) / 2, 0.853), (0.008, bp[0] - y0 - 0.25, 0.03), "TrimAlu", r=0.003)
-        ck.box((s * (wd - 0.002), (bp[1] + 0.92) / 2 + 0.02, 0.834), (0.004, 0.92 - bp[1] + 0.06, 0.004), "AmbientLight")
+        ck.box((s * (wd - 0.002), (bp[1] + yd) / 2 + 0.02, 0.834), (0.004, yd - bp[1] + 0.06, 0.004), "AmbientLight")
         ck.box((s * (wd - 0.002), (y0 + 0.25 + bp[0]) / 2, 0.834), (0.004, bp[0] - y0 - 0.25, 0.004), "AmbientLight")
         # B-Säulenfuß
         ck.box((s * (wd - 0.008), (bp[0] + bp[1]) / 2, (zf + belt) / 2), (0.03, bp[1] - bp[0] + 0.03, belt - zf), "Plastic",
                r=0.008)
-        for (ya, yb, front) in ((bp[1] + 0.03, 0.97, True), (y0 + 0.30, bp[0] - 0.03, False)):
+        for (ya, yb, front) in ((bp[1] + 0.03, yd + 0.05, True), (y0 + 0.30, bp[0] - 0.03, False)):
             L = yb - ya
             yc = (ya + yb) / 2
             # Lederspiegel, Armlehne, Griff
@@ -664,9 +685,9 @@ def main():
     wheel = Mesh("SteeringWheel")
     inner_skin(ck, body, m)
     top = build_dash(ck, m, eye)
-    build_console(ck, m)
+    build_console(ck, m, eye)
     Mw, wc, tilt = build_wheel(wheel, ck, eye, top)
-    build_doors(ck, m)
+    build_doors(ck, m, eye)
     build_seats(ck, m, eye)
     build_roof_parts(ck, m, eye)
     ob_ck = ck.finish(mats)

@@ -1,0 +1,15 @@
+{
+ "car": "taxi_limousine.glb",
+ "eye": [
+  -0.37,
+  1.25,
+  0.27
+ ],
+ "wheel_center": [
+  -0.37,
+  0.895,
+  -0.14
+ ],
+ "wheel_tilt_deg": 23.0,
+ "notes": "Knoten Cockpit (fest) und SteeringWheel (um lokale Y-Achse drehen); Materialien ScreenCluster/ScreenCenter/ScreenMeter mit UV 0..1, MirrorGlass = Innenspiegel. Gebaut von tools/blender/interior_build.py."
+}
