@@ -19,6 +19,8 @@ var _deco := {}                   # [Modell, Zelle] -> Array[Transform3D] (Balko
 const SHOP_CATS := ["food", "super", "fashion", "service", "home", "gastro", "bank", "health", "culture", "hotel", "other", "vacant"]
 
 
+var _plain_cur := false      # Gebäude ohne Gesimse/Bänder/Balkone (vielteilige Bauten wie das Schloss: je Teil ein Gesims
+                             # auf anderer Höhe ergab querlaufende Balken vor den Fenstern der Nachbarteile)
 var tile_key := ""           # Kachel (für Fotofassaden: dort keine Balkone/Türen davorsetzen)
 
 
@@ -178,6 +180,7 @@ func _build_cell(key: Vector2i, items: Array) -> void:
 		var y_top: float = ref + float(b["eave"])
 		var y_bot: float = float(b["base"])
 		var style: int = int(b.get("style", 0))
+		_plain_cur = bool(b.get("plain", false))
 		var seed01 := float(hash(b["id"]) & 0xFFFF) / 65535.0
 		var col := Color.from_string(b["wall"], Color(0.85, 0.8, 0.7))
 		col.a = float(style) + 0.02 + 0.96 * seed01
@@ -447,7 +450,7 @@ static func _h21(px: float, py: float) -> float:
 func _deco_edge(b: Dictionary, style: int, seed: float, p0: Vector2, p1: Vector2, ln: float, acc: float, nrm: Vector3, ref: float, shop_iv: Array) -> void:
 	var levels := maxf(float(b["levels"]), 1.0)
 	var height := maxf(float(b["eave"]), 3.0)
-	if height < 7.5 or Landmarks.on_photo_wall((p0 + p1) * 0.5) or PhotoFacades.covers(tile_key, (p0 + p1) * 0.5):
+	if height < 7.5 or _plain_cur or Landmarks.on_photo_wall((p0 + p1) * 0.5) or PhotoFacades.covers(tile_key, (p0 + p1) * 0.5):
 		return
 	var fh := clampf(height / levels, 2.7, 4.6)
 	var rows := int(floor(height / fh))
@@ -547,6 +550,17 @@ func _door(b: Dictionary, style: int, seed: float, p0: Vector2, p1: Vector2, ln:
 	var model := "door_portal" if style in [0, 1, 6] else "door_modern"
 	if StreetLife.parts(model).is_empty() or style == 5 or PhotoFacades.covers(tile_key, (p0 + p1) * 0.5):
 		return
+	# keine Tür in eine Durchfahrt stellen (stand z. B. mitten im Georgentor und versperrte es)
+	for ps in _pass_by_b.get(str(b.get("id", "")), []):
+		var pp: Array = ps["pts"]
+		var half_w := float(ps.get("w", 4.0)) * 0.5 + 2.0
+		for i in pp.size() - 1:
+			var a2 := Vector2(pp[i][0], pp[i][1])
+			var b2 := Vector2(pp[i + 1][0], pp[i + 1][1])
+			if Geometry2D.segment_intersects_segment(p0, p1, a2, b2) != null:
+				return
+			if Geometry2D.get_closest_point_to_segment((p0 + p1) * 0.5, a2, b2).distance_to((p0 + p1) * 0.5) < half_w:
+				return
 	var h1 := _h11(seed * 91.7)
 	var pitch := 2.6
 	match style:
@@ -748,6 +762,8 @@ func _tunnel(tun: Surf, ps: Dictionary, col: Color) -> void:
 
 func _trim_strip(trim: Surf, p0: Vector2, p1: Vector2, tdir: Vector2, nrm: Vector3, ref: float, y_top: float, eave_h: float, style: int, col: Color) -> void:
 	## Kranzgesims oben und Sockel unten als vorspringende Streifen.
+	if _plain_cur:
+		return
 	var ext := Vector3(tdir.x, 0.0, tdir.y)
 	var a := Vector3(p0.x, 0, p0.y)
 	var b := Vector3(p1.x, 0, p1.y)

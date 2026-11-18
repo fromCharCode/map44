@@ -999,6 +999,16 @@ def build_buildings_lod2(mosaic: Image.Image) -> list[dict] | None:
             "_tags": tags, "_shape": shape, "_foot": foot, "_wall_tag": bool(parse_color(tags.get("building:colour"))),
         })
     unify_group_styles(out, attached)
+    look = OVERRIDES.get("look_by_gid", {})
+    for o in out:
+        lk = look.get(o["gid"])
+        if isinstance(lk, dict):
+            if lk.get("wall"):
+                o["wall"], o["wall_osm"] = lk["wall"], True
+            if lk.get("roof"):
+                o["roof_col"] = lk["roof"]
+            if lk.get("plain"):
+                o["plain"] = True
     out += osm_elevated_buildings(out)
     return out
 

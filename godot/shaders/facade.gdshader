@@ -324,8 +324,9 @@ void fragment() {
 		// Patina: großflächig dunkle Verwitterung mit senkrechten Schlieren (typisch Elbsandstein)
 		float pat = texture(noise_tex, vec2(wuv.x * 0.16, wuv.y * 0.03)).r;
 		float pat2 = texture(noise_tex, wuv * 0.05 + 0.37).r;
-		float dark = smoothstep(0.5, 0.85, pat * 0.55 + pat2 * 0.6) * 0.75;
-		sand = mix(sand, sand * vec3(0.34, 0.32, 0.30), dark);
+		// dezent: vorher (0,75 / Faktor 0,33) sahen die Flecken wie Schimmel aus
+		float dark = smoothstep(0.5, 0.9, pat * 0.55 + pat2 * 0.6) * 0.5;
+		sand = mix(sand, sand * vec3(0.6, 0.57, 0.53), dark);
 		base = mix(sand, sand * 0.68, joint * 0.85);
 		nmap = unpack_nrm(texture(plaster_normal, puv));
 		nmap.xy *= 0.6;
