@@ -5,7 +5,8 @@ extends Node3D
 const LATITUDE := 51.05
 var day_of_year := 150.0       # Ende Mai
 var hours := 15.0
-var time_scale := 0.0          # Spielstunden pro Sekunde (0 = Zeit steht)
+var time_scale := 1.0 / 3600.0 # Spielstunden pro Sekunde: die Uhr läuft in Echtzeit (0 = Zeit steht)
+var _lit_hours := -99.0        # Uhrzeit, für die Licht und Himmel zuletzt berechnet wurden
 
 var sun: DirectionalLight3D
 var moon: DirectionalLight3D
@@ -50,6 +51,7 @@ func setup(noise: ImageTexture) -> void:
 	var sky := Sky.new()
 	sky.sky_material = sky_mat
 	sky.radiance_size = Sky.RADIANCE_SIZE_256
+	sky.process_mode = Sky.PROCESS_MODE_INCREMENTAL      # Himmelslicht über mehrere Bilder verteilt nachrechnen
 
 	_read_tune()
 	env = Environment.new()
@@ -243,6 +245,7 @@ func sun_vector(h: float) -> Vector3:
 
 func set_time(h: float) -> void:
 	hours = fposmod(h, 24.0)
+	_lit_hours = hours
 	var sv := sun_vector(hours)
 	var mv := sun_vector(hours + 12.0 + 4.0)
 	mv.y = -sv.y * 0.9 + 0.05
@@ -322,4 +325,8 @@ func _process(delta: float) -> void:
 		if cam:
 			rain.global_position = cam.global_position + Vector3(0, 12, 0) - cam.global_transform.basis.z * 10.0
 	if time_scale != 0.0:
-		set_time(hours + delta * time_scale)
+		# Die Uhr läuft stetig (Fahrplan, Anzeigen); Sonne und Himmel werden nur alle 20 Spielsekunden nachgeführt –
+		# jede Änderung lässt den Himmel neu berechnen, bei Echtzeit sieht man den Unterschied nicht
+		hours = fposmod(hours + delta * time_scale, 24.0)
+		if absf(hours - _lit_hours) > 20.0 / 3600.0:
+			set_time(hours)
