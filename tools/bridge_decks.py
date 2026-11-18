@@ -16,6 +16,7 @@ Dreiecke: Umlauf so, dass −(b−a)×(c−a) die Normale ist (roads.gd _tris_to
 import json
 import math
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -1321,7 +1322,7 @@ def missing_rails(city, terrain, x0, z0, ext_rails=()):
     return out
 
 
-def raise_rails(city, extra=None):
+def raise_rails(city, extra=None, ext_roads=()):
     """Brückengeländer über erhöhten Gehwegen um die Bordhöhe anheben (wiederholbar über bridge_rails0)."""
     if "bridge_rails0" not in city:
         city["bridge_rails0"] = [list(r) for r in city.get("bridge_rails", [])]
@@ -1336,7 +1337,7 @@ def raise_rails(city, extra=None):
     # Fahrbahnen auf Deckhöhe: Anschlüsse an den Brückenenden (ohne Brückenflag, Band + 0,2 m) und die
     # Brückenfahrbahnen selbst (Band − 0,2 m: OSM-Achse seitlich versetzt, Deck schmaler) – dort kein Geländer
     bands = []
-    for r in city.get("roads", []):
+    for r in list(city.get("roads", [])) + list(ext_roads):
         if len(r["pts"]) < 2:
             continue
         ln = LineString([(p[0], p[1]) for p in r["pts"]])
@@ -1415,6 +1416,33 @@ def neighbours(name):
     return parts, rails
 
 
+def neighbour_roads(name, margin=80.0):
+    """Fahrbahnen der 8 Nachbarkacheln nahe der Kachelgrenze. Geländer eines LoD2-Brückenteils reichen bis zu
+    Dutzende Meter in die Nachbarkachel; dort kennt diese Kachel die Fahrbahn nicht und ließ das Geländer in ihr
+    stehen (A 17, 414_5648: Lärmschutzwand 1,25 m innerhalb der Fahrbahn von 412_5648)."""
+    e_km, n_km = (int(v) for v in name.split("_"))
+    x0, z0 = e_km * 1000.0 - 411000.0, -((n_km + 2) * 1000.0 - 5656200.0)
+    out = []
+    for de in (-2, 0, 2):
+        for dn in (-2, 0, 2):
+            f = TILES / f"{e_km + de}_{n_km + dn}" / "city.json"
+            if (de == dn == 0) or not f.exists():
+                continue
+            for attempt in range(6):                       # Nachbar wird bei parallelem Lauf evtl. gerade geschrieben
+                try:
+                    nb = json.loads(f.read_text(encoding="utf-8"))
+                    break
+                except json.JSONDecodeError:
+                    time.sleep(2.0)
+            else:
+                continue
+            for r in nb.get("roads", []):
+                if len(r.get("pts", [])) >= 2 and any(x0 - margin < q[0] < x0 + 2000.0 + margin and
+                                                       z0 - margin < q[1] < z0 + 2000.0 + margin for q in r["pts"]):
+                    out.append({"pts": r["pts"], "width": r["width"], "bridge": r.get("bridge")})
+    return out
+
+
 def tile_decks(name, decks):
     d = TILES / name
     cf = d / "city.json"
@@ -1464,7 +1492,7 @@ def tile_decks(name, decks):
         city["bridge_rails0"] = [list(r) for r in city.get("bridge_rails", [])]
     extra = missing_rails(city, ter, e_km * 1000.0 - 411000.0, -((n_km + 2) * 1000.0 - 5656200.0), ext_rails)
     st["rails_add"] = len(extra)
-    st["rails_cut"] = raise_rails(city, extra)
+    st["rails_cut"] = raise_rails(city, extra, neighbour_roads(name))
     st["poles"] = bridge_tram_poles(city)
     st["lamps"] = lift_lamps(city)
     city["bridge_meshes"] = [bm for bm in city["bridge_meshes"] if not str(bm.get("id", "")).startswith("ext:")]

@@ -161,6 +161,14 @@ func _check_over(tile: Tile, st: Dictionary) -> void:
 						if o.begins_with("Terrain"):
 							continue
 						msg = "Hindernis %s" % o
+						if OS.get_environment("DRESDEN_AUDITTRACE") != "":
+							var ri := space.get_rest_info(_deck_q)
+							print("AUDIT Treffer Weg %d quer %+.2f bei %s: %s Punkt %s" % [int(r["id"]), off, str(p.snappedf(0.1)), o, str((ri.get("point", Vector3.ZERO) as Vector3).snappedf(0.01))])
+							for sgn in [-1.0, 1.0]:
+								var q2 := PhysicsRayQueryParameters3D.create(p0 + Vector3(0, 0.75, 0), p0 + Vector3(0, 0.75, 0) + nrm * 9.0 * sgn, 1)
+								q2.hit_back_faces = true
+								var h2 := space.intersect_ray(q2)
+								print("   Strahl quer %+.0f: %s" % [sgn, ("%.2f m %s" % [(h2["position"] as Vector3).distance_to(p0 + Vector3(0, 0.75, 0)), owner_of(h2["collider"]) + " " + String((h2["collider"] as Node).get_path())]) if not h2.is_empty() else "frei"])
 						break
 					if msg == "":
 						var rq := PhysicsRayQueryParameters3D.create(p + Vector3(0, 1.5, 0), p - Vector3(0, 2.0, 0), 1)
