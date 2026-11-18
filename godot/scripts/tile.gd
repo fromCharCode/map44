@@ -71,8 +71,15 @@ func build(k: String, noise: ImageTexture) -> void:
 	buildings.shops = city.get("life", {}).get("shops", [])
 	build_step = "buildings"
 	var _t_buildings := Time.get_ticks_msec()
+	var photo_list := PhotoFacades.load_list(k, dir)
+	buildings.tile_key = k
 	buildings.build(Landmarks.filter_buildings(city["buildings"]), noise)
 	if Time.get_ticks_msec() - _t_buildings > 150: print("Kachel %s: buildings %d ms" % [k, Time.get_ticks_msec() - _t_buildings])
+	if not photo_list.is_empty():
+		var pf := PhotoFacades.new()
+		pf.name = "PhotoFacades"
+		_mods.append(pf)
+		pf.build(terrain, k, dir, photo_list)
 	landmarks = Landmarks.new()
 	landmarks.name = "Landmarks"
 	_mods.append(landmarks)

@@ -19,6 +19,9 @@ var _deco := {}                   # [Modell, Zelle] -> Array[Transform3D] (Balko
 const SHOP_CATS := ["food", "super", "fashion", "service", "home", "gastro", "bank", "health", "culture", "hotel", "other", "vacant"]
 
 
+var tile_key := ""           # Kachel (für Fotofassaden: dort keine Balkone/Türen davorsetzen)
+
+
 func build(blds: Array, noise: ImageTexture) -> void:
 	# Materialien sind für alle Kacheln gleich -> einmal bauen, dann geteilt (TexLib-Cache)
 	facade_mat = TexLib.get_shared("bld_facade") as ShaderMaterial
@@ -444,7 +447,7 @@ static func _h21(px: float, py: float) -> float:
 func _deco_edge(b: Dictionary, style: int, seed: float, p0: Vector2, p1: Vector2, ln: float, acc: float, nrm: Vector3, ref: float, shop_iv: Array) -> void:
 	var levels := maxf(float(b["levels"]), 1.0)
 	var height := maxf(float(b["eave"]), 3.0)
-	if height < 7.5 or Landmarks.on_photo_wall((p0 + p1) * 0.5):
+	if height < 7.5 or Landmarks.on_photo_wall((p0 + p1) * 0.5) or PhotoFacades.covers(tile_key, (p0 + p1) * 0.5):
 		return
 	var fh := clampf(height / levels, 2.7, 4.6)
 	var rows := int(floor(height / fh))
@@ -542,7 +545,7 @@ func _is_party(b: Dictionary, p0: Vector2, p1: Vector2) -> bool:
 func _door(b: Dictionary, style: int, seed: float, p0: Vector2, p1: Vector2, ln: float, acc: float, nrm: Vector3, ref: float, shop_iv: Array) -> void:
 	## Hauseingang (Portal) auf einer Fensterachse nahe der Kantenmitte, nicht vor einem Laden; dazu Hausnummer.
 	var model := "door_portal" if style in [0, 1, 6] else "door_modern"
-	if StreetLife.parts(model).is_empty() or style == 5:
+	if StreetLife.parts(model).is_empty() or style == 5 or PhotoFacades.covers(tile_key, (p0 + p1) * 0.5):
 		return
 	var h1 := _h11(seed * 91.7)
 	var pitch := 2.6

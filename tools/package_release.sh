@@ -43,6 +43,12 @@ for d in data/processed/tiles/*/; do
   for f in city.json terrain.json terrain.f32 terrain_col.f32 splat0.png cover.png; do
     [ -f "$d/$f" ] && ln -f "$d/$f" "$STAGE/data/tiles/$k/$f" 2>/dev/null || cp "$d/$f" "$STAGE/data/tiles/$k/$f"
   done
+  # Fotofassaden (tools/mly_photofacade.py)
+  if [ -f "$d/facades.json" ] && [ -d "$d/facades" ]; then
+    cp "$d/facades.json" "$STAGE/data/tiles/$k/"
+    mkdir -p "$STAGE/data/tiles/$k/facades"
+    cp "$d"/facades/*.dds "$STAGE/data/tiles/$k/facades/" 2>/dev/null || true
+  fi
 done
 for i in 0 1 2 3 4 5; do
   "$GODOT" --headless --path godot -s res://scripts/dev/bake_textures.gd -- \
