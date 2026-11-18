@@ -253,10 +253,10 @@ func _text_spec(txt: String, xf: Transform3D, w: float, h: float, col: Color, vi
 		align := HORIZONTAL_ALIGNMENT_CENTER) -> void:
 	if txt == "":
 		return
-	var f: Font = ThemeDB.fallback_font
-	var sz := f.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 64)
-	var ps := minf(w / maxf(sz.x, 1.0), h / maxf(sz.y, 1.0))
-	_label_specs.append({"text": txt, "font_size": 64, "pixel_size": ps, "modulate": col, "outline_size": 0,
+	# Schrift NICHT hier vermessen: diese Funktion läuft im Kachel-Thread, und der Textserver ist nicht threadsicher
+	# (gleichzeitiges Zeichnen von HUD/Cockpit im Haupt-Thread ließ das Spiel abstürzen). Die Schriftgröße wird in
+	# _process aus "_fit" bestimmt.
+	_label_specs.append({"text": txt, "font_size": 64, "_fit": Vector2(w, h), "modulate": col, "outline_size": 0,
 		"shaded": true, "double_sided": false, "alpha_cut": Label3D.ALPHA_CUT_DISCARD, "visibility_range_end": vis,
 		"horizontal_alignment": align, "transform": xf})
 
@@ -398,6 +398,11 @@ func _process(delta: float) -> void:
 	while n < 60 and not _label_specs.is_empty():
 		var spec: Dictionary = _label_specs.pop_back()
 		var lb := Label3D.new()
+		if spec.has("_fit"):
+			var fit: Vector2 = spec["_fit"]
+			var sz := ThemeDB.fallback_font.get_string_size(String(spec["text"]), HORIZONTAL_ALIGNMENT_CENTER, -1, 64)
+			spec["pixel_size"] = minf(fit.x / maxf(sz.x, 1.0), fit.y / maxf(sz.y, 1.0))
+			spec.erase("_fit")
 		for k in spec:
 			lb.set(k, spec[k])
 		add_child(lb)

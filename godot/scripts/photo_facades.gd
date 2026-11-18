@@ -40,14 +40,19 @@ static func covers(k: String, p: Vector2) -> bool:
 	return false
 
 
+var _pending: Array = []        # [Image, a, b, n3, y0, h] – Textur und Mesh entstehen erst im Haupt-Thread
+
+
 func build(terrain: Terrain, k: String, dir: String, list: Array) -> void:
+	## Läuft im Kachel-Thread: nur Dateien lesen und Maße bestimmen. Texturen und Meshes im Thread anzulegen ließ das
+	## Spiel sporadisch abstürzen – sie entstehen deshalb in _process (Haupt-Thread), wenige je Bild.
 	_key = k
 	for e in list:
 		var path: String = dir + "facades/" + String(e["tex"])
 		if not FileAccess.file_exists(path):
 			continue
-		var img := Image.new()
-		if img.load_dds_from_buffer(FileAccess.get_file_as_bytes(path)) != OK:
+		var bytes := FileAccess.get_file_as_bytes(path)
+		if bytes.is_empty():
 			continue
 		var a := Vector2(e["a"][0], e["a"][1])
 		var b := Vector2(e["b"][0], e["b"][1])
@@ -57,32 +62,59 @@ func build(terrain: Terrain, k: String, dir: String, list: Array) -> void:
 		for t in [0.0, 0.5, 1.0]:
 			var q := a.lerp(b, t)
 			y0 = minf(y0, terrain.height_at(q.x + n3.x * 0.8, q.y + n3.z * 0.8))
-		y0 -= 0.1
-		var h := float(e["h"]) + 0.1
-		var off := n3 * 0.07
-		var v0 := Vector3(a.x, y0, a.y) + off
-		var v1 := Vector3(b.x, y0, b.y) + off
-		var vs := [v0, v1, v1 + Vector3(0, h, 0), v0 + Vector3(0, h, 0)]
-		var uvs := [Vector2(0, 1), Vector2(1, 1), Vector2(1, 0), Vector2(0, 0)]
-		var st := SurfaceTool.new()
-		st.begin(Mesh.PRIMITIVE_TRIANGLES)
-		for idx in [0, 2, 1, 0, 3, 2]:
-			st.set_normal(n3)
-			st.set_uv(uvs[idx])
-			st.add_vertex(vs[idx])
-		var m := StandardMaterial3D.new()
-		m.albedo_texture = ImageTexture.create_from_image(img)
-		m.roughness = 0.88
-		m.specular = 0.25
-		m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
-		var mi := MeshInstance3D.new()
-		mi.mesh = st.commit()
-		mi.material_override = m
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		mi.visibility_range_end = RANGE
-		mi.visibility_range_end_margin = 30.0
-		mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
-		add_child(mi)
+		_pending.append([bytes, a, b, n3, y0 - 0.1, float(e["h"]) + 0.1])
+	set_process(not _pending.is_empty())
+
+
+func _ready() -> void:
+	set_process(not _pending.is_empty())
+
+
+func _process(_delta: float) -> void:
+	for _i in 3:
+		if _pending.is_empty():
+			set_process(false)
+			return
+		_make(_pending.pop_back())
+
+
+func _make(p: Array) -> void:
+	if DisplayServer.get_name() == "headless":
+		return                       # ohne Grafikausgabe (Prüfläufe) keine Texturen: komprimierte Bilder ließen den Lauf abstürzen
+	var img := Image.new()
+	if img.load_dds_from_buffer(p[0]) != OK:
+		return
+	var a: Vector2 = p[1]
+	var b: Vector2 = p[2]
+	var n3: Vector3 = p[3]
+	var y0: float = p[4]
+	var h: float = p[5]
+	var off := n3 * 0.07
+	var v0 := Vector3(a.x, y0, a.y) + off
+	var v1 := Vector3(b.x, y0, b.y) + off
+	var vs := PackedVector3Array([v0, v1 + Vector3(0, h, 0), v1, v0, v0 + Vector3(0, h, 0), v1 + Vector3(0, h, 0)])
+	var uvs := PackedVector2Array([Vector2(0, 1), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1), Vector2(0, 0), Vector2(1, 0)])
+	var ns := PackedVector3Array([n3, n3, n3, n3, n3, n3])
+	var arr := []
+	arr.resize(Mesh.ARRAY_MAX)
+	arr[Mesh.ARRAY_VERTEX] = vs
+	arr[Mesh.ARRAY_NORMAL] = ns
+	arr[Mesh.ARRAY_TEX_UV] = uvs
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	var m := StandardMaterial3D.new()
+	m.albedo_texture = ImageTexture.create_from_image(img)
+	m.roughness = 0.88
+	m.specular = 0.25
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.visibility_range_end = RANGE
+	mi.visibility_range_end_margin = 30.0
+	mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+	add_child(mi)
 
 
 func _exit_tree() -> void:
