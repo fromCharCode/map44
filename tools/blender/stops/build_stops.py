@@ -8,6 +8,7 @@ Ausgaben (godot/assets/models/stops/):
   dfi_large.glb         große Abfahrtstafel am L-Mast („Galgen“), doppelseitig, Uhrfeld
   wall_shelter.glb      Wartehalle Wall/JCDecaux W1 (Flachdach-Glashalle 4,0 x 1,5 m)
   wall_shelter_long.glb dieselbe in 6,0 m
+  ticket_machine.glb    Fahrkartenautomat (gelb, graue Front mit Bildschirm)
   platform_rail.glb     Schutzgitter-Segment (2 m Raster) wie an Dresdner Haltestelleninseln
   stop_bin.glb          Edelstahl-Abfallbehälter mit schrägem Deckel (Tram-Bahnsteige)
   stop_bin_city.glb     Stadtreinigungs-Behälter grau mit orangem Deckel
@@ -60,8 +61,18 @@ MAT_SPECS = {
     "StopSteel": dict(col="#3D4241", rough=0.45, metal=0.5),
     "NameBlende": dict(col="#F2A93B", rough=0.35),
     "CityLightFrame": dict(col="#1E1E1E", rough=0.4, metal=0.3),
-    "PosterEmit": dict(col="#ECEAE3", rough=0.2, emit="#FFF8EC"),
+    "PosterEmit": dict(col="#FFFFFF", rough=0.25, tex="shelter_posters.png"),   # Emission setzt stops.gd (Textur)
     "BenchSeat": dict(col="#8E9296", rough=0.35, metal=0.7),
+    "BenchWood": dict(col="#FFFFFF", rough=0.6, tex="bench_wood.png"),
+    "StopGlassEdge": dict(col="#6FAE98", rough=0.1, alpha=0.6, double=True),     # grünliche ESG-Kante
+    "StopGlassRoof": dict(col="#9FAAAD", rough=0.3, alpha=0.4, double=True),     # Dachverglasung, leicht verschmutzt
+    "GlassMark": dict(col="#FFFFFF", rough=0.5, tex="glass_marks.png", texalpha=True, double=True),
+    "StopSteelLight": dict(col="#B9BDC0", rough=0.3, metal=0.9),                 # Edelstahl (Halter, Bügel)
+    "RoofSheet": dict(col="#2C302F", rough=0.55, metal=0.4),
+    # Fahrkartenautomat
+    "TicketYellow": dict(col="#F2B21B", rough=0.4),
+    "TicketFront": dict(col="#FFFFFF", rough=0.35, tex="ticket_front.png"),
+    "PosterEmitTicket": dict(col="#FFFFFF", rough=0.15, tex="ticket_front.png"),
     "ShelterLightEmit": dict(col="#F4F2EC", rough=0.3, emit="#FFF4E0"),
     "InfoBoard": dict(col="#FFFFFF", rough=0.3, tex="info_board.png"),
     # Geländer
@@ -101,6 +112,12 @@ def mat(name):
         tn.image = img
         tn.location = (-400, 250)
         nt.links.new(tn.outputs["Color"], b.inputs["Base Color"])
+        if sp.get("texalpha"):
+            nt.links.new(tn.outputs["Alpha"], b.inputs["Alpha"])
+            try:
+                m.surface_render_method = "BLENDED"
+            except Exception:
+                m.blend_method = "BLEND"
     if a is not None:
         b.inputs["Alpha"].default_value = a
         try:
@@ -579,6 +596,9 @@ def build_mast():
     mb = MB()
     lathe(mb, [(0.0, 0.0), (MAST_R, 0.0), (MAST_R, MAST_H), (MAST_R - 0.003, MAST_H + 0.008),
                (0.024, MAST_H + 0.016), (0.0, MAST_H + 0.018)], "StopPole", seg=12)
+    # Fußflansch mit Manschette
+    lathe(mb, [(0.0, 0.0), (0.095, 0.0), (0.095, 0.012), (MAST_R + 0.012, 0.016), (MAST_R + 0.012, 0.09),
+               (MAST_R, 0.10)], "StopPole", seg=12)
     mb.build("Mast")
     build_head()
     build_row(Z_STACK)
@@ -725,7 +745,9 @@ def build_dfi_large():
         box(mb, (-0.05, yh - 0.05, BZ1 + 0.005), (0.05, yh + 0.05, BZ1 + 0.025), "StopPole")
     # Gehäuse mit Regendach
     box(mb, (-BX, BY0, BZ0), (BX, BY1, BZ1), "DfiHousing")
-    box(mb, (-BX - 0.01, BY0 - 0.01, BZ1), (BX + 0.01, BY1 + 0.01, BZ1 + 0.012), "DfiHousing")
+    box(mb, (-BX - 0.05, BY0 - 0.015, BZ1), (BX + 0.05, BY1 + 0.015, BZ1 + 0.018), "DfiHousing")      # Regendach
+    box(mb, (-BX + 0.02, BY0 + 0.2, BZ0 - 0.012), (BX - 0.02, BY1 - 0.2, BZ0), "StopPole")              # Lüftungsleiste
+    cyl(mb, (0, BY1 - 0.22, BZ1 + 0.02), (0, BY1 - 0.22, Z_ARM - R), 0.012, "StopPole", seg=6, caps=False)
     # Frontflächen je Seite: Anzeige am Mastende, Uhrfeld am freien Ende
     bez = 0.04
     DW, DH = 0.80, 0.70
@@ -748,6 +770,14 @@ def build_dfi_large():
             return (u, (z - cz0) / (cz1 - cz0))
 
         yz_face(mb, x, [(dy0, dz0), (dy1, dz0), (dy1, dz1), (dy0, dz1)], "DfiEmit", side, duv)
+        # dunkler Blendrahmen um das LED-Feld (steht 10 mm vor)
+        xa, xb = (side * BX, side * (BX + 0.010))
+        xa, xb = min(xa, xb), max(xa, xb)
+        fr = 0.018
+        box(mb, (xa, dy0 - fr, dz0 - fr), (xb, dy1 + fr, dz0), "SignFrame")
+        box(mb, (xa, dy0 - fr, dz1), (xb, dy1 + fr, dz1 + fr), "SignFrame")
+        box(mb, (xa, dy0 - fr, dz0), (xb, dy0, dz1), "SignFrame")
+        box(mb, (xa, dy1, dz0), (xb, dy1 + fr, dz1), "SignFrame")
         yz_face(mb, x, [(cy0, cz0), (cy1, cz0), (cy1, cz1), (cy0, cz1)], "DfiPanel", side, cuv)
     mb.build("DfiLarge")
     yc = (dy0 + dy1) / 2
@@ -770,90 +800,170 @@ def build_dfi_large():
 
 
 # =============================================================================================== 4. Wartehalle
-def build_shelter(L, fname, n_fields, front_mid=False, benches=((0.55, 1.6),)):
+def glass_pane(mb, axis, c, a0, a1, z0, z1, mk="StopGlass", marks=(), t=0.010):
+    """Glasscheibe (10 mm ESG) mit sichtbarer grünlicher Kante. axis 'y': Scheibe in der xz-Ebene bei y = c,
+    a0..a1 = x; axis 'x': Scheibe in der yz-Ebene bei x = c, a0..a1 = y. marks = Höhen der Kontraststreifen."""
+    def P(a, z, off=0.0):
+        return (a, c + off, z) if axis == "y" else (c + off, a, z)
+    nrm = (0, 1, 0) if axis == "y" else (1, 0, 0)
+    mb.poly([P(a0, z0), P(a1, z0), P(a1, z1), P(a0, z1)], mk, outward=nrm)
+    h = t / 2
+    for (pa, pb) in (((a0, z0), (a1, z0)), ((a1, z0), (a1, z1)), ((a1, z1), (a0, z1)), ((a0, z1), (a0, z0))):
+        mb.poly([P(pa[0], pa[1], -h), P(pb[0], pb[1], -h), P(pb[0], pb[1], h), P(pa[0], pa[1], h)], "StopGlassEdge")
+    for zm in marks:
+        hh = 0.025
+        n = (a1 - a0) / 0.20
+        for off in (0.0012, -0.0012):
+            mb.poly([P(a0, zm - hh, off), P(a1, zm - hh, off), P(a1, zm + hh, off), P(a0, zm + hh, off)], "GlassMark",
+                    uvs=[(0, 0), (n, 0), (n, 1), (0, 1)])
+
+
+def post(mb, x, y, h, w=0.06, d=0.08, mk="StopSteel"):
+    """Rechteckrohrpfosten mit Fußplatte und vier Ankerschrauben."""
+    bx(mb, (x, y, h / 2), (w, d, h), mk, skip=("-z", "+z"))
+    bx(mb, (x, y, 0.006), (w + 0.10, d + 0.10, 0.012), mk, skip=("-z",))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            bx(mb, (x + sx * (w / 2 + 0.03), y + sy * (d / 2 + 0.03), 0.019), (0.018, 0.018, 0.014), "StopSteelLight",
+               skip=("-z",))
+
+
+def build_shelter(L, fname, n_fields, front_mid=False, benches=((0.55, 1.6),), posters=(0, 1)):
     new_scene()
     mb = MB()
     D0, D1 = -0.75, 0.75      # Dach in y
     YB = -0.66                # Rückwand (Pfostenmitte)
     YF = 0.47                 # Frontpfosten
-    ZR0, ZR1 = 2.40, 2.50     # Dachrand
+    ZR0, ZR1 = 2.38, 2.50     # Dachrand (Stirnband 120 mm)
     PW, PD = 0.06, 0.08       # Pfosten 60 x 80 mm
     xs = [-L / 2 + 0.05 + (L - 0.10) * i / n_fields for i in range(n_fields + 1)]
-    # Pfosten
     for x in xs:
-        bx(mb, (x, YB, ZR0 / 2), (PW, PD, ZR0), "StopSteel", skip=("-z", "+z"))
+        post(mb, x, YB, ZR0)
     fxs = [xs[0], xs[-1]] + ([0.0] if front_mid else [])
     for x in fxs:
-        bx(mb, (x, YF, ZR0 / 2), (PW, PD, ZR0), "StopSteel", skip=("-z", "+z"))
-    # Dachrand (Stirnband 100 mm) und Querträger
-    t = 0.06
+        post(mb, x, YF, ZR0)
+    # --- Dach: umlaufendes Stirnband, Querträger, Längspfetten, Verglasung, hinten Rinne mit Fallrohr
+    t = 0.05
     box(mb, (-L / 2, D1 - t, ZR0), (L / 2, D1, ZR1), "StopSteel")
     box(mb, (-L / 2, D0, ZR0), (L / 2, D0 + t, ZR1), "StopSteel")
     box(mb, (-L / 2, D0 + t, ZR0), (-L / 2 + t, D1 - t, ZR1), "StopSteel")
     box(mb, (L / 2 - t, D0 + t, ZR0), (L / 2, D1 - t, ZR1), "StopSteel")
-    for x in xs[1:-1]:
-        box(mb, (x - 0.025, D0 + t, ZR0 + 0.02), (x + 0.025, D1 - t, ZR0 + 0.07), "StopSteel")
-    # Glasdach
-    for zz, sd in ((ZR0 + 0.075, 1),):
-        mb.poly([(-L / 2 + t, D0 + t, zz), (L / 2 - t, D0 + t, zz), (L / 2 - t, D1 - t, zz), (-L / 2 + t, D1 - t, zz)],
-                "StopGlass", outward=(0, 0, 1))
-    # LED-Leiste unter dem vorderen Dachrand
-    box(mb, (-L / 2 + t, D1 - t - 0.07, ZR0 - 0.03), (L / 2 - t, D1 - t, ZR0), "StopSteel")
-    zl = ZR0 - 0.0305
-    mb.poly([(-L / 2 + 0.3, D1 - t - 0.06, zl), (L / 2 - 0.3, D1 - t - 0.06, zl),
-             (L / 2 - 0.3, D1 - t - 0.01, zl), (-L / 2 + 0.3, D1 - t - 0.01, zl)],
-            "ShelterLightEmit", outward=(0, 0, -1))
-    # Rückwand: Glasfelder, Riegel bei 1,05 m, Kopfriegel, Glashalter
-    GZ0, GZ1 = 0.10, 2.30
+    box(mb, (-L / 2 - 0.006, D1, ZR1 - 0.012), (L / 2 + 0.006, D1 + 0.012, ZR1 + 0.004), "StopSteelLight")   # Tropfkante
+    for x in xs:
+        box(mb, (x - 0.03, D0 + t, ZR0 + 0.01), (x + 0.03, D1 - t, ZR0 + 0.075), "StopSteel")
+    for y in (YB, YF):
+        box(mb, (-L / 2 + t, y - 0.03, ZR0), (L / 2 - t, y + 0.03, ZR0 + 0.06), "StopSteel")
+    zg = ZR0 + 0.082
     for i in range(n_fields):
-        x0, x1 = xs[i] + PW / 2 + 0.01, xs[i + 1] - PW / 2 - 0.01
-        mb.poly([(x0, YB, GZ0), (x1, YB, GZ0), (x1, YB, GZ1), (x0, YB, GZ1)], "StopGlass", outward=(0, 1, 0))
-        for xx in (x0 + 0.15, x1 - 0.15):
-            box(mb, (xx - 0.02, YB - 0.015, 0.0), (xx + 0.02, YB + 0.015, GZ0 + 0.03), "StopSteel", skip=("-z",))
-    box(mb, (xs[0], YB - 0.02, 1.03), (xs[-1], YB + 0.02, 1.07), "StopSteel")
-    box(mb, (xs[0], YB - 0.03, GZ1), (xs[-1], YB + 0.03, ZR0), "StopSteel")
-    # Glasseitenwand am -X-Ende
+        x0, x1 = xs[i] + 0.032, xs[i + 1] - 0.032
+        mb.poly([(x0, D0 + t, zg), (x1, D0 + t, zg), (x1, D1 - t, zg), (x0, D1 - t, zg)], "StopGlassRoof",
+                outward=(0, 0, 1))
+        box(mb, (xs[i + 1] - 0.035, D0 + t, zg - 0.004), (xs[i + 1] + 0.035, D1 - t, zg + 0.012), "StopSteel")
+    box(mb, (xs[0] - 0.035, D0 + t, zg - 0.004), (xs[0] + 0.035, D1 - t, zg + 0.012), "StopSteel")
+    # Rinne hinten (Kastenrinne) + Fallrohr am hinteren Endpfosten
+    box(mb, (-L / 2, D0 - 0.07, ZR0 + 0.02), (L / 2, D0, ZR0 + 0.03), "RoofSheet")
+    box(mb, (-L / 2, D0 - 0.075, ZR0 + 0.02), (L / 2, D0 - 0.068, ZR0 + 0.09), "RoofSheet")
+    for xe in (-L / 2, L / 2 - 0.006):
+        box(mb, (xe, D0 - 0.07, ZR0 + 0.02), (xe + 0.006, D0, ZR0 + 0.09), "RoofSheet")
+    xr = xs[-1] + 0.0
+    yr = YB - PD / 2 - 0.03
+    tube(mb, [(xr, D0 - 0.035, ZR0 + 0.025), (xr, D0 - 0.035, ZR0 - 0.06), (xr, yr, ZR0 - 0.16), (xr, yr, 0.06),
+              (xr, yr - 0.05, 0.02)], 0.022, "StopSteelLight", seg=8, cap1=True)
+    for zc in (0.5, 1.4, 2.1):
+        bx(mb, (xr, yr + 0.012, zc), (0.06, 0.03, 0.02), "StopSteel")
+    # LED-Leisten unter dem Dach (vorn und Mitte)
+    for yl in (D1 - t - 0.09, -0.12):
+        box(mb, (-L / 2 + 0.25, yl, ZR0 - 0.03), (L / 2 - 0.25, yl + 0.07, ZR0 + 0.005), "StopSteel")
+        zl = ZR0 - 0.0305
+        mb.poly([(-L / 2 + 0.28, yl + 0.012, zl), (L / 2 - 0.28, yl + 0.012, zl),
+                 (L / 2 - 0.28, yl + 0.058, zl), (-L / 2 + 0.28, yl + 0.058, zl)],
+                "ShelterLightEmit", outward=(0, 0, -1))
+    # --- Rückwand: Glasfelder mit Klemmhaltern, Kopfriegel, Kontraststreifen
+    GZ0, GZ1 = 0.12, 2.26
+    for i in range(n_fields):
+        x0, x1 = xs[i] + PW / 2 + 0.025, xs[i + 1] - PW / 2 - 0.025
+        glass_pane(mb, "y", YB, x0, x1, GZ0, GZ1, marks=(1.05, 1.50))
+        for xx, sg in ((x0, -1), (x1, 1)):
+            for zc in (0.35, 1.20, 2.05):
+                bx(mb, (xx + sg * 0.004, YB, zc), (0.06, 0.036, 0.09), "StopSteelLight")
+    box(mb, (xs[0], YB - 0.025, GZ1 + 0.02), (xs[-1], YB + 0.025, ZR0), "StopSteel")
+    # --- Glasseitenwand am -X-Ende
     xw = xs[0]
-    mb.poly([(xw, YB + PD / 2 + 0.01, GZ0), (xw, YF - PD / 2 - 0.01, GZ0), (xw, YF - PD / 2 - 0.01, GZ1),
-             (xw, YB + PD / 2 + 0.01, GZ1)], "StopGlass", outward=(1, 0, 0))
-    box(mb, (xw - 0.02, YB, 1.03), (xw + 0.02, YF, 1.07), "StopSteel")
-    box(mb, (xw - 0.03, YB, GZ1), (xw + 0.03, YF, ZR0), "StopSteel")
-    # City-Light-Vitrine am anderen Ende (doppelseitig, 4/1-Plakat 1,19 x 1,75)
+    y0w, y1w = YB + PD / 2 + 0.025, YF - PD / 2 - 0.025
+    glass_pane(mb, "x", xw, y0w, y1w, GZ0, GZ1, marks=(1.05, 1.50))
+    for yy, sg in ((y0w, -1), (y1w, 1)):
+        for zc in (0.35, 1.20, 2.05):
+            bx(mb, (xw, yy + sg * 0.004, zc), (0.036, 0.06, 0.09), "StopSteelLight")
+    box(mb, (xw - 0.025, YB, GZ1 + 0.02), (xw + 0.025, YF, ZR0), "StopSteel")
+    # --- City-Light-Vitrine am +X-Ende (doppelseitig, 4/1-Plakat 1,19 x 1,75), Gehäuse 1,30 x 1,90 x 0,15
     VX0, VX1 = L / 2 - 0.24, L / 2 - 0.09
     VY0, VY1 = -0.60, 0.70
     VZ0, VZ1 = 0.12, 2.02
     for fy in (VY0 + 0.15, VY1 - 0.15):
-        box(mb, (VX0 + 0.04, fy - 0.03, 0.0), (VX1 - 0.04, fy + 0.03, VZ0), "CityLightFrame", skip=("-z",))
-    box(mb, (VX0, VY0, VZ0), (VX1, VY1, VZ1), "CityLightFrame")
+        box(mb, (VX0 + 0.03, fy - 0.035, 0.0), (VX1 - 0.03, fy + 0.035, VZ0), "CityLightFrame", skip=("-z",))
+        box(mb, (VX0 - 0.02, fy - 0.07, 0.0), (VX1 + 0.02, fy + 0.07, 0.012), "CityLightFrame", skip=("-z",))
     vyc = (VY0 + VY1) / 2
     PWD, PHT = 1.19, 1.75
     py0, py1 = vyc - PWD / 2, vyc + PWD / 2
-    pz0 = VZ0 + 0.08
+    pz0 = VZ0 + 0.07
     pz1 = pz0 + PHT
-    for side, xx in ((1, VX1 + 0.002), (-1, VX0 - 0.002)):
-        def puv(y, z, sd):
+    # Korpus (schmaler Rücken) + je Seite ein vorstehender Rahmen um das Plakat
+    box(mb, (VX0 + 0.012, VY0 + 0.01, VZ0 + 0.01), (VX1 - 0.012, VY1 - 0.01, VZ1 - 0.01), "CityLightFrame")
+    for side, xf in ((1, VX1), (-1, VX0)):
+        xa, xb = (xf - 0.012, xf) if side > 0 else (xf, xf + 0.012)
+        box(mb, (xa, VY0, VZ0), (xb, py0, VZ1), "CityLightFrame")
+        box(mb, (xa, py1, VZ0), (xb, VY1, VZ1), "CityLightFrame")
+        box(mb, (xa, py0, VZ0), (xb, py1, pz0), "CityLightFrame")
+        box(mb, (xa, py0, pz1), (xb, py1, VZ1), "CityLightFrame")
+        cell = posters[0] if side > 0 else posters[1]
+        cu, cv = (cell % 2) * 0.5, 0.5 - (cell // 2) * 0.5      # UV-Zelle (v = 0 unten)
+
+        def puv(y, z, sd, cu=cu, cv=cv):
             u = (y - py0) / PWD if sd > 0 else (py1 - y) / PWD
-            return (u, (z - pz0) / PHT)
-        yz_face(mb, xx, [(py0, pz0), (py1, pz0), (py1, pz1), (py0, pz1)], "PosterEmit", side, puv)
-        # Glas vor dem Plakat
-        yz_face(mb, xx + side * 0.006, [(py0, pz0), (py1, pz0), (py1, pz1), (py0, pz1)], "StopGlass", side)
-    # Infovitrine an der Rückwand (innen), im mittleren Feld
+            return (cu + u * 0.5, cv + (z - pz0) / PHT * 0.5)
+        xp = xf - side * 0.010
+        yz_face(mb, xp, [(py0, pz0), (py1, pz0), (py1, pz1), (py0, pz1)], "PosterEmit", side, puv)
+        yz_face(mb, xf - side * 0.003, [(py0, pz0), (py1, pz0), (py1, pz1), (py0, pz1)], "StopGlass", side)
+    box(mb, (VX0 - 0.004, VY0 - 0.004, VZ1), (VX1 + 0.004, VY1 + 0.004, VZ1 + 0.02), "CityLightFrame")
+    # --- Infovitrine an der Rückwand (innen): Rahmen, Aushang, Glas
     centers = [(xs[i] + xs[i + 1]) / 2 for i in range(n_fields)]
     ix = min(centers, key=lambda c: (abs(c + 0.3), c))
-    IW, IH, ID = 0.98, 0.74, 0.05
-    iz = 1.50
-    iy0 = YB + 0.02
-    box(mb, (ix - IW / 2, iy0, iz - IH / 2), (ix + IW / 2, iy0 + ID, iz + IH / 2), "CityLightFrame")
+    IW, IH, ID = 1.00, 0.76, 0.045
+    iz = 1.52
+    iy0 = YB + 0.012
     vw, vh = 0.92, 0.68
-    xz_face(mb, iy0 + ID + 0.001, [(ix - vw / 2, iz - vh / 2), (ix + vw / 2, iz - vh / 2), (ix + vw / 2, iz + vh / 2),
-                                   (ix - vw / 2, iz + vh / 2)], "InfoBoard", 1, lambda x, z, s: (
+    box(mb, (ix - IW / 2, iy0, iz - IH / 2), (ix + IW / 2, iy0 + 0.012, iz + IH / 2), "CityLightFrame")
+    for (xa, xb, za, zb) in ((ix - IW / 2, ix - vw / 2, iz - IH / 2, iz + IH / 2), (ix + vw / 2, ix + IW / 2, iz - IH / 2, iz + IH / 2),
+                             (ix - vw / 2, ix + vw / 2, iz - IH / 2, iz - vh / 2), (ix - vw / 2, ix + vw / 2, iz + vh / 2, iz + IH / 2)):
+        box(mb, (xa, iy0 + 0.012, za), (xb, iy0 + ID, zb), "CityLightFrame")
+    xz_face(mb, iy0 + 0.014, [(ix - vw / 2, iz - vh / 2), (ix + vw / 2, iz - vh / 2), (ix + vw / 2, iz + vh / 2),
+                              (ix - vw / 2, iz + vh / 2)], "InfoBoard", 1, lambda x, z, s: (
         (ix + vw / 2 - x) / vw, (z - (iz - vh / 2)) / vh))
-    # Sitzbank(e): Sitzbrett Edelstahl auf zwei Stahlfüßen
+    xz_face(mb, iy0 + ID - 0.006, [(ix - vw / 2, iz - vh / 2), (ix + vw / 2, iz - vh / 2), (ix + vw / 2, iz + vh / 2),
+                                   (ix - vw / 2, iz + vh / 2)], "StopGlass", 1)
+    # --- Sitzbank: drei Lärchenlatten auf Stahlkonsolen, Edelstahl-Armbügel als Trenner
     for bxc, bl in benches:
-        box(mb, (bxc - bl / 2, -0.55, 0.42), (bxc + bl / 2, -0.23, 0.46), "BenchSeat")
-        for lx in (bxc - bl / 2 + 0.2, bxc + bl / 2 - 0.2):
-            box(mb, (lx - 0.03, -0.48, 0.0), (lx + 0.03, -0.30, 0.42), "StopSteel", skip=("-z",))
-    # Namensblende auf dem Dach, vorn am Glas-Seitenwand-Ende
+        by0 = -0.56
+        for k in range(3):
+            y0 = by0 + k * 0.112
+            lo, hi = (bxc - bl / 2, y0, 0.425), (bxc + bl / 2, y0 + 0.10, 0.465)
+            box(mb, lo, hi, "BenchWood", skip=())
+        # UV der Latten: Maserung längs x
+        for fi in range(len(mb.f) - 18, len(mb.f)):
+            vs = [mb.v[i] for i in mb.f[fi]]
+            n = newell(vs)
+            if abs(n.x) > max(abs(n.y), abs(n.z)):
+                mb.uv[fi] = [(v.y * 3.0, v.z * 3.0) for v in vs]
+            else:
+                mb.uv[fi] = [(v.x * 0.8, (v.y + v.z) * 2.2) for v in vs]
+        for lx in (bxc - bl / 2 + 0.18, bxc + bl / 2 - 0.18):
+            box(mb, (lx - 0.025, by0 + 0.01, 0.385), (lx + 0.025, by0 + 0.32, 0.425), "StopSteel")
+            box(mb, (lx - 0.03, by0 + 0.12, 0.012), (lx + 0.03, by0 + 0.20, 0.385), "StopSteel")
+            box(mb, (lx - 0.07, by0 + 0.06, 0.0), (lx + 0.07, by0 + 0.26, 0.012), "StopSteel", skip=("-z",))
+        ax = bxc
+        tube(mb, [(ax, by0 + 0.02, 0.465), (ax, by0 + 0.02, 0.63), (ax, by0 + 0.06, 0.66), (ax, by0 + 0.27, 0.66),
+                  (ax, by0 + 0.31, 0.63), (ax, by0 + 0.31, 0.465)], 0.014, "StopSteelLight", seg=6)
+    # --- Namensblende auf dem Dach, vorn am Glas-Seitenwand-Ende
     NL = 2.0
     nx0 = -L / 2 + 0.10
     nx1 = nx0 + NL
@@ -862,6 +972,7 @@ def build_shelter(L, fname, n_fields, front_mid=False, benches=((0.55, 1.6),)):
     box(mb, (nx0, NY0, NZ0), (nx1, NY1, NZ1), "NameBlende")
     for ex in (nx0 - 0.03, nx1):
         box(mb, (ex, NY0 - 0.005, NZ0), (ex + 0.03, NY1 + 0.005, NZ1 + 0.005), "StopSteel")
+    box(mb, (nx0 - 0.03, NY0 - 0.005, NZ1), (nx1 + 0.03, NY1 + 0.005, NZ1 + 0.012), "StopSteel")
     mb.build("Shelter")
     ncx = (nx0 + nx1) / 2
     nzc = (NZ0 + NZ1) / 2
@@ -874,19 +985,65 @@ def build_shelter(L, fname, n_fields, front_mid=False, benches=((0.55, 1.6),)):
     for side, nm in ((1, "Anchor_Poster"), (-1, "Anchor_Poster_Back")):
         xx = VX1 + 0.01 if side > 0 else VX0 - 0.01
         anchor(nm, (xx, vyc, (pz0 + pz1) / 2), (side, 0, 0), None, (PWD, PHT),
-               "City-Light-Plakat 4/1 (UV 0..1 auf PosterEmit, z. B. Zelle aus posters.png)")
+               "City-Light-Plakat 4/1 (PosterEmit, Zelle aus shelter_posters.png)")
+    anchor("Anchor_Ticket", (-L / 2 - 0.75, -0.30, 0.0), (0, 1, 0), None, None,
+           "Standplatz Fahrkartenautomat (ticket_machine.glb) neben der Glasseitenwand, Front zum Gleis")
     extra = {
-        "notes": "Wall/JCDecaux-Wartehalle Typ W1 (Flachdach-Glashalle): anthrazit #3D4241, Glasdach, "
-                 "Glasrückwand mit Riegel bei 1,05 m, offene Front zum Gleis (Godot -Z). Godot -X-Ende: "
-                 "Glasseitenwand + gelb-orange Namensblende auf dem Dach; +X-Ende: doppelseitige City-Light-"
-                 "Vitrine (PosterEmit, nachts leuchtend). Infovitrine (InfoBoard) innen an der Rückwand, "
-                 "Edelstahlsitzbank. ShelterLightEmit = LED-Leiste unter dem Dach.",
+        "notes": "Wall/JCDecaux-Wartehalle Typ W1 (Flachdach-Glashalle): anthrazit #3D4241, Pfosten 60 x 80 mit "
+                 "Fußplatten, Stirnband 120 mm, Dachverglasung auf Querträgern, Kastenrinne hinten mit Fallrohr; "
+                 "Glasrückwand (10 mm ESG, grünliche Kante, Klemmhalter, Kontraststreifen bei 1,05/1,50 m), "
+                 "offene Front zum Gleis (Godot -Z). Godot -X-Ende: Glasseitenwand + gelb-orange Namensblende "
+                 "auf dem Dach; +X-Ende: doppelseitige City-Light-Vitrine (PosterEmit, nachts leuchtend). "
+                 "Infovitrine (InfoBoard) hinter Glas an der Rückwand, Sitzbank aus Lärchenlatten mit "
+                 "Edelstahlbügel. ShelterLightEmit = LED-Leisten unter dem Dach.",
         "length": L,
         "fields": n_fields,
         "name_blende": {"width": NL, "height": round(NZ1 - NZ0, 3), "text_area": [NL - 0.10, 0.13]},
-        "poster": {"width": PWD, "height": PHT, "uv": "0..1 in Leserichtung je Seite"},
+        "poster": {"width": PWD, "height": PHT, "uv": "Zelle 2 x 2 in shelter_posters.png, Leserichtung je Seite"},
     }
     export(fname, extra)
+
+
+# =============================================================================================== 4b. Automat
+def build_ticket_machine():
+    """Fahrkartenautomat (gelb mit grauer Front, 0,60 x 0,40 x 1,80 m), Front = Blender +Y (Gleis)."""
+    new_scene()
+    mb = MB()
+    W, D, H = 0.60, 0.40, 1.80
+    box(mb, (-W / 2 + 0.04, -D / 2 + 0.04, 0.0), (W / 2 - 0.04, D / 2 - 0.04, 0.10), "StopSteel", skip=("-z",))
+    box(mb, (-W / 2, -D / 2, 0.10), (W / 2, D / 2, H), "TicketYellow")
+    # Dachhaube mit Überstand vorn
+    box(mb, (-W / 2 - 0.015, -D / 2 - 0.01, H), (W / 2 + 0.015, D / 2 + 0.07, H + 0.035), "StopSteel")
+    # Frontplatte 0,50 x 1,30 leicht vorgesetzt, darin Bildschirm (leuchtend) und Entnahmefach (vertieft)
+    FW, FH = 0.50, 1.30
+    fz1 = H - 0.08
+    fz0 = fz1 - FH
+    yf = D / 2 + 0.012
+    box(mb, (-FW / 2 - 0.012, D / 2, fz0 - 0.012), (FW / 2 + 0.012, yf, fz1 + 0.012), "StopSteel", skip=("-y",))
+
+    def fuv(x, z, sd):
+        return ((FW / 2 - x) / FW, (z - fz0) / FH)
+    xz_face(mb, yf + 0.001, [(-FW / 2, fz0), (FW / 2, fz0), (FW / 2, fz1), (-FW / 2, fz1)], "TicketFront", 1, fuv)
+    # Bildschirm (Texturbereich 0,06..0,44 x 0,165..0,485 von oben) als eigene, nachts leuchtende Fläche
+    sx0, sx1 = -FW / 2 + 0.06, -FW / 2 + 0.44
+    sz1, sz0 = fz1 - 0.165, fz1 - 0.485
+    box(mb, (sx0 - 0.02, yf, sz0 - 0.02), (sx1 + 0.02, yf + 0.02, sz0), "StopSteel", skip=("-y",))
+    box(mb, (sx0 - 0.02, yf, sz1), (sx1 + 0.02, yf + 0.03, sz1 + 0.02), "StopSteel", skip=("-y",))
+    for xa, xb in ((sx0 - 0.02, sx0), (sx1, sx1 + 0.02)):
+        box(mb, (xa, yf, sz0), (xb, yf + 0.025, sz1), "StopSteel", skip=("-y",))
+    xz_face(mb, yf + 0.003, [(sx0, sz0), (sx1, sz0), (sx1, sz1), (sx0, sz1)], "PosterEmitTicket", 1, fuv)
+    # seitliche Lüftungsschlitze und Türfuge
+    for side in (-1, 1):
+        for k in range(5):
+            z = 0.30 + k * 0.035
+            yz_face(mb, side * (W / 2 + 0.001), [(-0.12, z), (0.12, z), (0.12, z + 0.012), (-0.12, z + 0.012)],
+                    "BinInside", side)
+    mb.build("TicketMachine", smooth_angle=30.0)
+    extra = {"notes": "DVB-Fahrkartenautomat (frei gestaltet nach Recherche A2: gelb #F2B21B mit grauer Front, "
+                      "≈ 0,6 x 0,4 x 1,8 m), Front mit Bildschirm = Godot -Z. PosterEmitTicket = Bildschirm "
+                      "(nachts leuchtend wie die Vitrinen).",
+             "size": [W, H, D]}
+    export("ticket_machine.glb", extra)
 
 
 # =============================================================================================== 5. Schutzgitter
@@ -1011,8 +1168,9 @@ def build_bin_city():
 build_mast()
 build_dfi_small()
 build_dfi_large()
-build_shelter(4.0, "wall_shelter.glb", 3)
-build_shelter(6.0, "wall_shelter_long.glb", 4, front_mid=True, benches=((-1.35, 1.6), (0.95, 1.6)))
+build_shelter(4.0, "wall_shelter.glb", 3, posters=(1, 2))
+build_shelter(6.0, "wall_shelter_long.glb", 4, front_mid=True, benches=((-1.35, 1.6), (0.95, 1.6)), posters=(0, 3))
+build_ticket_machine()
 build_rail()
 build_bin_steel()
 build_bin_city()

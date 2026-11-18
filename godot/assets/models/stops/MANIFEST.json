@@ -4,9 +4,9 @@
   "models": {
     "dvb_mast.glb": {
       "file": "dvb_mast.glb",
-      "tris": 1040,
+      "tris": 1148,
       "bbox_min": [
-        -0.043,
+        -0.095,
         0.0,
         -0.125
       ],
@@ -17,7 +17,7 @@
       ],
       "height": 3.418,
       "footprint": {
-        "width_x": 0.144,
+        "width_x": 0.196,
         "depth_z": 0.823
       },
       "materials": [
@@ -213,7 +213,7 @@
         "depth_z": 0.076,
         "note": "nur das Rohr steht am Boden"
       },
-      "size_bytes": 172292
+      "size_bytes": 176432
     },
     "dfi_small.glb": {
       "file": "dfi_small.glb",
@@ -297,7 +297,7 @@
     },
     "dfi_large.glb": {
       "file": "dfi_large.glb",
-      "tris": 452,
+      "tris": 572,
       "bbox_min": [
         -0.13,
         0.0,
@@ -306,17 +306,18 @@
       "bbox_max": [
         0.13,
         3.685,
-        1.64
+        1.645
       ],
       "height": 3.685,
       "footprint": {
         "width_x": 0.26,
-        "depth_z": 1.77
+        "depth_z": 1.775
       },
       "materials": [
         "DfiEmit",
         "DfiHousing",
         "DfiPanel",
+        "SignFrame",
         "StopPole"
       ],
       "anchors": {
@@ -384,35 +385,40 @@
         "depth": 0.16,
         "bottom_y": 2.6
       },
-      "size_bytes": 55184
+      "size_bytes": 64524
     },
     "wall_shelter.glb": {
       "file": "wall_shelter.glb",
-      "tris": 374,
+      "tris": 1544,
       "bbox_min": [
-        -2.0,
+        -2.03,
         0.0,
-        -0.75
+        -0.762
       ],
       "bbox_max": [
-        2.0,
-        2.665,
-        0.75
+        2.03,
+        2.672,
+        0.825
       ],
-      "height": 2.665,
+      "height": 2.672,
       "footprint": {
-        "width_x": 4.0,
-        "depth_z": 1.5
+        "width_x": 4.06,
+        "depth_z": 1.587
       },
       "materials": [
-        "BenchSeat",
+        "BenchWood",
         "CityLightFrame",
+        "GlassMark",
         "InfoBoard",
         "NameBlende",
         "PosterEmit",
+        "RoofSheet",
         "ShelterLightEmit",
         "StopGlass",
-        "StopSteel"
+        "StopGlassEdge",
+        "StopGlassRoof",
+        "StopSteel",
+        "StopSteelLight"
       ],
       "anchors": {
         "Anchor_Name": {
@@ -465,7 +471,7 @@
           "parent": null,
           "position": [
             0.0,
-            2.35,
+            2.33,
             -0.0
           ],
           "normal": [
@@ -475,7 +481,7 @@
           ],
           "local_position": [
             0.0,
-            2.35,
+            2.33,
             -0.0
           ],
           "note": "Lichtquelle der Dach-LED (nachts OmniLight/SpotLight nach unten)"
@@ -484,7 +490,7 @@
           "parent": null,
           "position": [
             1.92,
-            1.075,
+            1.065,
             -0.05
           ],
           "normal": [
@@ -494,20 +500,20 @@
           ],
           "local_position": [
             1.92,
-            1.075,
+            1.065,
             -0.05
           ],
           "size": [
             1.19,
             1.75
           ],
-          "note": "City-Light-Plakat 4/1 (UV 0..1 auf PosterEmit, z. B. Zelle aus posters.png)"
+          "note": "City-Light-Plakat 4/1 (PosterEmit, Zelle aus shelter_posters.png)"
         },
         "Anchor_Poster_Back": {
           "parent": null,
           "position": [
             1.75,
-            1.075,
+            1.065,
             -0.05
           ],
           "normal": [
@@ -517,17 +523,36 @@
           ],
           "local_position": [
             1.75,
-            1.075,
+            1.065,
             -0.05
           ],
           "size": [
             1.19,
             1.75
           ],
-          "note": "City-Light-Plakat 4/1 (UV 0..1 auf PosterEmit, z. B. Zelle aus posters.png)"
+          "note": "City-Light-Plakat 4/1 (PosterEmit, Zelle aus shelter_posters.png)"
+        },
+        "Anchor_Ticket": {
+          "parent": null,
+          "position": [
+            -2.75,
+            0.0,
+            0.3
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "local_position": [
+            -2.75,
+            0.0,
+            0.3
+          ],
+          "note": "Standplatz Fahrkartenautomat (ticket_machine.glb) neben der Glasseitenwand, Front zum Gleis"
         }
       },
-      "notes": "Wall/JCDecaux-Wartehalle Typ W1 (Flachdach-Glashalle): anthrazit #3D4241, Glasdach, Glasrückwand mit Riegel bei 1,05 m, offene Front zum Gleis (Godot -Z). Godot -X-Ende: Glasseitenwand + gelb-orange Namensblende auf dem Dach; +X-Ende: doppelseitige City-Light-Vitrine (PosterEmit, nachts leuchtend). Infovitrine (InfoBoard) innen an der Rückwand, Edelstahlsitzbank. ShelterLightEmit = LED-Leiste unter dem Dach.",
+      "notes": "Wall/JCDecaux-Wartehalle Typ W1 (Flachdach-Glashalle): anthrazit #3D4241, Pfosten 60 x 80 mit Fußplatten, Stirnband 120 mm, Dachverglasung auf Querträgern, Kastenrinne hinten mit Fallrohr; Glasrückwand (10 mm ESG, grünliche Kante, Klemmhalter, Kontraststreifen bei 1,05/1,50 m), offene Front zum Gleis (Godot -Z). Godot -X-Ende: Glasseitenwand + gelb-orange Namensblende auf dem Dach; +X-Ende: doppelseitige City-Light-Vitrine (PosterEmit, nachts leuchtend). Infovitrine (InfoBoard) hinter Glas an der Rückwand, Sitzbank aus Lärchenlatten mit Edelstahlbügel. ShelterLightEmit = LED-Leisten unter dem Dach.",
       "length": 4.0,
       "fields": 3,
       "name_blende": {
@@ -541,37 +566,42 @@
       "poster": {
         "width": 1.19,
         "height": 1.75,
-        "uv": "0..1 in Leserichtung je Seite"
+        "uv": "Zelle 2 x 2 in shelter_posters.png, Leserichtung je Seite"
       },
-      "size_bytes": 91412
+      "size_bytes": 570832
     },
     "wall_shelter_long.glb": {
       "file": "wall_shelter_long.glb",
-      "tris": 456,
+      "tris": 1940,
       "bbox_min": [
-        -3.0,
+        -3.03,
         0.0,
-        -0.75
+        -0.762
       ],
       "bbox_max": [
-        3.0,
-        2.665,
-        0.75
+        3.03,
+        2.672,
+        0.825
       ],
-      "height": 2.665,
+      "height": 2.672,
       "footprint": {
-        "width_x": 6.0,
-        "depth_z": 1.5
+        "width_x": 6.06,
+        "depth_z": 1.587
       },
       "materials": [
-        "BenchSeat",
+        "BenchWood",
         "CityLightFrame",
+        "GlassMark",
         "InfoBoard",
         "NameBlende",
         "PosterEmit",
+        "RoofSheet",
         "ShelterLightEmit",
         "StopGlass",
-        "StopSteel"
+        "StopGlassEdge",
+        "StopGlassRoof",
+        "StopSteel",
+        "StopSteelLight"
       ],
       "anchors": {
         "Anchor_Name": {
@@ -624,7 +654,7 @@
           "parent": null,
           "position": [
             0.0,
-            2.35,
+            2.33,
             -0.0
           ],
           "normal": [
@@ -634,7 +664,7 @@
           ],
           "local_position": [
             0.0,
-            2.35,
+            2.33,
             -0.0
           ],
           "note": "Lichtquelle der Dach-LED (nachts OmniLight/SpotLight nach unten)"
@@ -643,7 +673,7 @@
           "parent": null,
           "position": [
             2.92,
-            1.075,
+            1.065,
             -0.05
           ],
           "normal": [
@@ -653,20 +683,20 @@
           ],
           "local_position": [
             2.92,
-            1.075,
+            1.065,
             -0.05
           ],
           "size": [
             1.19,
             1.75
           ],
-          "note": "City-Light-Plakat 4/1 (UV 0..1 auf PosterEmit, z. B. Zelle aus posters.png)"
+          "note": "City-Light-Plakat 4/1 (PosterEmit, Zelle aus shelter_posters.png)"
         },
         "Anchor_Poster_Back": {
           "parent": null,
           "position": [
             2.75,
-            1.075,
+            1.065,
             -0.05
           ],
           "normal": [
@@ -676,17 +706,36 @@
           ],
           "local_position": [
             2.75,
-            1.075,
+            1.065,
             -0.05
           ],
           "size": [
             1.19,
             1.75
           ],
-          "note": "City-Light-Plakat 4/1 (UV 0..1 auf PosterEmit, z. B. Zelle aus posters.png)"
+          "note": "City-Light-Plakat 4/1 (PosterEmit, Zelle aus shelter_posters.png)"
+        },
+        "Anchor_Ticket": {
+          "parent": null,
+          "position": [
+            -3.75,
+            0.0,
+            0.3
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "local_position": [
+            -3.75,
+            0.0,
+            0.3
+          ],
+          "note": "Standplatz Fahrkartenautomat (ticket_machine.glb) neben der Glasseitenwand, Front zum Gleis"
         }
       },
-      "notes": "Wall/JCDecaux-Wartehalle Typ W1 (Flachdach-Glashalle): anthrazit #3D4241, Glasdach, Glasrückwand mit Riegel bei 1,05 m, offene Front zum Gleis (Godot -Z). Godot -X-Ende: Glasseitenwand + gelb-orange Namensblende auf dem Dach; +X-Ende: doppelseitige City-Light-Vitrine (PosterEmit, nachts leuchtend). Infovitrine (InfoBoard) innen an der Rückwand, Edelstahlsitzbank. ShelterLightEmit = LED-Leiste unter dem Dach.",
+      "notes": "Wall/JCDecaux-Wartehalle Typ W1 (Flachdach-Glashalle): anthrazit #3D4241, Pfosten 60 x 80 mit Fußplatten, Stirnband 120 mm, Dachverglasung auf Querträgern, Kastenrinne hinten mit Fallrohr; Glasrückwand (10 mm ESG, grünliche Kante, Klemmhalter, Kontraststreifen bei 1,05/1,50 m), offene Front zum Gleis (Godot -Z). Godot -X-Ende: Glasseitenwand + gelb-orange Namensblende auf dem Dach; +X-Ende: doppelseitige City-Light-Vitrine (PosterEmit, nachts leuchtend). Infovitrine (InfoBoard) hinter Glas an der Rückwand, Sitzbank aus Lärchenlatten mit Edelstahlbügel. ShelterLightEmit = LED-Leisten unter dem Dach.",
       "length": 6.0,
       "fields": 4,
       "name_blende": {
@@ -700,9 +749,43 @@
       "poster": {
         "width": 1.19,
         "height": 1.75,
-        "uv": "0..1 in Leserichtung je Seite"
+        "uv": "Zelle 2 x 2 in shelter_posters.png, Leserichtung je Seite"
       },
-      "size_bytes": 97348
+      "size_bytes": 597528
+    },
+    "ticket_machine.glb": {
+      "file": "ticket_machine.glb",
+      "tris": 108,
+      "bbox_min": [
+        -0.315,
+        0.0,
+        -0.27
+      ],
+      "bbox_max": [
+        0.315,
+        1.835,
+        0.21
+      ],
+      "height": 1.835,
+      "footprint": {
+        "width_x": 0.63,
+        "depth_z": 0.48
+      },
+      "materials": [
+        "BinInside",
+        "PosterEmitTicket",
+        "StopSteel",
+        "TicketFront",
+        "TicketYellow"
+      ],
+      "anchors": {},
+      "notes": "DVB-Fahrkartenautomat (frei gestaltet nach Recherche A2: gelb #F2B21B mit grauer Front, ≈ 0,6 x 0,4 x 1,8 m), Front mit Bildschirm = Godot -Z. PosterEmitTicket = Bildschirm (nachts leuchtend wie die Vitrinen).",
+      "size": [
+        0.6,
+        1.8,
+        0.4
+      ],
+      "size_bytes": 56844
     },
     "platform_rail.glb": {
       "file": "platform_rail.glb",

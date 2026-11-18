@@ -8,9 +8,10 @@ extends Node3D
 const DIR := "res://assets/models/stops/"
 ## Ersatz, solange die eigenen Modelle fehlen
 const FALLBACK := {"dvb_mast": "", "wall_shelter": "res://assets/models/props/bus_stop.glb",
-	"wall_shelter_long": "res://assets/models/props/bus_stop.glb", "dfi_large": "", "dfi_small": "", "stop_bin": ""}
+	"wall_shelter_long": "res://assets/models/props/bus_stop.glb", "dfi_large": "", "dfi_small": "", "stop_bin": "",
+	"ticket_machine": ""}
 const VIS := {"dvb_mast": 220.0, "wall_shelter": 300.0, "wall_shelter_long": 300.0, "dfi_large": 220.0, "dfi_small": 160.0,
-	"stop_bin": 120.0}
+	"stop_bin": 120.0, "ticket_machine": 160.0}
 
 static var _scenes := {}
 static var _man := {}
@@ -110,9 +111,20 @@ func build(t: Terrain, data: Dictionary) -> void:
 	_prails(data.get("prails", []))
 	for m in data.get("masts", []):
 		_mast(m)
+	# Fahrkartenautomat: je größerer Straßenbahn-Haltestelle (ab 4 Linien) einer, neben der ersten Wartehalle
+	var big := {}
+	for m in data.get("masts", []):
+		if String(m[6]) == "tram" and String(m[5]).split(",", false).size() >= 4:
+			big[String(m[4])] = true
 	for s in data.get("shelters", []):
 		_place(String(s[0]), float(s[1]), float(s[2]), float(s[3]), float(s[4]))
 		_shelter_name(String(s[0]), float(s[1]), float(s[2]), float(s[3]), float(s[4]), String(s[5]))
+		if big.get(String(s[5]), false):
+			big[String(s[5])] = false
+			var at := _anchor(String(s[0]), "Anchor_Ticket", Vector3.ZERO)
+			if at["found"]:
+				var tp: Vector3 = Basis(Vector3.UP, float(s[3])) * (at["pos"] as Vector3)
+				_place("ticket_machine", float(s[1]) + tp.x, float(s[2]) + tp.z, float(s[3]), float(s[4]))
 	for d in data.get("dfis", []):
 		_dfi(d)
 	for b in data.get("bins", []):
@@ -154,7 +166,10 @@ static func _fix_emit(mi: MeshInstance3D) -> void:
 				m.emission_enabled = true
 				m.emission = Color(1.0, 0.97, 0.9) if not nm.begins_with("DfiEmit") else Color(0.02, 0.02, 0.02)
 				if nm.begins_with("PosterEmit"):
+					# hinterleuchtetes Plakat: Emission = Bild (gedämpft, sonst überstrahlt es nachts zu Weiß)
 					m.emission_texture = m.albedo_texture
+					m.emission = Color(0.42, 0.41, 0.38)
+					m.emission_energy_multiplier = 0.15
 			if not Trams.emit_mats.has(m):
 				Trams.emit_mats.append(m)       # nachts heller (Trams.set_night)
 
@@ -176,6 +191,17 @@ func _mast(m: Array) -> void:
 	var sign: Dictionary = model_info("dvb_mast").get("sign", {})
 	var pitch := float(sign.get("row_pitch", 0.1))
 	var nrows := mini(rows.size(), 7)
+	if mast != null and (nrows > 1 or dfi != ""):
+		# Fahne modular (MANIFEST sign.row_rule/footer_rule): Linienzeile je Linie vervielfachen, Fußzeile nachrücken
+		var row := mast.find_child("LineRow", true, false) as Node3D
+		var foot := mast.find_child("Footer", true, false) as Node3D
+		if row != null:
+			for i in range(1, nrows):
+				var r2 := row.duplicate() as Node3D
+				r2.position.y -= pitch * i
+				row.get_parent().add_child(r2)
+		if foot != null:
+			foot.position.y -= pitch * (nrows - 1) + (float(sign.get("dfi_module_height", 0.28)) if dfi != "" else 0.0)
 	for sfx in ["", "_Back"]:
 		var an := _anchor("dvb_mast", "Anchor_Name" + sfx, Vector3(0.014, 2.822, 0.398), Vector2(0.54, 0.176))
 		var ar := _anchor("dvb_mast", "Anchor_Row0" + sfx, Vector3(0.014, 2.682, 0.398), Vector2(0.54, 0.096))
@@ -264,6 +290,24 @@ static func _mat(key: String, c: Color) -> StandardMaterial3D:
 	m.albedo_color = c
 	m.roughness = 0.6
 	_mats[key] = m
+	return m
+
+
+static func _tex_mat(tex: String, with_normal: bool) -> StandardMaterial3D:
+	## Bodenplatten-Material aus assets/models/stops/<tex>.png (+ _n.png), erzeugt von make_stop_textures.py
+	if _mats.has(tex):
+		return _mats[tex]
+	var m := StandardMaterial3D.new()
+	m.roughness = 0.85
+	m.albedo_color = Color(0.86, 0.86, 0.85)
+	var p := DIR + tex + ".png"
+	if ResourceLoader.exists(p):
+		m.albedo_texture = load(p)
+		if with_normal and ResourceLoader.exists(DIR + tex + "_n.png"):
+			m.normal_enabled = true
+			m.normal_texture = load(DIR + tex + "_n.png")
+			m.normal_scale = 1.2
+	_mats[tex] = m
 	return m
 
 
@@ -437,7 +481,8 @@ func _platforms(plats: Array) -> void:
 	var top := SurfaceTool.new()
 	var side := SurfaceTool.new()
 	var tact := SurfaceTool.new()
-	for st in [top, side, tact]:
+	var band := SurfaceTool.new()        # helles Betonband (Bordstein + Platte) an der Bahnsteigkante
+	for st in [top, side, tact, band]:
 		st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var col := PackedVector3Array()
 	for p in plats:
@@ -486,6 +531,7 @@ func _platforms(plats: Array) -> void:
 		# Leitstreifen (Rillenplatten) 0,30 m breit, 0,6 m hinter der Kante
 		var edge: Array = p.get("edge", [])
 		if edge.size() >= 2:
+			var run := 0.0                  # Lauflänge entlang der Kante (Texturraster: Platten 0,30 m, Bordsteine 1 m)
 			for i in edge.size() - 1:
 				var a: Vector3 = v[int(edge[i])]
 				var b: Vector3 = v[int(edge[i + 1])]
@@ -502,10 +548,22 @@ func _platforms(plats: Array) -> void:
 				var o1 := inward * 0.9
 				var lift := Vector3(0, 0.006, 0)
 				var q := [a + o0 + lift, b + o0 + lift, b + o1 + lift, a + o1 + lift]
+				var seg_l := dirv.length()
+				var quv := [Vector2(run / 0.3, 0.0), Vector2((run + seg_l) / 0.3, 0.0), Vector2((run + seg_l) / 0.3, 1.0),
+						Vector2(run / 0.3, 1.0)]
+				var e1 := inward * 0.40
+				var lift2 := Vector3(0, 0.004, 0)
+				var qb := [a + lift2, b + lift2, b + e1 + lift2, a + e1 + lift2]
+				var tng := dirv.normalized()
 				for k in [0, 2, 1, 0, 3, 2, 0, 1, 2, 0, 2, 3]:
 					tact.set_normal(Vector3.UP)
-					tact.set_uv(Vector2(q[k].x, q[k].z) * 3.0)
+					tact.set_tangent(Plane(tng, 1.0))
+					tact.set_uv(quv[k])
 					tact.add_vertex(q[k])
+					band.set_normal(Vector3.UP)
+					band.set_uv(Vector2(quv[k].x * 0.3, quv[k].y))
+					band.add_vertex(qb[k])
+				run += seg_l
 	var mesh := ArrayMesh.new()
 	top.commit(mesh)
 	mesh.surface_set_material(0, TexLib.tri_material("sidewalk", 0.8))   # wie Gehweg im Gelände-Shader (×0,84)
@@ -513,7 +571,10 @@ func _platforms(plats: Array) -> void:
 	mesh.surface_set_material(1, TexLib.tri_material("paving_sandstone", 0.78))
 	tact.commit(mesh)
 	if mesh.get_surface_count() > 2:
-		mesh.surface_set_material(2, _mat("tactile", Color(0.86, 0.86, 0.84)))
+		mesh.surface_set_material(2, _tex_mat("platform_tactile", true))
+	band.commit(mesh)
+	if mesh.get_surface_count() > 3:
+		mesh.surface_set_material(3, _tex_mat("platform_edge", false))
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.gi_mode = GeometryInstance3D.GI_MODE_DISABLED

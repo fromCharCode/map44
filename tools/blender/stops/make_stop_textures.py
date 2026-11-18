@@ -9,6 +9,12 @@ Ausgabe: tools/blender/stops/tex/
                   - Fahrplanaushang A4 (frei erfundener Platzhalter, keine echten Daten)
   dfi_panel.png   Uhrfeld der großen Abfahrtstafel (gelb, Analoguhr 10:10, Schriftzug DVB)
   info_board.png  Infovitrine in der Wartehalle (Kopf „Information“, abstrakter Netzplan, Aushänge)
+  shelter_posters.png  vier frei erfundene City-Light-Plakate (2 x 2, je 512 x 768), keine Marken
+  glass_marks.png      Kontrastmarkierung für Glasflächen (RGBA, Reihe weißer Quadrate)
+  bench_wood.png       Lärchenlatten der Sitzbank
+  ticket_front.png     Front des Fahrkartenautomaten (Bildschirm, Tastenfeld, Zahlfelder, Entnahme)
+Zusätzlich direkt nach godot/assets/models/stops/ (von stops.gd geladen):
+  platform_tactile.png/_n.png  Rillenplatte des Leitstreifens, platform_edge.png  Betonband an der Bahnsteigkante
 Die Regionen (Pixel und Meter) stehen in REGIONS und werden von build_stops.py identisch verwendet.
 Farben: Recherchebericht data/research/dvb_haltestellen.md (A1/A2/A3), Grün an Fotos geprüft (Farbton ≈ 160°,
 deckt sich mit RAL 6024 Verkehrsgrün; Albedo leicht aufgehellt).
@@ -252,9 +258,258 @@ def info_board(seed=7):
     im.save(os.path.join(OUT, "info_board.png"))
 
 
+# --- Plakate der City-Light-Vitrine (frei erfundene Motive, keine Marken) --------------------------------------
+PW_PX, PH_PX = 512, 768          # je Plakat (4/1-Bogen 1,19 x 1,75 m)
+
+
+def _grad(w, h, top, bot):
+    im = Image.new("RGB", (w, h))
+    t = [int(top[i:i + 2], 16) for i in (1, 3, 5)]
+    b = [int(bot[i:i + 2], 16) for i in (1, 3, 5)]
+    px = im.load()
+    for y in range(h):
+        q = y / (h - 1)
+        col = tuple(int(t[i] + (b[i] - t[i]) * q) for i in range(3))
+        for x in range(w):
+            px[x, y] = col
+    return im
+
+
+def _ctext(d, x, y, s, path, px, col, anchor="ms"):
+    d.text((x, y), s, font=font(path, px), fill=col, anchor=anchor)
+
+
+def poster_konzert(rnd):
+    S2 = 2
+    w, h = PW_PX * S2, PH_PX * S2
+    im = _grad(w, h, "#2B1B4A", "#F08A3C")
+    d = ImageDraw.Draw(im)
+    d.ellipse([w * 0.30, h * 0.30, w * 0.70, h * 0.30 + w * 0.40], fill="#FFD27A")
+    for k in range(5):                                   # Hügel- und Uferlinien
+        y0 = h * (0.50 + 0.05 * k)
+        pts = [(0, h)]
+        for i in range(0, 21):
+            x = w * i / 20
+            pts.append((x, y0 + math.sin(i * 0.6 + k * 1.7) * h * 0.018 + k * 4))
+        pts.append((w, h))
+        shade = (40 - k * 6, 26 - k * 3, 62 - k * 8)
+        d.polygon(pts, fill=shade)
+    for i in range(60):                                  # Lichter am Ufer
+        x, y = rnd.uniform(0, w), rnd.uniform(h * 0.58, h * 0.70)
+        r = rnd.uniform(1.5, 4) * S2
+        d.ellipse([x - r, y - r, x + r, y + r], fill="#FFE9B0")
+    _ctext(d, w / 2, h * 0.13, "ELBSOMMER", F_CB, 150 * S2 / 1.6, "#FFF4DE")
+    _ctext(d, w / 2, h * 0.185, "Open-Air-Konzerte am Fluss", F_SEMI, 34 * S2 / 1.3, "#FFE0B0")
+    d.rectangle([w * 0.12, h * 0.80, w * 0.88, h * 0.925], fill="#FFF4DE")
+    _ctext(d, w / 2, h * 0.855, "12.–28. Juli", F_BOLD, 60 * S2 / 1.3, "#2B1B4A")
+    _ctext(d, w / 2, h * 0.905, "täglich ab 19 Uhr · Eintritt frei", F_REG, 26 * S2 / 1.3, "#2B1B4A")
+    return im.resize((PW_PX, PH_PX), Image.LANCZOS)
+
+
+def poster_markt(rnd):
+    S2 = 2
+    w, h = PW_PX * S2, PH_PX * S2
+    im = Image.new("RGB", (w, h), "#F4EEDC")
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 0, w, h * 0.52], fill="#2F7D4F")
+    cols = ["#D8372E", "#F2A41E", "#E8742A", "#8DB33A", "#B8284A", "#F6D14A"]
+    for i in range(26):                                  # Obst und Gemüse als Kreise
+        x, y = rnd.uniform(0.06, 0.94) * w, rnd.uniform(0.30, 0.58) * h
+        r = rnd.uniform(0.045, 0.085) * w
+        col = rnd.choice(cols)
+        d.ellipse([x - r, y - r, x + r, y + r], fill=col)
+        d.ellipse([x - r * 0.55, y - r * 0.6, x - r * 0.15, y - r * 0.2], fill="#FFFFFF")
+        d.line([x, y - r, x + r * 0.2, y - r * 1.25], fill="#3B2A1A", width=int(4 * S2))
+    _ctext(d, w / 2, h * 0.12, "Frisch.", F_BOLD, 110 * S2 / 1.3, "#F4EEDC")
+    _ctext(d, w / 2, h * 0.215, "Regional.", F_BOLD, 110 * S2 / 1.3, "#F6D14A")
+    _ctext(d, w / 2, h * 0.72, "Wochenmarkt", F_CB, 120 * S2 / 1.5, "#2F7D4F")
+    _ctext(d, w / 2, h * 0.79, "jeden Samstag 8–14 Uhr", F_SEMI, 40 * S2 / 1.3, "#333333")
+    d.rectangle([w * 0.2, h * 0.84, w * 0.8, h * 0.845], fill="#2F7D4F")
+    _ctext(d, w / 2, h * 0.90, "auf dem Marktplatz", F_REG, 32 * S2 / 1.3, "#555555")
+    return im.resize((PW_PX, PH_PX), Image.LANCZOS)
+
+
+def poster_bibliothek(rnd):
+    S2 = 2
+    w, h = PW_PX * S2, PH_PX * S2
+    im = Image.new("RGB", (w, h), "#12355B")
+    d = ImageDraw.Draw(im)
+    x = w * 0.08                                          # Bücherregal
+    cols = ["#E8B04A", "#C9482E", "#3E8E7E", "#E9E2D0", "#7A4C8F", "#D97B29", "#5C88B8"]
+    while x < w * 0.92:
+        bw = rnd.uniform(0.035, 0.075) * w
+        bh = rnd.uniform(0.20, 0.30) * h
+        col = rnd.choice(cols)
+        d.rectangle([x, h * 0.70 - bh, x + bw, h * 0.70], fill=col)
+        d.rectangle([x + bw * 0.2, h * 0.70 - bh * 0.85, x + bw * 0.8, h * 0.70 - bh * 0.78], fill="#12355B")
+        x += bw + 3 * S2
+    d.rectangle([w * 0.05, h * 0.70, w * 0.95, h * 0.715], fill="#E9E2D0")
+    _ctext(d, w * 0.08, h * 0.13, "Lies mal", F_BOLD, 120 * S2 / 1.3, "#E9E2D0", anchor="ls")
+    _ctext(d, w * 0.08, h * 0.24, "wieder.", F_BOLD, 120 * S2 / 1.3, "#E8B04A", anchor="ls")
+    _ctext(d, w * 0.08, h * 0.82, "Deine Stadtbibliothek", F_SEMI, 44 * S2 / 1.3, "#E9E2D0", anchor="ls")
+    _ctext(d, w * 0.08, h * 0.875, "Ausweis kostenlos bis 18 Jahre", F_REG, 30 * S2 / 1.3, "#B9C7D8", anchor="ls")
+    return im.resize((PW_PX, PH_PX), Image.LANCZOS)
+
+
+def poster_bahn(rnd):
+    S2 = 2
+    w, h = PW_PX * S2, PH_PX * S2
+    im = Image.new("RGB", (w, h), "#F2B01E")
+    d = ImageDraw.Draw(im)
+    for k in range(9):                                    # Strahlen
+        a0 = math.radians(200 + k * 16)
+        a1 = math.radians(208 + k * 16)
+        d.polygon([(w / 2, h * 0.62), (w / 2 + math.cos(a0) * w * 2, h * 0.62 + math.sin(a0) * w * 2),
+                   (w / 2 + math.cos(a1) * w * 2, h * 0.62 + math.sin(a1) * w * 2)], fill="#F6C24A")
+    # stilisierte Bahn von vorn (ohne Vorbild)
+    bx0, bx1, by0, by1 = w * 0.27, w * 0.73, h * 0.36, h * 0.70
+    d.rounded_rectangle([bx0, by0, bx1, by1], radius=int(w * 0.07), fill="#1A1A1A")
+    d.rounded_rectangle([bx0 + w * 0.04, by0 + h * 0.03, bx1 - w * 0.04, by0 + h * 0.17], radius=int(w * 0.03),
+                        fill="#9CC7DD")
+    d.rectangle([bx0 + w * 0.10, by0 + h * 0.005, bx1 - w * 0.10, by0 + h * 0.024], fill="#FFA51F")
+    for xx in (bx0 + w * 0.07, bx1 - w * 0.07):
+        d.ellipse([xx - w * 0.025, by1 - h * 0.07, xx + w * 0.025, by1 - h * 0.07 + w * 0.05], fill="#FFF4DE")
+    d.rectangle([w * 0.10, by1, w * 0.90, by1 + h * 0.012], fill="#1A1A1A")
+    d.line([w / 2, by0, w / 2 - w * 0.05, by0 - h * 0.07, w / 2 + w * 0.05, by0 - h * 0.12], fill="#1A1A1A",
+           width=int(5 * S2))
+    _ctext(d, w / 2, h * 0.14, "Einsteigen.", F_BOLD, 100 * S2 / 1.3, "#1A1A1A")
+    _ctext(d, w / 2, h * 0.225, "Ankommen.", F_BOLD, 100 * S2 / 1.3, "#FFFFFF")
+    _ctext(d, w / 2, h * 0.83, "Alle 10 Minuten durch die Stadt", F_SEMI, 38 * S2 / 1.3, "#1A1A1A")
+    _ctext(d, w / 2, h * 0.89, "Bus und Bahn – auch nachts", F_REG, 30 * S2 / 1.3, "#3A3A3A")
+    return im.resize((PW_PX, PH_PX), Image.LANCZOS)
+
+
+def posters():
+    """Atlas 1024 x 1536 mit vier Plakaten (2 x 2); Zelle (i, j): u0 = i/2, v von oben j/2."""
+    rnd = random.Random(21)
+    im = Image.new("RGB", (PW_PX * 2, PH_PX * 2), "#FFFFFF")
+    for k, fn in enumerate((poster_konzert, poster_markt, poster_bibliothek, poster_bahn)):
+        im.paste(fn(rnd), ((k % 2) * PW_PX, (k // 2) * PH_PX))
+    im.save(os.path.join(OUT, "shelter_posters.png"))
+
+
+def glass_marks():
+    """Kontrastmarkierung auf Glasflächen: Reihe weißer Quadrate (RGBA), kachelbar in u; 1 Kachel = 0,20 m."""
+    im = Image.new("RGBA", (128, 32), (255, 255, 255, 0))
+    d = ImageDraw.Draw(im)
+    for i in range(4):
+        d.rectangle([i * 32 + 5, 5, i * 32 + 26, 26], fill=(245, 247, 248, 215))
+    im.save(os.path.join(OUT, "glass_marks.png"))
+
+
+def bench_wood():
+    """Holzlatten (Lärche, geölt), Maserung längs u; kachelbar."""
+    import numpy as np
+    rs = np.random.RandomState(5)
+    h, w = 128, 512
+    base = np.array([150, 104, 62], dtype=np.float32)
+    grain = np.zeros((h, w), dtype=np.float32)
+    for _ in range(90):
+        y = rs.randint(0, h)
+        amp = rs.uniform(-18, 14)
+        ph = rs.uniform(0, 6.28)
+        fr = rs.choice([1, 2, 3])
+        xs = np.arange(w)
+        yy = (y + 2.5 * np.sin(xs * 2 * math.pi * fr / w + ph)).astype(int) % h
+        grain[yy, xs] += amp
+        grain[(yy + 1) % h, xs] += amp * 0.5
+    grain += rs.normal(0, 3.0, (h, w))
+    img = np.clip(base[None, None, :] + grain[:, :, None] * np.array([1.0, 0.8, 0.55]), 0, 255).astype("uint8")
+    Image.fromarray(img, "RGB").save(os.path.join(OUT, "bench_wood.png"))
+
+
+def ticket_front():
+    """Front des Fahrkartenautomaten 0,50 x 1,30 m (Bildschirm, Tasten, Zahlfelder, Ausgabeschacht), frei gestaltet."""
+    W, H = 0.50, 1.30
+    c = Canvas(W, H, 600.0, "#8D9296")
+    c.rect(0, 0, W, 0.11, "#F2B01E")
+    c.text(0.03, 0.078, "Fahrkarten", F_BOLD, 0.040, INK)
+    c.text(W - 0.03, 0.078, "Tickets", F_REG, 0.026, "#3A3A3A", anchor="rs")
+    # Bildschirm
+    c.rect(0.045, 0.15, W - 0.045, 0.50, "#15181B")
+    c.rect(0.06, 0.165, W - 0.06, 0.485, "#1E3C5A")
+    c.rect(0.06, 0.165, W - 0.06, 0.215, "#F2B01E")
+    c.text(0.075, 0.202, "Bitte Ziel wählen", F_SEMI, 0.020, INK)
+    labels = ["Einzelfahrt", "4er-Karte", "Tageskarte", "Kurzstrecke", "Familie", "Fahrrad"]
+    for i, lb in enumerate(labels):
+        x0 = 0.075 + (i % 2) * 0.18
+        y0 = 0.235 + (i // 2) * 0.078
+        c.rect(x0, y0, x0 + 0.165, y0 + 0.062, "#E9EEF2")
+        c.text(x0 + 0.0825, y0 + 0.040, lb, F_SEMI, 0.016, "#1E3C5A", anchor="ms")
+    # Zahlbereich: Kartenleser, Münzeinwurf, Scheine
+    c.rect(0.045, 0.56, 0.22, 0.80, "#2A2D30")
+    for r in range(4):
+        for q in range(3):
+            c.rect(0.06 + q * 0.05, 0.575 + r * 0.054, 0.06 + q * 0.05 + 0.038, 0.575 + r * 0.054 + 0.04, "#C9CCCE")
+    c.rect(0.07, 0.535, 0.20, 0.552, "#0C0D0E")
+    c.rect(0.27, 0.56, W - 0.045, 0.66, "#2A2D30")
+    c.rect(0.29, 0.605, W - 0.065, 0.615, "#0C0D0E")
+    c.text(0.275, 0.59, "Scheine", F_REG, 0.012, "#D8DADB")
+    c.rect(0.27, 0.69, W - 0.045, 0.80, "#2A2D30")
+    c.circle(0.40, 0.745, 0.028, "#B9BCBF")
+    c.rect(0.397, 0.725, 0.403, 0.765, "#0C0D0E")
+    c.text(0.275, 0.715, "Münzen", F_REG, 0.012, "#D8DADB")
+    # Ausgabeschacht
+    c.rect(0.07, 0.90, W - 0.07, 1.10, "#101113")
+    c.rect(0.085, 0.915, W - 0.085, 1.085, "#1B1D20")
+    c.text(W / 2, 0.885, "Entnahme", F_REG, 0.014, "#2A2D30", anchor="ms")
+    c.rect(0.045, 1.16, W - 0.045, 1.24, "#F2F2F2")
+    c.text(W / 2, 1.212, "Hilfe und Auskunft: Sprechtaste drücken", F_REG, 0.011, "#333333", anchor="ms")
+    im = c.done(320, 832)
+    im.save(os.path.join(OUT, "ticket_front.png"))
+
+
+def platform_textures():
+    """Bodenplatten für stops.gd (direkt nach godot/assets/models/stops/):
+    platform_tactile.png  Rillenplatte 0,30 m, Rillen längs u (u = Laufrichtung, 1 Kachel = 0,30 m)
+    platform_tactile_n.png Normalmap dazu
+    platform_edge.png     helles Betonband mit Bordsteinfuge (1 Kachel = 1,0 m längs u, v = 0 Kante … 1 innen)"""
+    import numpy as np
+    dst = os.path.abspath(os.path.join(HERE, "..", "..", "..", "godot", "assets", "models", "stops"))
+    rs = np.random.RandomState(11)
+    n = 256
+    v = np.arange(n) / n
+    ribs = 0.5 + 0.5 * np.cos(v * 2 * math.pi * 8)          # 8 Rippen je Platte
+    hgt = np.repeat(np.clip(ribs * 1.6 - 0.3, 0, 1)[:, None], n, axis=1)
+    hgt[:, :3] = 0
+    hgt[:, -3:] = 0                                         # Plattenfuge
+    noise = rs.normal(0, 5.0, (n, n))
+    alb = 176 + hgt * 28 + noise
+    alb[:, :3] -= 45
+    alb[:, -3:] -= 45
+    col = np.clip(np.stack([alb, alb * 0.985, alb * 0.96], axis=2), 0, 255).astype("uint8")
+    Image.fromarray(col, "RGB").save(os.path.join(dst, "platform_tactile.png"))
+    dy = np.gradient(hgt, axis=0) * 6.0
+    dx = np.gradient(hgt, axis=1) * 6.0
+    nz = np.ones_like(dx)
+    ln = np.sqrt(dx * dx + dy * dy + nz * nz)
+    nrm = np.stack([(-dx / ln) * 0.5 + 0.5, (dy / ln) * 0.5 + 0.5, (nz / ln) * 0.5 + 0.5], axis=2)
+    Image.fromarray((nrm * 255).astype("uint8"), "RGB").save(os.path.join(dst, "platform_tactile_n.png"))
+    # Betonband: Bordstein (v < 0.45) + Platte, Fugen
+    w, h = 512, 256
+    g = 168 + rs.normal(0, 6.0, (h, w))
+    blot = rs.normal(0, 1.0, (h // 16, w // 16))
+    blot = np.kron(blot, np.ones((16, 16))) * 5.0
+    g = g + blot
+    g[: int(h * 0.42), :] += 10                              # Bordstein etwas heller
+    g[int(h * 0.42) - 2: int(h * 0.42) + 2, :] -= 50          # Längsfuge Bord/Platte
+    g[:, :3] -= 50
+    g[:, -3:] -= 50                                          # Stoßfuge je Meter
+    g[int(h * 0.42):, w // 2 - 2: w // 2 + 2] -= 40          # Platten 0,5 m
+    g[:6, :] -= 18                                           # Kante leicht verschmutzt
+    col = np.clip(np.stack([g, g * 0.99, g * 0.965], axis=2), 0, 255).astype("uint8")
+    Image.fromarray(col, "RGB").save(os.path.join(dst, "platform_edge.png"))
+
+
+
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     sign_atlas()
     dfi_panel()
     info_board()
+    posters()
+    glass_marks()
+    bench_wood()
+    ticket_front()
+    platform_textures()
     print("Texturen geschrieben:", OUT, REGIONS)
