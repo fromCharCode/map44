@@ -153,6 +153,28 @@ def wall_runs(ring, min_len=7.0):
     return runs
 
 
+def tex_ok(tex, ppm=28.0):
+    """Plausibilität der fertigen Textur: wenig Laub davor, Geschosshöhe 2,4–5,2 m (aus der senkrechten Wiederholung
+    der Fensterreihen). Zu stark vergrößerte Ausschnitte zeigen riesige Fenster und fallen hier durch.
+    Liefert (ok, Grund)."""
+    f = tex.astype(float)
+    mx, mn = f.max(2), f.min(2)
+    sat = (mx - mn) / np.maximum(mx, 1.0)
+    green = (f[..., 1] > f[..., 0] * 1.06) & (f[..., 1] > f[..., 2] * 1.06) & (sat > 0.2)
+    h = tex.shape[0]
+    if green[: int(h * 0.8)].mean() > 0.16:
+        return False, "Laub"
+    g = f.mean(2)[: int(h * 0.85)]
+    dark = (g < np.median(g) - 22.0).astype(float)
+    if not 0.03 < dark.mean() < 0.55:
+        return False, "keine Fenster"
+    per, strength = mw._period(dark.mean(1), int(2.2 * ppm), min(int(6.5 * ppm), len(g) // 2))
+    if per == 0 or strength < 0.12:
+        return len(g) / ppm < 7.5, "keine Geschossteilung"       # niedrige Wände dürfen ohne Wiederholung sein
+    fh = per / ppm
+    return 2.4 <= fh <= 5.2, f"Geschosshöhe {fh:.1f} m"
+
+
 def good(info):
     """strenge Annahme: beide Hauskanten deutlich und Trauflinie gefunden"""
     return min(info["kanten"]) >= 0.55 and info["traufe"] >= 0.15
@@ -223,7 +245,7 @@ def tile_facades(name, max_cand=4):
                     print("  Fehler", im["id"], ex, flush=True)
                     continue
                 tried += 1
-                if tex is not None and good(info) and (best is None or info["guete"] > best[1]["guete"]):
+                if tex is not None and good(info) and tex_ok(tex)[0] and (best is None or info["guete"] > best[1]["guete"]):
                     best = (tex, info, im, p0, p1)
             if best:
                 tex, info, im, p0, p1 = best
