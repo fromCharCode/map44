@@ -1153,6 +1153,10 @@ def road_width(tags: dict) -> float:
         # Richtungsfahrbahn mit erfasster Streifenzahl: Streifen 3,5 m + Randstreifen; vorher galt die Breite der
         # ganzen Straße mit Gegenverkehr (z. B. 11 m für zwei Streifen in einer Richtung)
         base = min(base, lanes * 3.5 + 1.0)
+    if lanes == 1 and not oneway and tags.get("bridge") not in (None, "no") and cls in DRIVE:
+        # einstreifige Brücke mit Gegenverkehr (Engstelle, lanes=1 ausdrücklich erfasst): vorher galt die
+        # Regelbreite der Straßenklasse (bis 7,5 m für einen einzigen Streifen)
+        base = min(base, 4.5)
     if lanes and cls in ("motorway", "trunk"):
         # Richtungsfahrbahn der Autobahn: Fahrstreifen 3,75 m + Standstreifen 2,5 m + Randstreifen 0,5 m
         # (2 Streifen: 10,5 m, 3 Streifen: 14,25 m). Vorher pauschal 14 m – für zweistreifige Abschnitte zu breit;
@@ -1166,6 +1170,8 @@ def road_width(tags: dict) -> float:
         from width_override import measured
         m = measured(tags["_id"], est)
         if m:
+            if lanes == 1 and not oneway and tags.get("bridge") not in (None, "no"):
+                m = max(m, 3.5)                           # einstreifige Brücke: Messwerte unter 3,5 m sind Teilflächen
             return m
     return est
 

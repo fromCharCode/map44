@@ -22,6 +22,7 @@ var _attaching := {}
 var attach_log: Array = []   # Diagnose: in diesem Bild eingehängte Teile (DriveBench liest und leert)
 var _result: Tile
 var _now := ""              # Kachel, die load_now gerade im Haupt-Thread baut
+var _hold := 0               # > 0: load_now wartet/baut – der Worker startet solange keine neue Kachel
 var _timer := 0.0
 var enabled := true
 
@@ -46,15 +47,22 @@ func scan() -> void:
 func load_now(key: String) -> void:
 	if not available.has(key):
 		return
-	while _pending == key or _attaching.has(key):
+	# Nie zwei Kacheln gleichzeitig bauen: Haupt-Thread und Worker teilen sich Zwischenspeicher (Materialien,
+	# zerlegte Modelle), die beim ersten Gebrauch gefüllt werden – gleichzeitiger Aufbau führte zu seltenen
+	# Abstürzen beim Start (signal 11 in parked_cars/_cars). Erst den laufenden Worker fertig werden lassen,
+	# solange keinen neuen starten (_hold).
+	_hold += 1
+	while _thread != null or _pending == key or _attaching.has(key) or _now != "":
 		await get_tree().process_frame
 	if tiles.has(key):
+		_hold -= 1
 		return
 	_now = key
 	var t := Tile.new()
 	t.build(key, noise)
-	await _attach(t)
 	_now = ""
+	_hold -= 1
+	await _attach(t)
 
 
 func _attach(t: Tile) -> void:
@@ -136,7 +144,7 @@ func _process(delta: float) -> void:
 			tiles.erase(k)
 			_unload(t)
 	# Nächste fehlende Kachel laden
-	if _thread == null:
+	if _thread == null and _hold == 0:
 		var best := ""
 		var best_d := LOAD_R
 		for k in available:

@@ -88,6 +88,12 @@ def set_widths(city, decks):
         for r in rs:
             w = cw * 0.5 if dual else cw
             ln = max(1, lanes // 2) if dual and lanes else (lanes or int(r.get("lanes", 1)))
+            # Gleise liegen in der Fahrbahn und werden mitbefahren (Marienbrücke, Albertbrücke): die Recherche zählt
+            # Kfz-Streifen und Gleise getrennt, OSM zählt die Gleisstreifen als Fahrstreifen – dann gilt OSM je Weg
+            tracks = int(_num(deck.get("tram_tracks")) or 0)
+            if tracks and not dual and lanes and lanes < int(r.get("lanes", 1)) <= lanes + tracks \
+                    and w / int(r["lanes"]) >= 2.75:
+                ln = int(r["lanes"])
             if 0 in dirs and len(dirs) > 1 and int(r.get("oneway", 0)) != 0:
                 continue                                  # Rampen/Nebenwege einer Brücke mit Hauptfahrbahn
             r["w_osm"], r["lanes_osm"] = r["width"], r["lanes"]
