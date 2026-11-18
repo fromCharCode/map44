@@ -38,8 +38,12 @@ func setup(count: int) -> void:
 	var s_alt := _nearest_s(Vector2(494.0, -260.0))
 	for i in count:
 		var b := {"s": s_alt + rng.randf_range(-4200.0, 4200.0), "dir": 1 if i % 2 == 0 else -1,
-				"v": rng.randf_range(3.6, 5.2), "node": null, "wheel": 0.0}
+				"v": rng.randf_range(3.6, 5.2), "node": null, "wheel": 0.0, "ship": i}
 		boats.append(b)
+	if OS.has_environment("DRESDEN_BOATS"):
+		for b in boats:
+			var q := point_at(b["s"])
+			print("DAMPFER %s bei (%.0f, %.0f) Richtung %d" % [SteamerModel.FLEET[int(b["ship"]) % SteamerModel.FLEET.size()]["name"], q.x, q.y, int(b["dir"])])
 
 
 func _nearest_s(p: Vector2) -> float:
@@ -87,8 +91,9 @@ func _process(delta: float) -> void:
 			b["dir"] = -1
 		var p := point_at(b["s"])
 		var near := Vector2(p.x - focus.x, p.y - focus.z).length() < SHOW_R
-		if near and b["node"] == null and scene != null:
-			var n := scene.instantiate() as Node3D
+		if near and b["node"] == null:
+			# Schiff der Flotte (eigener Name, eigene Länge) – im Spiel erzeugt (scripts/steamer_model.gd)
+			var n := SteamerModel.build(SteamerModel.FLEET[int(b["ship"]) % SteamerModel.FLEET.size()])
 			RenderUtil.gi_off(n)
 			add_child(n)
 			b["node"] = n
@@ -119,7 +124,7 @@ func _setup_effects(b: Dictionary) -> void:
 		pm.gravity = Vector3(0.6, 0.4, 0)
 		pm.scale_min = 1.2
 		pm.scale_max = 3.2
-		pm.color = Color(0.22, 0.22, 0.24, 0.55)
+		pm.color = Color(0.72, 0.72, 0.74, 0.40)       # heller Dampf/Abgas (ölgefeuert), kein schwarzer Qualm
 		var curve := Curve.new()
 		curve.add_point(Vector2(0, 0.3))
 		curve.add_point(Vector2(1, 2.2))
