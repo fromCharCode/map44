@@ -27,7 +27,7 @@ TO_LL = Transformer.from_crs("EPSG:25833", "EPSG:4326", always_xy=True)
 ORIGIN_E, ORIGIN_N = 411000.0, 5656200.0
 UA = {"User-Agent": "map-data-research/1.0"}
 FIELDS = "id,captured_at,camera_type,computed_geometry,geometry,computed_compass_angle,computed_rotation," \
-         "computed_altitude,width,height,creator,thumb_2048_url,thumb_original_url"
+         "computed_altitude,width,height,creator,thumb_1024_url,thumb_2048_url,thumb_original_url"
 
 
 def token():
@@ -43,18 +43,19 @@ def get(url, binary=False, auth=True):
     return d if binary else json.loads(d.decode("utf-8"))
 
 
-def images_near(x, z, radius):
+def images_near(x, z, radius, pano_only=False):
     """Bilder im Umkreis (Spielkoordinaten); Antwort je Abfragekasten zwischengespeichert"""
     CACHE.mkdir(parents=True, exist_ok=True)
     e, n = x + ORIGIN_E, ORIGIN_N - z
     lo = TO_LL.transform(e - radius, n - radius)
     hi = TO_LL.transform(e + radius, n + radius)
-    key = f"q_{round(x)}_{round(z)}_{round(radius)}.json"
+    key = f"q{'p' if pano_only else ''}_{round(x)}_{round(z)}_{round(radius)}.json"
     f = CACHE / key
     if f.exists():
         return json.loads(f.read_text())
     url = "https://graph.mapillary.com/images?" + urllib.parse.urlencode(
-        {"fields": FIELDS, "bbox": f"{lo[0]:.6f},{lo[1]:.6f},{hi[0]:.6f},{hi[1]:.6f}", "limit": 2000})
+        {"fields": FIELDS, "bbox": f"{lo[0]:.6f},{lo[1]:.6f},{hi[0]:.6f},{hi[1]:.6f}", "limit": 2000,
+         **({"is_pano": "true"} if pano_only else {})})
     data = get(url).get("data", [])
     f.write_text(json.dumps(data))
     return data

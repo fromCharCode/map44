@@ -1041,6 +1041,8 @@ def unify_group_styles(out, attached):
                 if not o["_wall_tag"]:
                     o["wall"] = wall
         for o in lst:
+            if o.get("_wall_tag"):
+                o["wall_osm"] = True                 # Farbe von Hand erfasst: Fotofarben (mly_colors) überschreiben sie nicht
             for k in ("_tags", "_shape", "_foot", "_wall_tag"):
                 o.pop(k, None)
 

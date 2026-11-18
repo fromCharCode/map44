@@ -3,6 +3,7 @@ cd "$(dirname "$0")"
 source ../.venv/bin/activate
 export DRESDEN_TILE="$1"
 python build_city.py > "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || { echo "FAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt; exit 1; }
+python mly_colors.py apply "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "COLFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python vegetation.py >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "VEGFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python street_green.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "GREENFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python curbs.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "CURBFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
