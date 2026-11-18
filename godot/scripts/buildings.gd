@@ -186,7 +186,8 @@ func _build_cell(key: Vector2i, items: Array) -> void:
 		col.a = float(style) + 0.02 + 0.96 * seed01
 		# Stil und Zufallswert gehen über CUSTOM0 (32-Bit-Float) an den Fassaden-Shader: Vertexfarben speichert
 		# Godot als 8 Bit (0..1) – COLOR.a > 1 wurde abgeschnitten, alle Stile >= 1 erschienen als Barock
-		walls.cur = Color(0.0, float(style), seed01, 0.0)
+		var era := float(int(b.get("era", 0)))
+		walls.cur = Color(0.0, float(style), seed01, era)
 		var uv2 := Vector2(float(b["levels"]), float(b["eave"]))
 		var v0 := y_bot - ref
 		var v1 := y_top - ref
@@ -244,12 +245,12 @@ func _build_cell(key: Vector2i, items: Array) -> void:
 					# Ladenfronten: Wandstücke mit Kategorie in CUSTOM0 (Shader zeichnet Schaufenster)
 					var tp := 0.0
 					for iv in shop_iv:
-						walls.cur = Color(0.0, float(style), seed01, 0.0)
+						walls.cur = Color(0.0, float(style), seed01, era)
 						_wall_piece(walls, trim, p0, p1, ln, tp, iv[0], y_bot, y_top, nrm, col, acc, v0, ref, uv2, tang, style != 5, tdir, eave_h, style, trim_col)
-						walls.cur = Color(iv[2], float(style), seed01, 0.0)
+						walls.cur = Color(iv[2], float(style), seed01, era)
 						_wall_piece(walls, trim, p0, p1, ln, iv[0], iv[1], y_bot, y_top, nrm, col, acc, v0, ref, uv2, tang, false, tdir, eave_h, style, trim_col)
 						tp = iv[1]
-					walls.cur = Color(0.0, float(style), seed01, 0.0)
+					walls.cur = Color(0.0, float(style), seed01, era)
 					_wall_piece(walls, trim, p0, p1, ln, tp, 1.0, y_bot, y_top, nrm, col, acc, v0, ref, uv2, tang, style != 5, tdir, eave_h, style, trim_col)
 				else:
 					# Wand mit Durchfahrt(en): volle Abschnitte daneben, darüber nur der Sturz
@@ -269,7 +270,9 @@ func _build_cell(key: Vector2i, items: Array) -> void:
 					# plastischer Fassadenschmuck (Gewände, Verdachungen, Pilaster, Konsolen) am Fensterraster
 					var mid_e := (p0 + p1) * 0.5
 					if not _plain_cur and not Landmarks.on_photo_wall(mid_e) and not PhotoFacades.covers(tile_key, mid_e):
-						FacadeRelief.edge(_deco, _cell_of, float(b["levels"]), eave_h, style, seed01, p0, p1, ln, acc, nrm, ref)
+						var rf_b = b.get("roof")
+						FacadeRelief.edge(_deco, _cell_of, float(b["levels"]), eave_h, style, int(era), rf_b != null and (rf_b as Array).size() >= 9,
+							seed01, p0, p1, ln, acc, nrm, ref, not shop_iv.is_empty())
 					if _edge_is(rings[0], p0, p1, door_edge):
 						_door(b, style, seed01, p0, p1, ln, acc, nrm, ref, shop_iv)
 				acc += ln
@@ -461,6 +464,13 @@ func _deco_edge(b: Dictionary, style: int, seed: float, p0: Vector2, p1: Vector2
 	var h1 := _h11(seed * 91.7)
 	var pitch := 0.0
 	var model := ""
+	# Epoche (tools/facade_eras.py): ab 1919 keine Gründerzeit-Balkone; Loggien/Balkone der Siedlungsbauten und
+	# der 1950er setzt der Fassaden-Baukasten (FacadeRelief)
+	var era := int(b.get("era", 0))
+	if era in [8, 9, 10, 14] and style in [0, 3, 6]:
+		return
+	if era == 12 and style in [0, 6]:
+		style = 3
 	match style:
 		0, 6:
 			pitch = lerpf(2.3, 3.1, h1) if style == 0 else lerpf(2.4, 3.0, h1)
@@ -478,6 +488,8 @@ func _deco_edge(b: Dictionary, style: int, seed: float, p0: Vector2, p1: Vector2
 			return
 	if StreetLife.parts(model).is_empty():
 		return
+	if int(b.get("style", 0)) in [0, 1, 3, 6]:
+		pitch = float(FacadeRelief.grid(int(b.get("style", 0)), era, seed, fh)["pitch"])    # gleiches Achsmaß wie der Shader
 	var e := (p1 - p0) / ln
 	var basis := Basis(Vector3.UP.cross(-nrm).normalized(), Vector3.UP, -nrm)   # Modell -Z = nach außen
 	var c0 := int(ceil((acc - pitch * 0.5) / pitch))

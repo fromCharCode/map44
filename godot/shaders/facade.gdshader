@@ -81,6 +81,8 @@ void fragment() {
 	// Stil/Zufallswert aus CUSTOM0.y/.z (Float); COLOR.a ist nur 8 Bit und wurde bei Werten > 1 abgeschnitten
 	float st = floor(shopinfo.y + 0.5);
 	float seed = clamp(shopinfo.z, 0.0, 1.0);
+	// Bauepoche (tools/facade_eras.py, 0 = unbekannt) aus CUSTOM0.w: Fensterformat und Schmuck je Epoche
+	float era = floor(shopinfo.w + 0.5);
 	float levels = max(UV2.x, 1.0);
 	float height = max(UV2.y, 3.0);
 	float fh = clamp(height / levels, 2.7, 4.6);
@@ -147,6 +149,37 @@ void fragment() {
 		wh = 0.95;
 		wy = 0.25;
 	}
+	// ---- Epoche: Fensterformate (identisch in scripts/facade_relief.gd, grid()) ----
+	bool plain_era = false;      // ab 1919: kein historistischer Fensterschmuck, keine Geschossbänder
+	if (era > 0.5 && (st < 1.5 || (st > 2.5 && st < 3.5) || (st > 5.5 && st < 6.5))) {
+		if (era < 1.5) {                 // Barock: Stilwerte
+		} else if (era < 2.5) {          // Klassizismus/Biedermeier
+			pitch = mix(2.4, 3.0, h1); ww = 1.1; wh = fh * 0.60; wy = fh * 0.22; shape = 0;
+		} else if (era < 3.5) {          // Dresdner Schule (Semper-Nicolai): Rundbogen in der Beletage
+			pitch = mix(2.8, 3.6, h1); ww = 1.15; wh = fh * 0.66; wy = fh * 0.18;
+			shape = (row > 0.5 && row < 1.5) ? 2 : 0;
+		} else if (era < 4.5) {          // Gründerzeit: Stilwerte
+		} else if (era < 5.5) {          // Würfelhaus
+			pitch = mix(2.6, 3.4, h1); ww = pitch * 0.42;
+		} else if (era < 6.5) {          // Klinker: Stilwerte
+		} else if (era < 7.5) {          // Jugendstil/Reform: breitere Fenster
+			pitch = mix(2.4, 3.6, h1); ww = pitch * 0.46; wh = fh * 0.58; wy = fh * 0.24; shape = 1;
+		} else if (era < 8.5) {          // Weimarer Zeit: liegende Formate
+			pitch = mix(2.8, 3.8, h1); ww = pitch * 0.50; wh = 1.38; wy = 0.90; shape = 0; plain_era = true;
+		} else if (era < 9.5) {          // 1933–45
+			pitch = mix(2.6, 3.4, h1); ww = 1.15; wh = 1.50; wy = 0.85; shape = 0; plain_era = true;
+		} else if (era < 10.5) {         // Wiederaufbau 1950er
+			pitch = mix(2.8, 3.6, h1); ww = 1.30; wh = 1.65; wy = 0.80; shape = 0; plain_era = true;
+		} else if (era < 11.5) {         // DDR (kleinere Bauten ohne Plattenraster)
+			plain_era = true;
+		} else if (era < 12.5) {         // nach 1990: bodentiefe Fenster
+			pitch = mix(2.5, 4.0, h1); ww = 1.2; wh = fh - 0.85; wy = 0.14; shape = 0; plain_era = true;
+		} else if (era < 13.5) {         // Villen
+			pitch = mix(2.8, 3.8, h1); ww = 1.2;
+		} else if (era < 14.5) {         // Dorfkern: kleine Fenster
+			pitch = mix(2.2, 3.0, h1); ww = 0.9; wh = 1.25; wy = 0.90; shape = 0; plain_era = true;
+		}
+	}
 	float col = floor(p.x / pitch);
 	float ux = p.x - col * pitch;
 	vec2 q = vec2(ux, vy);
@@ -173,7 +206,7 @@ void fragment() {
 		ww = 1.15;
 		wc = vec2(pitch * 0.5, wy + wh * 0.5);
 		whs = vec2(ww * 0.5, wh * 0.5);
-		shape = (st == 1.0 || st == 0.0) ? 2 : 0;
+		shape = ((st == 1.0 || st == 0.0) && !plain_era) ? 2 : 0;
 	}
 	if (st > 1.5 && st < 2.5) {
 		// Platte: zwei Fenster je Plattenbreite, jede zweite Platte Loggia
@@ -375,7 +408,7 @@ void fragment() {
 	float cornice = smoothstep(height - 0.95, height - 0.7, p.y);
 	vec3 stone_tone = clamp(base * 1.1 + 0.05, 0.0, 1.0);
 	float band = 0.0;
-	if (st < 0.5 || st > 5.5 && st < 6.5) {
+	if ((st < 0.5 || st > 5.5 && st < 6.5) && !plain_era) {
 		// Gründerzeit: Geschossbänder
 		band = (1.0 - smoothstep(0.0, 0.05 + aa, abs(vy - 0.04) - 0.09)) * step(0.5, row);
 	} else if (st > 0.5 && st < 1.5) {
@@ -443,7 +476,7 @@ void fragment() {
 	vec3 stone_deco = clamp(base * 1.18 + 0.03, 0.0, 1.0);
 	// Sturz/Verdachung über dem Fenster (Gründerzeit, Barock, Klinker)
 	float lintel = 0.0;
-	if ((st < 1.5 || (st > 5.5 && st < 6.5)) && has_win && !shop) {
+	if ((st < 1.5 || (st > 5.5 && st < 6.5)) && has_win && !shop && !plain_era) {
 		float ly = wy + wh + 0.02;
 		float dl = sdbox(q, vec2(pitch * 0.5, ly + 0.17), vec2(ww * 0.5 + 0.14, 0.15));
 		lintel = 1.0 - smoothstep(-aa, aa, dl);
