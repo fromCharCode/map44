@@ -50,7 +50,7 @@ def tile_clear(name, dry=False):
             return items
         out = [o for o in items if not (cond(o) and on_road(*xz(o), margin))]
         if len(out) != len(items):
-            n[key] = len(items) - len(out)
+            n[key] = n.get(key, 0) + len(items) - len(out)
         return out
 
     # Bäume: Stamm (Radius ~0,3 m) muss neben der Fahrbahn stehen; −0,2 m Spielraum, weil Straßenbäume oft im
@@ -94,7 +94,12 @@ def tile_clear(name, dry=False):
                              lambda o: o[0] not in KEEP_FURN)
     life["signs"] = keep("Schilder", life.get("signs", []), lambda o: (o[2], o[3]), -0.25)
     if life.get("monuments"):
-        life["monuments"] = keep("Denkmäler", life["monuments"], lambda o: (o[1], o[2]), 0.8)
+        # Abstand nach Größe des Modells: ein Brunnenbecken (Ø 6 m) ragte sonst in die Fahrbahn
+        rad = {"mon_fountain": 3.3, "mon_reiter": 2.3, "mon_reiter_gold": 2.3, "mon_obelisk": 1.7, "mon_war": 1.8}
+        for model in sorted({o[0] for o in life["monuments"]}):
+            r_ = rad.get(model, 1.1) * 1.0
+            life["monuments"] = keep("Denkmäler", life["monuments"], lambda o: (o[1], o[2]), r_,
+                                     lambda o, m=model: o[0] == m)
     city["props"] = keep("Kleinobjekte", city.get("props", []), lambda o: (o[0], o[1]), -0.1)
     # Mauern, Zäune und Stützmauern, die quer über eine Fahrbahn laufen: dort unterbrechen (Einfahrten, Lagefehler)
     from shapely.ops import unary_union
