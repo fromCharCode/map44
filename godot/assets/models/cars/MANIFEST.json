@@ -618,5 +618,537 @@
   "tris": 24464,
   "size_bytes": 2362952,
   "notes": "Gelenkbus 18.1 m (Schubgelenk), 4 Doppeltüren rechts (+X). Knoten: Bus/Front (Vorderwagen, Wheel_FL/FR, Wheel_ML/MR, Door_1/2), Bus/Rear (Nachläufer, Ursprung = Gelenk, Wheel_RL/RR Zwilling, Door_3/4), Bus/Bellows (Faltenbalg + Drehteller, Ursprung = Gelenk, halben Knickwinkel mitdrehen). Ursprung der Wurzel: Mitte zwischen Vorder- und Mittelachse."
+ },
+ "limousine_ober.glb": {
+  "file": "limousine_ober.glb",
+  "class": "Obere Mittelklasse, Stufenheck",
+  "length": 4.95,
+  "width": 1.875,
+  "height": 1.465,
+  "bbox_length": 4.997,
+  "bbox_width_with_mirrors": 2.099,
+  "bbox_min": [
+   -1.049,
+   0.16,
+   -2.37
+  ],
+  "bbox_max": [
+   1.049,
+   1.475,
+   2.627
+  ],
+  "wheelbase": 2.96,
+  "axle_z": {
+   "front": -1.48,
+   "rear": 1.48
+  },
+  "front_overhang": 0.86,
+  "rear_overhang": 1.13,
+  "track_width": 1.62,
+  "wheel_radius": 0.345,
+  "wheel_width": 0.235,
+  "center_of_mass_height_hint": 0.46,
+  "tris": 9003,
+  "tris_parts": {
+   "Body": 5109,
+   "Glass": 324,
+   "Interior": 548,
+   "Lights": 494,
+   "Wheels": 2528
+  },
+  "size_bytes": 257672,
+  "preview_paint": "#5C6368",
+  "materials": [
+   "BlackGloss",
+   "BrakeDisc",
+   "BrakeLightEmit",
+   "CarPaint",
+   "Chrome",
+   "Glass",
+   "HeadlightEmit",
+   "IndicatorEmit",
+   "Interior",
+   "InteriorSeat",
+   "PlasticBlack",
+   "Plate",
+   "PlateBlue",
+   "Rim",
+   "Rubber",
+   "TaillightEmit"
+  ],
+  "notes": "Knoten Car/{Body,Glass,Interior,Lights,Wheel_FL|FR|RL|RR/{Rim_*,Tire_*}}; schaut nach -Z, rechts +X, Ursprung am Boden mittig zwischen den Achsen. Gebaut mit tools/blender/cars_build.py."
+ },
+ "kombi_nord.glb": {
+  "file": "kombi_nord.glb",
+  "class": "Großer Kombi nordischer Art",
+  "length": 4.94,
+  "width": 1.875,
+  "height": 1.48,
+  "bbox_length": 4.978,
+  "bbox_width_with_mirrors": 2.101,
+  "bbox_min": [
+   -1.05,
+   0.165,
+   -2.396
+  ],
+  "bbox_max": [
+   1.05,
+   1.488,
+   2.582
+  ],
+  "wheelbase": 2.94,
+  "axle_z": {
+   "front": -1.47,
+   "rear": 1.47
+  },
+  "front_overhang": 0.9,
+  "rear_overhang": 1.1,
+  "track_width": 1.63,
+  "wheel_radius": 0.345,
+  "wheel_width": 0.235,
+  "center_of_mass_height_hint": 0.47,
+  "tris": 9543,
+  "tris_parts": {
+   "Body": 5473,
+   "Glass": 244,
+   "Interior": 612,
+   "Lights": 566,
+   "Wheels": 2648
+  },
+  "size_bytes": 273368,
+  "preview_paint": "#3B5169",
+  "materials": [
+   "BlackGloss",
+   "BrakeDisc",
+   "BrakeLightEmit",
+   "CarPaint",
+   "Chrome",
+   "Glass",
+   "HeadlightEmit",
+   "IndicatorEmit",
+   "Interior",
+   "InteriorSeat",
+   "PlasticBlack",
+   "Plate",
+   "PlateBlue",
+   "Rim",
+   "Rubber",
+   "TaillightEmit"
+  ],
+  "notes": "Knoten Car/{Body,Glass,Interior,Lights,Wheel_FL|FR|RL|RR/{Rim_*,Tire_*}}; schaut nach -Z, rechts +X, Ursprung am Boden mittig zwischen den Achsen. Gebaut mit tools/blender/cars_build.py."
+ },
+ "suv_kompakt.glb": {
+  "file": "suv_kompakt.glb",
+  "class": "Kompakt-SUV",
+  "length": 4.5,
+  "width": 1.836,
+  "height": 1.65,
+  "bbox_length": 4.535,
+  "bbox_width_with_mirrors": 2.052,
+  "bbox_min": [
+   -1.026,
+   0.21,
+   -2.277
+  ],
+  "bbox_max": [
+   1.026,
+   1.658,
+   2.258
+  ],
+  "wheelbase": 2.68,
+  "axle_z": {
+   "front": -1.34,
+   "rear": 1.34
+  },
+  "front_overhang": 0.91,
+  "rear_overhang": 0.91,
+  "track_width": 1.59,
+  "wheel_radius": 0.355,
+  "wheel_width": 0.235,
+  "center_of_mass_height_hint": 0.52,
+  "tris": 8801,
+  "tris_parts": {
+   "Body": 5119,
+   "Glass": 232,
+   "Interior": 588,
+   "Lights": 454,
+   "Wheels": 2408
+  },
+  "size_bytes": 256192,
+  "preview_paint": "#E7E8E8",
+  "materials": [
+   "BlackGloss",
+   "BrakeDisc",
+   "BrakeLightEmit",
+   "CarPaint",
+   "Chrome",
+   "Glass",
+   "HeadlightEmit",
+   "IndicatorEmit",
+   "Interior",
+   "InteriorSeat",
+   "PlasticBlack",
+   "Plate",
+   "PlateBlue",
+   "Rim",
+   "Rubber",
+   "TaillightEmit"
+  ],
+  "notes": "Knoten Car/{Body,Glass,Interior,Lights,Wheel_FL|FR|RL|RR/{Rim_*,Tire_*}}; schaut nach -Z, rechts +X, Ursprung am Boden mittig zwischen den Achsen. Gebaut mit tools/blender/cars_build.py."
+ },
+ "suv_gross.glb": {
+  "file": "suv_gross.glb",
+  "class": "Großer SUV",
+  "length": 4.95,
+  "width": 1.945,
+  "height": 1.76,
+  "bbox_length": 4.98,
+  "bbox_width_with_mirrors": 2.189,
+  "bbox_min": [
+   -1.095,
+   0.22,
+   -2.415
+  ],
+  "bbox_max": [
+   1.095,
+   1.768,
+   2.565
+  ],
+  "wheelbase": 2.98,
+  "axle_z": {
+   "front": -1.49,
+   "rear": 1.49
+  },
+  "front_overhang": 0.9,
+  "rear_overhang": 1.07,
+  "track_width": 1.68,
+  "wheel_radius": 0.385,
+  "wheel_width": 0.27,
+  "center_of_mass_height_hint": 0.55,
+  "tris": 9695,
+  "tris_parts": {
+   "Body": 5677,
+   "Glass": 244,
+   "Interior": 636,
+   "Lights": 610,
+   "Wheels": 2528
+  },
+  "size_bytes": 283176,
+  "preview_paint": "#2E3D3A",
+  "materials": [
+   "BlackGloss",
+   "BrakeDisc",
+   "BrakeLightEmit",
+   "CarPaint",
+   "Chrome",
+   "Glass",
+   "HeadlightEmit",
+   "IndicatorEmit",
+   "Interior",
+   "InteriorSeat",
+   "PlasticBlack",
+   "Plate",
+   "PlateBlue",
+   "Rim",
+   "Rubber",
+   "TaillightEmit"
+  ],
+  "notes": "Knoten Car/{Body,Glass,Interior,Lights,Wheel_FL|FR|RL|RR/{Rim_*,Tire_*}}; schaut nach -Z, rechts +X, Ursprung am Boden mittig zwischen den Achsen. Gebaut mit tools/blender/cars_build.py."
+ },
+ "kompakt_modern.glb": {
+  "file": "kompakt_modern.glb",
+  "class": "Kompaktklasse, Schrägheck",
+  "length": 4.29,
+  "width": 1.785,
+  "height": 1.46,
+  "bbox_length": 4.334,
+  "bbox_width_with_mirrors": 2.011,
+  "bbox_min": [
+   -1.005,
+   0.16,
+   -2.203
+  ],
+  "bbox_max": [
+   1.005,
+   1.46,
+   2.131
+  ],
+  "wheelbase": 2.63,
+  "axle_z": {
+   "front": -1.315,
+   "rear": 1.315
+  },
+  "front_overhang": 0.86,
+  "rear_overhang": 0.8,
+  "track_width": 1.54,
+  "wheel_radius": 0.32,
+  "wheel_width": 0.215,
+  "center_of_mass_height_hint": 0.46,
+  "tris": 9041,
+  "tris_parts": {
+   "Body": 5127,
+   "Glass": 268,
+   "Interior": 564,
+   "Lights": 434,
+   "Wheels": 2648
+  },
+  "size_bytes": 254420,
+  "preview_paint": "#8C1C24",
+  "materials": [
+   "BlackGloss",
+   "BrakeDisc",
+   "BrakeLightEmit",
+   "CarPaint",
+   "Chrome",
+   "Glass",
+   "HeadlightEmit",
+   "IndicatorEmit",
+   "Interior",
+   "InteriorSeat",
+   "PlasticBlack",
+   "Plate",
+   "PlateBlue",
+   "Rim",
+   "Rubber",
+   "TaillightEmit"
+  ],
+  "notes": "Knoten Car/{Body,Glass,Interior,Lights,Wheel_FL|FR|RL|RR/{Rim_*,Tire_*}}; schaut nach -Z, rechts +X, Ursprung am Boden mittig zwischen den Achsen. Gebaut mit tools/blender/cars_build.py."
+ },
+ "kleinwagen_modern.glb": {
+  "file": "kleinwagen_modern.glb",
+  "class": "Kleinwagen, Schrägheck",
+  "length": 4.05,
+  "width": 1.745,
+  "height": 1.45,
+  "bbox_length": 4.094,
+  "bbox_width_with_mirrors": 1.97,
+  "bbox_min": [
+   -0.985,
+   0.155,
+   -2.124
+  ],
+  "bbox_max": [
+   0.985,
+   1.455,
+   1.97
+  ],
+  "wheelbase": 2.55,
+  "axle_z": {
+   "front": -1.275,
+   "rear": 1.275
+  },
+  "front_overhang": 0.82,
+  "rear_overhang": 0.68,
+  "track_width": 1.5,
+  "wheel_radius": 0.305,
+  "wheel_width": 0.195,
+  "center_of_mass_height_hint": 0.46,
+  "tris": 8255,
+  "tris_parts": {
+   "Body": 4593,
+   "Glass": 240,
+   "Interior": 540,
+   "Lights": 474,
+   "Wheels": 2408
+  },
+  "size_bytes": 226348,
+  "preview_paint": "#2D7D8A",
+  "materials": [
+   "BlackGloss",
+   "BrakeDisc",
+   "BrakeLightEmit",
+   "CarPaint",
+   "Chrome",
+   "Glass",
+   "HeadlightEmit",
+   "IndicatorEmit",
+   "Interior",
+   "InteriorSeat",
+   "PlasticBlack",
+   "Plate",
+   "PlateBlue",
+   "Rim",
+   "Rubber",
+   "TaillightEmit"
+  ],
+  "notes": "Knoten Car/{Body,Glass,Interior,Lights,Wheel_FL|FR|RL|RR/{Rim_*,Tire_*}}; schaut nach -Z, rechts +X, Ursprung am Boden mittig zwischen den Achsen. Gebaut mit tools/blender/cars_build.py."
+ },
+ "elektro_limo.glb": {
+  "file": "elektro_limo.glb",
+  "class": "Elektro-Limousine, Fließheck",
+  "length": 4.72,
+  "width": 1.845,
+  "height": 1.44,
+  "bbox_length": 4.765,
+  "bbox_width_with_mirrors": 2.038,
+  "bbox_min": [
+   -1.019,
+   0.145,
+   -2.304
+  ],
+  "bbox_max": [
+   1.019,
+   1.448,
+   2.461
+  ],
+  "wheelbase": 2.88,
+  "axle_z": {
+   "front": -1.44,
+   "rear": 1.44
+  },
+  "front_overhang": 0.84,
+  "rear_overhang": 1.0,
+  "track_width": 1.6,
+  "wheel_radius": 0.335,
+  "wheel_width": 0.235,
+  "center_of_mass_height_hint": 0.45,
+  "tris": 8641,
+  "tris_parts": {
+   "Body": 4795,
+   "Glass": 360,
+   "Interior": 612,
+   "Lights": 466,
+   "Wheels": 2408
+  },
+  "size_bytes": 237976,
+  "preview_paint": "#1E3759",
+  "materials": [
+   "BlackGloss",
+   "BrakeDisc",
+   "BrakeLightEmit",
+   "CarPaint",
+   "Chrome",
+   "Glass",
+   "HeadlightEmit",
+   "IndicatorEmit",
+   "Interior",
+   "InteriorSeat",
+   "PlasticBlack",
+   "Plate",
+   "PlateBlue",
+   "Rim",
+   "Rubber",
+   "TaillightEmit"
+  ],
+  "notes": "Knoten Car/{Body,Glass,Interior,Lights,Wheel_FL|FR|RL|RR/{Rim_*,Tire_*}}; schaut nach -Z, rechts +X, Ursprung am Boden mittig zwischen den Achsen. Gebaut mit tools/blender/cars_build.py."
+ },
+ "transporter_modern.glb": {
+  "file": "transporter_modern.glb",
+  "class": "Transporter, Kastenwagen",
+  "length": 5.14,
+  "width": 1.93,
+  "height": 1.97,
+  "bbox_length": 5.183,
+  "bbox_width_with_mirrors": 2.247,
+  "bbox_min": [
+   -1.124,
+   0.24,
+   -2.57
+  ],
+  "bbox_max": [
+   1.124,
+   1.97,
+   2.613
+  ],
+  "wheelbase": 3.2,
+  "axle_z": {
+   "front": -1.6,
+   "rear": 1.6
+  },
+  "front_overhang": 0.95,
+  "rear_overhang": 0.99,
+  "track_width": 1.66,
+  "wheel_radius": 0.345,
+  "wheel_width": 0.215,
+  "center_of_mass_height_hint": 0.61,
+  "tris": 9311,
+  "tris_parts": {
+   "Body": 5938,
+   "Glass": 176,
+   "Interior": 289,
+   "Lights": 476,
+   "Wheels": 2432
+  },
+  "size_bytes": 263148,
+  "preview_paint": "#E4E5E6",
+  "materials": [
+   "BlackGloss",
+   "BrakeDisc",
+   "BrakeLightEmit",
+   "CarPaint",
+   "Chrome",
+   "Glass",
+   "HeadlightEmit",
+   "IndicatorEmit",
+   "Interior",
+   "InteriorSeat",
+   "PlasticBlack",
+   "Plate",
+   "PlateBlue",
+   "Rim",
+   "Rubber",
+   "TaillightEmit"
+  ],
+  "notes": "Knoten Car/{Body,Glass,Interior,Lights,Wheel_FL|FR|RL|RR/{Rim_*,Tire_*}}; schaut nach -Z, rechts +X, Ursprung am Boden mittig zwischen den Achsen. Gebaut mit tools/blender/cars_build.py."
+ },
+ "taxi_limousine.glb": {
+  "file": "taxi_limousine.glb",
+  "class": "Taxi (obere Mittelklasse, Stufenheck)",
+  "length": 4.95,
+  "width": 1.875,
+  "height": 1.602,
+  "bbox_length": 4.997,
+  "bbox_width_with_mirrors": 2.099,
+  "bbox_min": [
+   -1.049,
+   0.16,
+   -2.37
+  ],
+  "bbox_max": [
+   1.049,
+   1.602,
+   2.627
+  ],
+  "wheelbase": 2.96,
+  "axle_z": {
+   "front": -1.48,
+   "rear": 1.48
+  },
+  "front_overhang": 0.86,
+  "rear_overhang": 1.13,
+  "track_width": 1.62,
+  "wheel_radius": 0.345,
+  "wheel_width": 0.235,
+  "center_of_mass_height_hint": 0.5,
+  "tris": 9141,
+  "tris_parts": {
+   "Body": 5173,
+   "Glass": 328,
+   "Interior": 548,
+   "Lights": 564,
+   "Wheels": 2528
+  },
+  "size_bytes": 264968,
+  "preview_paint": "#E1CC9F",
+  "materials": [
+   "BlackGloss",
+   "BrakeDisc",
+   "BrakeLightEmit",
+   "CarPaint",
+   "Chrome",
+   "Glass",
+   "HeadlightEmit",
+   "IndicatorEmit",
+   "Interior",
+   "InteriorSeat",
+   "PlasticBlack",
+   "Plate",
+   "PlateBlue",
+   "Rim",
+   "Rubber",
+   "TaillightEmit",
+   "TaxiSignEmit"
+  ],
+  "notes": "Knoten Car/{Body,Glass,Interior,Lights,Wheel_FL|FR|RL|RR/{Rim_*,Tire_*}}; schaut nach -Z, rechts +X, Ursprung am Boden mittig zwischen den Achsen. Gebaut mit tools/blender/cars_build.py."
  }
 }

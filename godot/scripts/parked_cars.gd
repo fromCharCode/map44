@@ -3,12 +3,18 @@ extends Node3D
 ## Geparkte Autos am Straßenrand, Gullydeckel und Entwässerungsgitter (MultiMesh je Zelle, mit Kollision).
 
 const CELL := 125.0
-const MODELS := ["hatchback.glb", "sedan.glb", "van.glb", "citycar.glb"]
-const SIZES := {"hatchback.glb": Vector3(1.8, 1.4, 4.3), "sedan.glb": Vector3(1.8, 1.4, 4.7), "van.glb": Vector3(2.0, 2.3, 5.9), "citycar.glb": Vector3(1.65, 1.45, 3.6)}
+# aktuelle Modelle (tools/blender/cars_build.py), nach Häufigkeit im Stadtbild mehrfach genannt
+const MODELS := ["kompakt_modern.glb", "kleinwagen_modern.glb", "suv_kompakt.glb", "kombi_nord.glb", "kompakt_modern.glb",
+	"limousine_ober.glb", "suv_kompakt.glb", "kleinwagen_modern.glb", "suv_gross.glb", "kompakt_modern.glb",
+	"elektro_limo.glb", "kombi_nord.glb", "transporter_modern.glb"]
+const SIZES := {"kompakt_modern.glb": Vector3(1.78, 1.46, 4.3), "kleinwagen_modern.glb": Vector3(1.75, 1.45, 4.05),
+	"suv_kompakt.glb": Vector3(1.84, 1.65, 4.5), "suv_gross.glb": Vector3(1.95, 1.76, 4.95),
+	"kombi_nord.glb": Vector3(1.88, 1.48, 4.95), "limousine_ober.glb": Vector3(1.88, 1.47, 4.95),
+	"elektro_limo.glb": Vector3(1.84, 1.44, 4.72), "transporter_modern.glb": Vector3(1.93, 1.97, 5.15)}
 const COLORS := [
-	Color(0.9, 0.9, 0.88), Color(0.72, 0.73, 0.76), Color(0.1, 0.1, 0.11), Color(0.15, 0.2, 0.32),
-	Color(0.5, 0.07, 0.09), Color(0.33, 0.34, 0.36), Color(0.14, 0.28, 0.2), Color(0.82, 0.78, 0.65),
-	Color(0.55, 0.57, 0.6), Color(0.78, 0.3, 0.08),
+	Color(0.86, 0.87, 0.86), Color(0.62, 0.64, 0.66), Color(0.06, 0.06, 0.07), Color(0.3, 0.31, 0.33),
+	Color(0.12, 0.17, 0.3), Color(0.45, 0.06, 0.08), Color(0.2, 0.21, 0.23), Color(0.72, 0.73, 0.75),
+	Color(0.09, 0.1, 0.12), Color(0.9, 0.9, 0.9), Color(0.16, 0.3, 0.42), Color(0.42, 0.44, 0.4),
 ]
 
 var terrain: Terrain
@@ -87,8 +93,8 @@ func _cars(parked: Array) -> void:
 	var groups := {}   # [file, cell] -> Array[[xf, color]]
 	for pk in parked:
 		var file: String = MODELS[int(pk[3]) % MODELS.size()]
-		if file == "van.glb" and int(pk[3]) % 7 != 0:
-			file = "hatchback.glb"
+		if file == "transporter_modern.glb" and int(pk[3]) % 3 != 0:
+			file = "kompakt_modern.glb"
 		var pos := Vector3(pk[0], 0, pk[1])
 		var xf := _fit_ground(pos, float(pk[2]), SIZES.get(file, Vector3(1.8, 1.4, 4.4)))
 		var color: Color = COLORS[(int(pk[3]) / 3) % COLORS.size()]
