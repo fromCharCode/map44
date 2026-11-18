@@ -26,7 +26,7 @@ TO_UTM = Transformer.from_crs("EPSG:4326", "EPSG:25833", always_xy=True)
 TO_LL = Transformer.from_crs("EPSG:25833", "EPSG:4326", always_xy=True)
 ORIGIN_E, ORIGIN_N = 411000.0, 5656200.0
 UA = {"User-Agent": "map-data-research/1.0"}
-FIELDS = "id,captured_at,camera_type,computed_geometry,geometry,computed_compass_angle,computed_rotation," \
+FIELDS = "id,captured_at,camera_type,camera_parameters,computed_geometry,geometry,computed_compass_angle,computed_rotation," \
          "computed_altitude,width,height,creator,thumb_1024_url,thumb_2048_url,thumb_original_url"
 
 
@@ -49,7 +49,7 @@ def images_near(x, z, radius, pano_only=False):
     e, n = x + ORIGIN_E, ORIGIN_N - z
     lo = TO_LL.transform(e - radius, n - radius)
     hi = TO_LL.transform(e + radius, n + radius)
-    key = f"q{'p' if pano_only else ''}_{round(x)}_{round(z)}_{round(radius)}.json"
+    key = f"q{'p' if pano_only else 'a'}2_{round(x)}_{round(z)}_{round(radius)}.json"
     f = CACHE / key
     if f.exists():
         return json.loads(f.read_text())

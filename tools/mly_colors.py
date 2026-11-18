@@ -35,7 +35,7 @@ def pano_small(im):
     return np.asarray(Image.open(f).convert("RGB"))
 
 
-def wall_colour(pano, R, c, p0, p1, H, cam_h=2.3):
+def wall_colour(pano, R, c, p0, p1, H, cam_h=2.3, persp=None):
     """häufigste Wandfarbe (r, g, b 0..255) und Anteil gültiger Pixel"""
     ph, pw = pano.shape[:2]
     L = float(np.linalg.norm(p1 - p0))
@@ -45,11 +45,28 @@ def wall_colour(pano, R, c, p0, p1, H, cam_h=2.3):
     uu, vv = np.meshgrid(us, vs)
     rel = np.stack([p0[0] + dirv[0] * uu - c[0], -(p0[1] + dirv[1] * uu - c[1]), vv - cam_h], axis=-1)
     cam = rel @ R.T
-    lon = np.arctan2(cam[..., 0], cam[..., 2])
-    lat = np.arctan2(-cam[..., 1], np.hypot(cam[..., 0], cam[..., 2]))
-    sx = ((lon / (2 * math.pi) + 0.5) * pw).astype(int) % pw
-    sy = np.clip(((0.5 - lat / math.pi) * ph).astype(int), 0, ph - 1)
-    px = pano[sy, sx].reshape(-1, 3).astype(float) / 255.0
+    if persp is None:
+        lon = np.arctan2(cam[..., 0], cam[..., 2])
+        lat = np.arctan2(-cam[..., 1], np.hypot(cam[..., 0], cam[..., 2]))
+        sx = ((lon / (2 * math.pi) + 0.5) * pw).astype(int) % pw
+        sy = np.clip(((0.5 - lat / math.pi) * ph).astype(int), 0, ph - 1)
+        px = pano[sy, sx].reshape(-1, 3).astype(float) / 255.0
+    else:
+        # Lochkamera mit radialer Verzeichnung (OpenSfM: Brennweite und Bildkoordinaten auf die längere Seite normiert)
+        f_, k1, k2 = persp
+        zc = cam[..., 2]
+        front = zc > 0.5
+        xn = np.where(front, cam[..., 0] / np.maximum(zc, 0.5), 9.0)
+        yn = np.where(front, cam[..., 1] / np.maximum(zc, 0.5), 9.0)
+        r2 = xn * xn + yn * yn
+        dd = 1.0 + k1 * r2 + k2 * r2 * r2
+        m = float(max(pw, ph))
+        sxf = f_ * dd * xn * m + pw * 0.5
+        syf = f_ * dd * yn * m + ph * 0.5
+        inside = front & (sxf >= 2) & (sxf < pw - 2) & (syf >= 2) & (syf < ph - 2) & (r2 < 2.5)
+        if inside.sum() < 120:
+            return None, 0.0
+        px = pano[syf[inside].astype(int), sxf[inside].astype(int)].astype(float) / 255.0
     mx, mn = px.max(1), px.min(1)
     sat = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0)
     green = (px[:, 1] > px[:, 0] * 1.06) & (px[:, 1] > px[:, 2] * 1.06) & (sat > 0.2)
@@ -73,6 +90,14 @@ def wall_colour(pano, R, c, p0, p1, H, cam_h=2.3):
     return tuple(int(round(v * 255)) for v in col), float(sel.sum()) / len(px)
 
 
+def plausible(col, share, pano):
+    """Himmel (bläulich), Laub (grünlich) und Blüten/Planen (violett) verwerfen; Fotos brauchen mehr gültige Fläche"""
+    r, g, b_ = (int(col[i:i + 2], 16) for i in (1, 3, 5))
+    if b_ > r + 6 or g > r + 10 or (b_ > g + 8 and r > g):
+        return False
+    return share >= (0.12 if pano else 0.3)
+
+
 def building_colour(b, images, footprints, tree):
     """Farbe der am besten einsehbaren Kante eines Gebäudes: (hex, güte, bild-id) oder None"""
     ring = b["rings"][0]
@@ -89,27 +114,41 @@ def building_colour(b, images, footprints, tree):
             off = c - mid
             dist = abs(float(off[0] * -dirv[1] + off[1] * dirv[0]))
             along = abs(float(off @ dirv))
-            if dist < 3.5 or dist > 28.0 or along > L * 0.5:
+            pers = im.get("camera_type") != "spherical"
+            if dist < 3.5 or dist > 28.0 or along > (L * 0.5 + (22.0 if pers else 0.0)):
                 continue
+            if pers:
+                # Fahrtrichtungskamera: die Wandmitte muss im Bild liegen (höchstens ~38° neben der Blickachse)
+                fw = mf.rodrigues(im["computed_rotation"]).T @ np.array([0.0, 0.0, 1.0])
+                to = np.array([-off[0], off[1]])            # Kamera -> Wandmitte in (Ost, Nord)
+                cosang = float(to @ fw[:2]) / (np.linalg.norm(to) * max(np.linalg.norm(fw[:2]), 1e-6))
+                if cosang < 0.78:
+                    continue
             sight = LineString([tuple(c), tuple(mid + (c - mid) / np.linalg.norm(c - mid) * 0.6)])
             if any(footprints[j].intersects(sight) for j in tree.query(sight)):
                 continue                                    # anderes Haus (oder das eigene) dazwischen
-            score = dist / 28.0 + along / max(L, 1.0)
+            score = dist / 28.0 + along / max(L, 1.0) + (0.6 if pers else 0.0)      # Rundumbild bevorzugt
             if best is None or score < best[0]:
                 best = (score, im, c, p0, p1)
     if best is None:
         return None
     _, im, c, p0, p1 = best
-    col, share = wall_colour(pano_small(im), mf.rodrigues(im["computed_rotation"]), c, p0, p1, H)
-    if col is None or share < 0.12:
+    cp = im.get("camera_parameters") if im.get("camera_type") != "spherical" else None
+    col, share = wall_colour(pano_small(im), mf.rodrigues(im["computed_rotation"]), c, p0, p1, H,
+                             persp=cp if cp and len(cp) >= 3 else None)
+    if col is None:
         return None
-    return "#%02x%02x%02x" % col, round(share, 2), im["id"]
+    hx = "#%02x%02x%02x" % col
+    if not plausible(hx, share, cp is None):
+        return None
+    return hx, round(share, 2), im["id"]
 
 
 def load_images(x, z, radius, pano_only=False):
     out = []
     for im in mf.images_near(x, z, radius, pano_only):
-        if im.get("camera_type") != "spherical" or not im.get("computed_rotation"):
+        ct = im.get("camera_type")
+        if not im.get("computed_rotation") or not (ct == "spherical" or (ct == "perspective" and im.get("camera_parameters"))):
             continue
         g = (im.get("computed_geometry") or im["geometry"])["coordinates"]
         e, n = mf.TO_UTM.transform(g[0], g[1])
@@ -124,10 +163,11 @@ def tile_images(name):
     seen, out = set(), []
     for i in range(8):
         for j in range(8):
-            for im, c in load_images(x0 + 125.0 + 250.0 * i, z0 + 125.0 + 250.0 * j, 135.0, True):
-                if im["id"] not in seen:
-                    seen.add(im["id"])
-                    out.append((im, c))
+            for po in (True, False):                        # Rundumbilder vollständig, dazu alle übrigen (bis 2000)
+                for im, c in load_images(x0 + 125.0 + 250.0 * i, z0 + 125.0 + 250.0 * j, 135.0, po):
+                    if im["id"] not in seen:
+                        seen.add(im["id"])
+                        out.append((im, c))
     return out
 
 
@@ -179,7 +219,7 @@ def apply(name):
     n = 0
     for b in city["buildings"]:
         r = res.get(b.get("gid") or b["id"])
-        if r and int(b.get("style", 0)) in (0, 2, 3, 6) and not b.get("wall_osm"):
+        if r and int(b.get("style", 0)) in (0, 2, 3, 6) and not b.get("wall_osm") and plausible(r[0], r[1], r[1] < 0.3):
             if b.get("wall") != r[0]:
                 b["wall"] = r[0]
                 n += 1
