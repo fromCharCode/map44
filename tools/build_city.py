@@ -2049,6 +2049,31 @@ def build_splats(road_layers, grass, forest, parking, plaza_areas, water):
 # ---------------------------------------------------------------------------
 def build_points(water_polys):
     trees, lamps, signals, crossings, stops, props = [], [], [], [], [], []
+    # Ampelrichtung (traffic_signals:direction = forward/backward) bezieht sich auf die Zeichenrichtung des Weges:
+    # Nachbarpunkte je Wegpunkt merken
+    way_nb = {}
+    for el in load("roads"):
+        g = el.get("geometry") or []
+        if el.get("type") != "way" or len(g) < 2 or (el.get("tags") or {}).get("highway") in (
+                "footway", "path", "cycleway", "steps", "pedestrian", "platform", "corridor", "bridleway"):
+            continue
+        for i, q in enumerate(g):
+            a, b = g[max(i - 1, 0)], g[min(i + 1, len(g) - 1)]
+            way_nb.setdefault((round(q["lon"], 7), round(q["lat"], 7)), (a, b))
+
+    def signal_dir(el, t):
+        d = t.get("traffic_signals:direction")
+        nb = way_nb.get((round(el["lon"], 7), round(el["lat"], 7)))
+        if d not in ("forward", "backward") or nb is None:
+            return 0.0, 0.0
+        (ea, na), (eb, nb_) = TO_UTM.transform(nb[0]["lon"], nb[0]["lat"]), TO_UTM.transform(nb[1]["lon"], nb[1]["lat"])
+        dx, dz = eb - ea, -(nb_ - na)
+        L = math.hypot(dx, dz)
+        if L < 0.01:
+            return 0.0, 0.0
+        sgn = 1.0 if d == "forward" else -1.0
+        return round(sgn * dx / L, 3), round(sgn * dz / L, 3)
+
     for el in load("points"):
         if el["type"] != "node":
             continue
@@ -2065,7 +2090,10 @@ def build_points(water_polys):
             gas = t.get("lamp_type") in ("gaslight", "gas") or str(t.get("light:method", "")).lower() == "gas"
             lamps.append([x, z, y, 2 if gas else -1])
         elif t.get("highway") == "traffic_signals":
-            signals.append([x, z, y])
+            # Vorrangsignale für Bahn/Bus, Feuerwehrausfahrten, Radsignale: gelten nicht für den Autoverkehr
+            if t.get("traffic_signals") in ("tram_priority", "bus_priority", "bus_signal", "emergency", "bicycle", "no"):
+                continue
+            signals.append([x, z, y, *signal_dir(el, t)])
         elif t.get("highway") == "crossing":
             crossings.append([x, z, y])
         elif t.get("highway") == "stop":
@@ -2749,6 +2777,11 @@ def build_graph(roads, signals):
             })
     for k, nd in nodes.items():
         nd["signal"] = k in sig_keys or k in sig_pts or any(math.dist(k, (s[0], s[1])) < 6 for s in signals)
+        # gerichtete Ampel auf diesem Knoten (nur für die Kreuzungsanalyse, wird nicht gespeichert)
+        for s_ in signals:
+            if len(s_) >= 4 and (s_[2] or s_[3]) and math.dist(k, (s_[0], s_[1])) < 2.6:
+                nd["sdir"] = [s_[2], s_[3]]
+                break
     return {"nodes": [n for n in sorted(nodes.values(), key=lambda n: n["id"])], "edges": edges}
 
 
@@ -2983,7 +3016,7 @@ def main() -> None:
     passages = build_passages(buildings)
     print(f"  {len(passages)} Durchfahrten/Durchgänge in Gebäuden", flush=True)
     print(f"  {len(barriers)} Mauern/Zäune, {len(steps_out)} Treppen", flush=True)
-    graph = build_graph(roads, [[s[0], s[1]] for s in signals])
+    graph = build_graph(roads, [[s[0], s[1], *s[3:5]] for s in signals])
     print(f"  Graph: {len(graph['nodes'])} Knoten, {len(graph['edges'])} Kanten", flush=True)
     # Fahrbahn freihalten: Laternen, Bänke, Masten ... an den Bordstein
     from curb import Curb

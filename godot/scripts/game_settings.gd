@@ -8,6 +8,7 @@ const VEHICLE_BUS := "Fahrzeug"
 static var master_volume := 0.8      # 0..1
 static var vehicle_volume := 0.45    # 0..1 (Motor, Reifen, Wind, Hupe)
 static var render_scale := -1.0      # 3D-Auflösung (FSR2 unter 1.0); -1 = automatisch nach Bildschirmauflösung
+static var route_lane := true        # Routenspur zum Fahrziel anzeigen
 static var _loaded := false
 
 
@@ -21,6 +22,7 @@ static func load_settings() -> void:
 		vehicle_volume = clampf(float(cf.get_value("audio", "vehicle", vehicle_volume)), 0.0, 1.0)
 		var rs := float(cf.get_value("graphics", "render_scale", render_scale))
 		render_scale = -1.0 if rs <= 0.0 else clampf(rs, 0.5, 1.0)
+		route_lane = bool(cf.get_value("game", "route_lane", route_lane))
 	_ensure_buses()
 	apply_audio()
 
@@ -31,6 +33,7 @@ static func save_settings() -> void:
 	cf.set_value("audio", "master", master_volume)
 	cf.set_value("audio", "vehicle", vehicle_volume)
 	cf.set_value("graphics", "render_scale", render_scale)
+	cf.set_value("game", "route_lane", route_lane)
 	cf.save(PATH)
 
 

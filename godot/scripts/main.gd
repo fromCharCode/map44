@@ -27,6 +27,7 @@ var ground_cover: GroundCover
 var pending_graphs: Array = []
 var last_safe := Vector3.ZERO
 var street_picker: StreetPicker
+var route_guide: RouteGuide
 var _teleporting := false
 var env_mgr: EnvManager
 var traffic: Traffic
@@ -119,7 +120,12 @@ func _build() -> void:
 	env_mgr = EnvManager.new()
 	env_mgr.name = "Env"
 	add_child(env_mgr)
-	env_mgr.hours = float(args.get("time", 17.0))
+	if args.has("time"):
+		env_mgr.hours = float(args["time"])
+	else:
+		# ohne Vorgabe: Ortszeit des Rechners beim Start
+		var now := Time.get_time_dict_from_system()
+		env_mgr.hours = float(now.hour) + float(now.minute) / 60.0 + float(now.second) / 3600.0
 	env_mgr.quality = int(args.get("quality", 2))
 	GameSettings.load_settings()
 	env_mgr.render_scale = float(args.get("scale", GameSettings.render_scale))
@@ -550,6 +556,14 @@ func _setup_game() -> void:
 		add_child(taxi)
 		taxi.setup(player, traffic, hud)
 		hud.taxi = taxi
+	route_guide = RouteGuide.new()
+	route_guide.name = "RouteGuide"
+	add_child(route_guide)
+	route_guide.setup(player, traffic, taxi, world)
+	if args.has("routeguide"):
+		var rg := String(args["routeguide"]).split(",")
+		route_guide.fixed_target = Vector3(float(rg[0]), 0.0, float(rg[1]))
+		route_guide.enabled = true
 	street_picker = StreetPicker.new()
 	street_picker.name = "StreetPicker"
 	add_child(street_picker)
@@ -585,7 +599,7 @@ func _make_pause_menu() -> void:
 	title.add_theme_font_size_override("font_size", 34)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	for def in [["resume", "Weiter"], ["time", ""], ["weather", ""], ["quality", ""], ["scale", ""], ["traffic", ""], ["damage", ""], ["repair", "Auto reparieren (F5)"], ["input", "Eingabetest (Controller)"], ["quit", "Beenden"]]:
+	for def in [["resume", "Weiter"], ["time", ""], ["weather", ""], ["quality", ""], ["scale", ""], ["traffic", ""], ["damage", ""], ["route", ""], ["repair", "Auto reparieren (F5)"], ["input", "Eingabetest (Controller)"], ["quit", "Beenden"]]:
 		var b := Button.new()
 		b.text = def[1]
 		b.custom_minimum_size = Vector2(0, 46)
@@ -638,14 +652,14 @@ func _on_volume(v: float, id: String, save: bool = true) -> void:
 
 
 func _refresh_pause_labels() -> void:
-	var h := int(env_mgr.hours)
-	pause_buttons["time"].text = "Tageszeit: %02d:00  (+3 Std.)" % h
+	pause_buttons["time"].text = "Tageszeit: %02d:%02d  (+3 Std.)" % [int(env_mgr.hours), int(fposmod(env_mgr.hours, 1.0) * 60.0)]
 	pause_buttons["quality"].text = "Grafik: " + ["Niedrig", "Mittel", "Hoch"][env_mgr.quality]
 	pause_buttons["weather"].text = "Wetter: " + EnvManager.WEATHER_NAMES[env_mgr.weather] + " (F6)"
 	var esc := env_mgr.effective_scale()
 	pause_buttons["scale"].text = "Auflösung: %s%d %%%s" % ["Auto " if env_mgr.render_scale <= 0.0 else "", int(round(esc * 100.0)), " (FSR2)" if esc < 0.99 else " (nativ)"]
 	pause_buttons["traffic"].text = "Verkehr: " + ["Leer", "Wenig", "Normal", "Dicht"][traffic_i]
 	pause_buttons["damage"].text = "Schaden: " + ("An" if player.damage_enabled else "Aus") + " (F4)"
+	pause_buttons["route"].text = "Routenspur: " + ("An" if route_guide and route_guide.enabled else "Aus") + " (F7)"
 
 
 func _on_pause_button(id: String) -> void:
@@ -653,7 +667,7 @@ func _on_pause_button(id: String) -> void:
 		"resume":
 			_toggle_pause()
 		"time":
-			env_mgr.set_time(floorf(env_mgr.hours) + 3.0)
+			env_mgr.set_time(env_mgr.hours + 3.0)
 		"quality":
 			env_mgr.apply_quality((env_mgr.quality + 1) % 3)
 		"weather":
@@ -672,6 +686,9 @@ func _on_pause_button(id: String) -> void:
 			traffic.target_count = traffic_levels[traffic_i]
 		"damage":
 			player.damage_enabled = not player.damage_enabled
+		"route":
+			if route_guide:
+				route_guide.toggle()
 		"repair":
 			player.repair()
 			hud.message("Auto repariert", 2.0)

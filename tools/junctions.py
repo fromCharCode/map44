@@ -85,6 +85,21 @@ def analyse(graph, edges_meta, signals, sign_nodes, curb=None, gy=None, log=prin
         inc[e["a"]].append((ei, -1, pts))
     pos = {n["id"]: (n["pos"][0], n["pos"][2]) for n in nodes}
     sig_nodes = {n["id"] for n in nodes if n.get("signal")}
+    sdir = {n["id"]: n.pop("sdir") for n in nodes if n.get("sdir")}      # gerichtete Ampel: geregelte Fahrtrichtung
+
+    def _away_dir(away, length):
+        q, _t = _pt_along(away, min(8.0, float(length) * 0.9))
+        dx, dz = q[0] - away[0][0], q[1] - away[0][1]
+        L = math.hypot(dx, dz) or 1.0
+        return dx / L, dz / L
+
+    def governed(nid, away, length):
+        """False, wenn die Ampel am Knoten nid nur für die Gegenrichtung gilt (Zufahrt kommt über 'away' an)"""
+        sd = sdir.get(nid)
+        if sd is None or len(inc[nid]) >= 3:
+            return True
+        ax, az = _away_dir(away, length)
+        return -(ax * sd[0] + az * sd[1]) > 0.2          # Fahrtrichtung zum Knoten = −away
 
     # --- Ampelgruppen: Ampelknoten, die über kurze Kanten (< 40 m) zusammenhängen ----------------------------
     parent = {}
@@ -108,12 +123,18 @@ def analyse(graph, edges_meta, signals, sign_nodes, curb=None, gy=None, log=prin
         if len(inc[nid]) >= 3:
             continue
         best = None
+        sd = sdir.get(nid)
         for ei, d, away in inc[nid]:
             e = edges[ei]
-            if float(e["len"]) > 45.0:
+            if sd is not None:
+                # gerichtete Ampel: sie gehört zur Kreuzung in Fahrtrichtung (bis 70 m), nicht zur nächstgelegenen
+                ax, az = _away_dir(away, e["len"])
+                if ax * sd[0] + az * sd[1] < 0.2 or float(e["len"]) > 70.0:
+                    continue
+            elif float(e["len"]) > 45.0:
                 continue
             other = e["a"] if e["b"] == nid else e["b"]
-            if other in sig_nodes:
+            if other in sig_nodes and (sd is None or len(inc[other]) >= 3):
                 parent.setdefault(other, other)
                 union(nid, other)
             elif len(inc[other]) >= 3 and (best is None or float(e["len"]) < best[0]):
@@ -121,6 +142,11 @@ def analyse(graph, edges_meta, signals, sign_nodes, curb=None, gy=None, log=prin
         if best is not None:
             parent.setdefault(best[1], best[1])
             union(nid, best[1])
+    # Teilknoten derselben Kreuzung (getrennte Richtungsfahrbahnen, Ringe): über kurze Kanten verbundene
+    # Gruppenmitglieder bekommen eine gemeinsame Steuerung
+    for e in edges:
+        if float(e["len"]) < 45.0 and e["a"] in parent and e["b"] in parent:
+            union(e["a"], e["b"])
     groups = defaultdict(set)
     for nid in parent:
         groups[find(nid)].add(nid)
@@ -141,6 +167,8 @@ def analyse(graph, edges_meta, signals, sign_nodes, curb=None, gy=None, log=prin
                     continue
                 ow = int(e["oneway"])
                 if (d == 1 and ow < 0) or (d == -1 and ow > 0):
+                    continue
+                if not governed(nid, away, e["len"]):
                     continue
                 apps.append((nid, ei, d, away))
         if not apps:
@@ -214,6 +242,8 @@ def analyse(graph, edges_meta, signals, sign_nodes, curb=None, gy=None, log=prin
                 other = e["a"] if e["b"] == nid else e["b"]
                 if node_ctl.get(other, -2) == ci:
                     ph = -2                   # Kante innerhalb der Ampelgruppe
+                elif not governed(nid, away, e["len"]):
+                    ph = -2                   # Ampel gilt nur für die Gegenrichtung
                 else:
                     ph = node_phase_ref[ci].get((ei, d), 0)
                     if len(lst) <= 2:
@@ -263,6 +293,8 @@ def analyse(graph, edges_meta, signals, sign_nodes, curb=None, gy=None, log=prin
                     continue
                 px, pz = pp
             yaw = math.atan2(tx, tz)
+            if any(math.hypot(h[0] - px, h[1] - pz) < 2.5 and abs(math.remainder(h[3] - yaw, math.tau)) < 0.5 for h in heads[-12:]):
+                continue                              # zweite Kante derselben Zufahrt: kein Doppelmast
             py = gy(px, pz) if gy else 0.0
             heads.append([round(px, 2), round(pz, 2), round(py, 2), round(yaw, 3), ph, c])
     graph["ctls"] = ctls
