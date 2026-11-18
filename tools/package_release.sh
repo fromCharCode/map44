@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 # Map44 – Release-Pakete bauen (Linux-Entwicklungsrechner mit Godot 4.7.1 + Exportvorlagen)
 #
-#   tools/package_release.sh <version> [data-version]
-#     z. B. tools/package_release.sh v0.1.0 data-v1
+#   tools/package_release.sh <version> [data-version] [vorherige-data-version]
+#     z. B. tools/package_release.sh v0.1.0 data-v2 data-v1
+#     (vorherige Datenversion: Standard = neuestes data-v*-Release auf GitHub)
 #
 # Ergebnis in dist/:
 #   map44-linux-x86_64.zip      Spiel (Programm + .pck + DATA_VERSION + Lizenzen)
 #   map44-windows-x86_64.zip
 #   map44-macos.zip             Dresden.app (Universal, ad-hoc signiert) + DATA_VERSION; Installer: install-macos.sh
-#   map44-<data-version>-NN.zip Kartendaten (je < 1,9 GB; entpacken nach <Spielordner>/data/…)
-#   SHA256SUMS, map44-<data-version>.sha256
+#   map44-<data-version>-<block>.zip  Kartendaten je 2×2-km-Block bzw. "root" (entpacken nach <Spielordner>/data/…);
+#                               nur geänderte Blöcke, unveränderte verweist das Manifest auf ihr älteres Release
+#   map44-<data-version>.manifest  Zeilen "sha256 größe datei release-tag" (alle Pakete der Datenversion)
+#   UPLOAD_DATA                 Liste der hochzuladenden Datendateien
+#   SHA256SUMS
 # Hochladen (Beispiel):
-#   gh release create <data-version> dist/map44-<data-version>-*.zip dist/map44-<data-version>.sha256 --latest=false
+#   gh release create <data-version> $(cat dist/UPLOAD_DATA) --latest=false
 #   gh release create <version> dist/map44-*-x86_64.zip dist/map44-macos.zip dist/SHA256SUMS
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -59,7 +63,7 @@ cp godot/data/bus_routes.json godot/data/tram_routes.json godot/data/streets.jso
 # data/VERSION schreibt der Installer erst nach dem vollständigen Entpacken
 
 echo "==> Spielpakete"
-rm -f "$DIST"/map44-*.zip "$DIST"/SHA256SUMS "$DIST"/*.sha256
+rm -f "$DIST"/map44-*.zip "$DIST"/SHA256SUMS "$DIST"/*.sha256 "$DIST"/*.manifest "$DIST"/UPLOAD_DATA
 for plat in linux windows; do
   P="$ROOT/build/pkg_$plat"
   rm -rf "$P" && mkdir -p "$P"
@@ -76,37 +80,70 @@ echo "$DATA_VER" > "$P/DATA_VERSION"
 cp README.md THIRD_PARTY.md "$P/" 2>/dev/null || true
 (cd "$P" && zip -q "$DIST/map44-macos.zip" DATA_VERSION README.md THIRD_PARTY.md)
 
-echo "==> Datenpakete (je < 1,9 GB)"
-.venv/bin/python - "$STAGE" "$DIST" "$DATA_VER" <<'PY'
-import os, sys, zipfile
-stage, dist, ver = sys.argv[1], sys.argv[2], sys.argv[3]
-LIMIT = 1_850_000_000
-files = []
+echo "==> Datenpakete (je 2×2-km-Kachelblock, reproduzierbar)"
+# Vorherige Datenversion: unveränderte Pakete werden von dort referenziert statt neu hochgeladen
+PREV_DATA="${3:-$(gh release list -L 50 --json tagName -q '.[].tagName' 2>/dev/null | grep -E '^data-v' | grep -vx "$DATA_VER" | head -1 || true)}"
+PREV_MF="$ROOT/build/prev.manifest"
+rm -f "$PREV_MF"
+if [ -n "$PREV_DATA" ] && gh release download "$PREV_DATA" -p "map44-$PREV_DATA.manifest" -O "$PREV_MF" 2>/dev/null; then
+  echo "    Vergleiche mit $PREV_DATA"
+else
+  echo "    Kein vorheriges Manifest – alle Pakete neu"
+  : > "$PREV_MF"
+fi
+.venv/bin/python - "$STAGE" "$DIST" "$DATA_VER" "$PREV_MF" <<'PY'
+import hashlib, os, sys, zipfile
+stage, dist, ver, prev_mf = sys.argv[1:5]
+BLOCK = 2  # km; eine Kachel landet immer im selben Paket
+prev = {}  # gruppe -> (sha, size, name, tag)
+for line in open(prev_mf):
+    sha, size, name, tag = line.split()
+    prev[name.removeprefix(f"map44-{tag}-").removesuffix(".zip")] = (sha, size, name, tag)
+groups = {}
 for root, _dirs, names in os.walk(os.path.join(stage, "data")):
-    for n in sorted(names):
+    for n in names:
         p = os.path.join(root, n)
-        files.append((os.path.relpath(p, stage), p))
-files.sort(key=lambda t: (t[0].count("/") > 1, t[0]))      # Wurzeldateien (Linien, VERSION) zuerst
-part, zf = 0, None
-def open_part():
-    global part
-    part += 1
-    return zipfile.ZipFile(os.path.join(dist, f"map44-{ver}-{part:02d}.zip"), "w", zipfile.ZIP_DEFLATED, compresslevel=6)
-zf = open_part()
-cur_tile = None
-for rel, p in files:
-    tile = rel.split("/")[2] if rel.startswith("data/tiles/") else None
-    # neue Datei nur an Kachelgrenzen beginnen (eine Kachel nie auf zwei Pakete verteilen)
-    if tile != cur_tile and zf.fp.tell() > LIMIT:
-        zf.close()
-        zf = open_part()
-    cur_tile = tile
-    zf.write(p, rel)
-zf.close()
-print(f"{part} Datenpakete")
+        rel = os.path.relpath(p, stage)
+        parts = rel.split("/")
+        g = "root"
+        if parts[1] == "tiles" and len(parts) > 3:
+            try:
+                e, n_ = (int(v) for v in parts[2].split("_"))
+                g = f"t{e // BLOCK * BLOCK}_{n_ // BLOCK * BLOCK}"
+            except ValueError:
+                g = "tx"
+        groups.setdefault(g, []).append((rel, p))
+manifest, upload = [], []
+for g in sorted(groups):
+    name = f"map44-{ver}-{g}.zip"
+    out = os.path.join(dist, name)
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+        for rel, p in sorted(groups[g]):
+            zi = zipfile.ZipInfo(rel, date_time=(1980, 1, 1, 0, 0, 0))  # feste Metadaten -> gleiche Bytes
+            zi.compress_type = zipfile.ZIP_DEFLATED
+            zi.external_attr = 0o644 << 16
+            with open(p, "rb") as f:
+                zf.writestr(zi, f.read(), compresslevel=6)
+    h = hashlib.sha256()
+    with open(out, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    sha, size = h.hexdigest(), os.path.getsize(out)
+    if g in prev and prev[g][0] == sha:
+        os.remove(out)
+        manifest.append(" ".join(prev[g]))
+    else:
+        manifest.append(f"{sha} {size} {name} {ver}")
+        upload.append(out)
+mf = os.path.join(dist, f"map44-{ver}.manifest")
+with open(mf, "w") as f:
+    f.write("\n".join(manifest) + "\n")
+with open(os.path.join(dist, "UPLOAD_DATA"), "w") as f:
+    f.write("\n".join(upload + [mf]) + "\n")
+mb = sum(os.path.getsize(u) for u in upload) / 1e6
+print(f"{len(groups)} Datenpakete, davon {len(upload)} neu ({mb:.0f} MB) – Liste in dist/UPLOAD_DATA")
 PY
 
 echo "==> Prüfsummen"
 (cd "$DIST" && sha256sum map44-linux-x86_64.zip map44-windows-x86_64.zip map44-macos.zip > SHA256SUMS)
-(cd "$DIST" && sha256sum map44-"$DATA_VER"-*.zip > "map44-$DATA_VER.sha256")
 ls -la "$DIST"
