@@ -269,6 +269,26 @@ def tile_arches(name, bridges):
         vs = sorted((q[0] - cx_) * ux + (q[1] - cz_) * uz for q in (g.coords[0], g.coords[-1]))
         return vs[0], vs[1]
 
+    # Fahrbahnen zu ebener Erde (keine Brücken): dort darf keine Stütze stehen
+    gr_roads = []
+    for r in city.get("roads", []):
+        if r.get("bridge") or len(r["pts"]) < 2 or r.get("cls") in ("footway", "path", "steps", "cycleway", "pedestrian", "track"):
+            continue
+        ln_ = LineString([(q[0], q[1]) for q in r["pts"]])
+        if ln_.length > 0.5:
+            gr_roads.append((ln_, float(r["width"]) * 0.5))
+    gr_tree = STRtree([g_[0] for g_ in gr_roads]) if gr_roads else None
+
+    def on_ground_road(x, z, margin):
+        if gr_tree is None:
+            return False
+        pt = Point(x, z)
+        for i in gr_tree.query(pt.buffer(12.0)):
+            ln_, hw_ = gr_roads[int(i)]
+            if ln_.distance(pt) < hw_ + margin:
+                return True
+        return False
+
     tris, norms = [], []
 
     def tri(a, b, c, n):
@@ -644,6 +664,11 @@ def tile_arches(name, bridges):
                     for j in range(nc):
                         vc = v0 + 0.35 + ((v1 - v0 - 0.7) * j / (nc - 1) if nc > 1 else 0.5 * (v1 - v0 - 0.7))
                         cx, cz = px - tz * vc, pz + tx * vc
+                        if on_ground_road(cx, cz, 0.6):
+                            # letzte Sicherung: Stütze stünde in einer Fahrbahn zu ebener Erde (nach dem Rücken der Achse
+                            # stand eine Stützenreihe in der Johann-Meyer-Straße)
+                            report.append(f"{b.get('name')}: Stütze bei ({cx:.0f},{cz:.0f}) entfällt (Fahrbahn)")
+                            continue
                         g0 = ground(cx, cz) - 0.2
                         if yb - g0 < 1.5:
                             continue

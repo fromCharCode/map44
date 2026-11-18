@@ -47,7 +47,7 @@ func add_tile(tile: Tile) -> void:
 	for c in tile.city.get("speedcams", []):
 		var x := float(c[0])
 		var z := float(c[1])
-		var pos := Vector3(x, tile.terrain.height_at(x, z), z)
+		var pos := Vector3(x, float(c[7]) if c.size() > 7 else tile.terrain.height_at(x, z), z)
 		var dir := Vector3(float(c[3]), 0.0, float(c[4]))
 		var root := Node3D.new()
 		root.position = pos

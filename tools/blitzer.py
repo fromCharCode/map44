@@ -7,7 +7,7 @@ Quelle: OpenStreetMap (© OpenStreetMap-Mitwirkende, ODbL): Knoten highway=speed
 type=enforcement (from -> device -> to: überwachte Fahrtrichtung, maxspeed). Abgelegt in
 data/raw/blitzer/osm_enforcement.json.
 Zeile: [x, z, limit_kmh, dx, dz, bauart, rotlicht]   dx/dz = überwachte Fahrtrichtung (0,0 = beide),
-bauart 0 = Säule, 1 = Mast mit Kasten; rotlicht 1 = reiner Ampelblitzer (kein Tempo), 2 = Ampel und Tempo.
+[, y] nur auf Brücken (Deckhöhe); bauart 0 = Säule, 1 = Mast mit Kasten; rotlicht 1 = reiner Ampelblitzer (kein Tempo), 2 = Ampel und Tempo.
 """
 import json
 import math
@@ -94,7 +94,8 @@ def cameras():
         for d in (c["dirs"] if len(c["dirs"]) == 1 else [(0.0, 0.0)]):      # zwei Richtungen = beide
             out.append([round(c["p"][0], 2), round(c["p"][1], 2), int(c["limit"]), round(d[0], 3), round(d[1], 3),
                         c["kind"], (2 if c["spd"] else 1) if c["red"] else 0])
-    return out
+    extra = json.loads((ROOT / "tools" / "overrides.json").read_text(encoding="utf-8")).get("speedcams_extra", [])
+    return out + [list(e) for e in extra]
 
 
 def main():
@@ -113,6 +114,19 @@ def main():
         x0, z0 = e_km * 1000.0 - ORIGIN_E, -((n_km + 2) * 1000.0 - ORIGIN_N)
         mine = [c for c in cams if x0 <= c[0] < x0 + 2000.0 and z0 <= c[1] < z0 + 2000.0]
         city = json.loads(cf.read_text(encoding="utf-8"))
+        # Anlage an einer Brückenfahrbahn (≤ 10 m): Höhe des Decks als 8. Feld (sonst stünde sie auf dem Gelände darunter)
+        mine = [list(c[:7]) for c in mine]
+        for c in mine:
+            best = None
+            for r in city.get("roads", []):
+                if not r.get("bridge"):
+                    continue
+                for q in r["pts"]:
+                    dd = math.hypot(q[0] - c[0], q[1] - c[1])
+                    if dd < 10.0 and (best is None or dd < best[0]):
+                        best = (dd, q[2])
+            if best:
+                c.append(round(best[1], 2))
         if mine or city.get("speedcams"):
             city["speedcams"] = mine
             cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")

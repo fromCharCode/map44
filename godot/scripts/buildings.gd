@@ -266,6 +266,10 @@ func _build_cell(key: Vector2i, items: Array) -> void:
 					_wall_piece(walls, trim, p0, p1, ln, t_prev, 1.0, y_bot, y_top, nrm, col, acc, v0, ref, uv2, tang, ri_idx == 0 and style != 5, tdir, eave_h, style, trim_col)
 				if ri_idx == 0 and ln >= 4.0 and not b.get("stacked", false) and not b.get("elev", false) and not _is_party(b, p0, p1):
 					_deco_edge(b, style, seed01, p0, p1, ln, acc, nrm, ref, shop_iv)
+					# plastischer Fassadenschmuck (Gewände, Verdachungen, Pilaster, Konsolen) am Fensterraster
+					var mid_e := (p0 + p1) * 0.5
+					if not _plain_cur and not Landmarks.on_photo_wall(mid_e) and not PhotoFacades.covers(tile_key, mid_e):
+						FacadeRelief.edge(_deco, _cell_of, float(b["levels"]), eave_h, style, seed01, p0, p1, ln, acc, nrm, ref)
 					if _edge_is(rings[0], p0, p1, door_edge):
 						_door(b, style, seed01, p0, p1, ln, acc, nrm, ref, shop_iv)
 				acc += ln
@@ -656,19 +660,26 @@ func _flush_numbers() -> void:
 	_hn_plates.clear()
 
 
+func _cell_of(wp: Vector2) -> Vector2i:
+	return Vector2i(floori((wp.x + world_half) / CELL), floori((wp.y + world_half) / CELL))
+
+
 func _flush_deco() -> void:
 	_flush_numbers()
 	for key in _deco:
 		var model: String = key[0]
 		var list: Array = _deco[key]
-		for part in StreetLife.parts(model):
+		var relief := FacadeRelief.is_model(model)
+		for part in (FacadeRelief.parts(model) if relief else StreetLife.parts(model)):
 			var mm := MultiMesh.new()
 			mm.transform_format = MultiMesh.TRANSFORM_3D
 			mm.mesh = part["mesh"]
 			RenderUtil.fill_multimesh(mm, list, part["xf"])
 			var inst := MultiMeshInstance3D.new()
 			inst.multimesh = mm
-			inst.visibility_range_end = 420.0
+			inst.visibility_range_end = 230.0 if relief else 420.0
+			if relief:
+				inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			inst.visibility_range_end_margin = 40.0
 			inst.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 			add_child(inst)

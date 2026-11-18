@@ -104,5 +104,26 @@
  },
  "passage_min_w": {
   "DESNATPU1000EjsO": 7.0
- }
+ },
+ "speedcams_extra": [
+  [
+   3301.6,
+   -1375.0,
+   50,
+   -0.042,
+   -0.999,
+   0,
+   0
+  ],
+  [
+   3286.2,
+   -1375.0,
+   50,
+   0.042,
+   0.999,
+   0,
+   0
+  ]
+ ],
+ "speedcams_extra_note": "Waldschlößchenbrücke land-/stadtwärts (Standortliste der Stadt 2017, Nr. 13/14); in OSM nicht als Blitzer erfasst, Lage auf der Brücke geschätzt (Brückenmitte)"
 }
