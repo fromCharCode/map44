@@ -8,6 +8,7 @@ render_mode diffuse_burley, specular_schlick_ggx;
 //        5 Industrie, 6 Klinker, 7 Gaube.
 
 global uniform float night;
+global uniform float lit_frac;      // Anteil beleuchteter Fenster nach Uhrzeit (env_manager)
 global uniform float wetness;
 
 uniform sampler2D plaster_albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
@@ -297,7 +298,7 @@ void fragment() {
 		}
 		// Tageslicht fällt durchs Fenster: vorn hell, hinten dunkel
 		room_col *= mix(1.35, 0.22, sqrt(dz));
-		room_lit = step(0.64, hash21(vec2(col * 0.37 + 11.0, row * 0.73) + seed * 53.0));
+		room_lit = step(1.0 - lit_frac * ((st > 3.5 && st < 4.5) ? 0.45 : 1.0), hash21(vec2(col * 0.37 + 11.0, row * 0.73) + seed * 53.0));
 	}
 
 	// ---- Grundmaterial --------------------------------------------------
@@ -587,7 +588,7 @@ void fragment() {
 
 	// ---- Nachtlicht -----------------------------------------------------
 	float lit_p = hash21(vec2(col * 0.37 + 11.0, row * 0.73) + seed * 53.0);
-	float lit = step(0.64, lit_p) * pane_m * (1.0 - mull);
+	float lit = step(1.0 - lit_frac * ((st > 3.5 && st < 4.5) ? 0.45 : 1.0), lit_p) * pane_m * (1.0 - mull);
 	float warm = hash21(vec2(col, row) * 1.3 + seed * 7.0);
 	vec3 emis = mix(vec3(1.0, 0.7, 0.38), vec3(0.85, 0.92, 1.0), step(0.78, warm)) * lit * (shop ? 1.5 : 1.0);
 	if (st > 3.5 && st < 4.5) {
@@ -599,7 +600,7 @@ void fragment() {
 	float show = pane_m * (1.0 - mull) * (1.0 - fres) * (1.0 - curt * 0.75 * (shop ? 0.0 : 1.0)) * (1.0 - clamp(drape, 0.0, 1.0));
 	vec3 lamp = mix(vec3(1.0, 0.72, 0.42), vec3(0.85, 0.92, 1.0), step(0.78, warm));
 	// tagsüber sind Räume hinter Glas dunkel (vorher 0,16: Glasfassaden wirkten wie bunte, selbstleuchtende Platten)
-	vec3 interior = room_col * (0.055 * (1.0 - night) + room_lit * night * 1.6 * lamp) * (door_col ? 0.0 : 1.0);
+	vec3 interior = room_col * (0.055 * (1.0 - night) + room_lit * night * 1.05 * lamp) * (door_col ? 0.0 : 1.0);
 	if (shop) {
 		// Verkaufsraum: hell, tagsüber beleuchtet; leerstehend dunkel
 		// Verkaufsraum: Regalreihen (dunkle Bänder) vor hellerem Hintergrund, tags gedämpft, nachts beleuchtet

@@ -40,6 +40,7 @@ var rain: GPUParticles3D
 
 static func register_globals() -> void:
 	RenderingServer.global_shader_parameter_add("night", RenderingServer.GLOBAL_VAR_TYPE_FLOAT, 0.0)
+	RenderingServer.global_shader_parameter_add("lit_frac", RenderingServer.GLOBAL_VAR_TYPE_FLOAT, 0.3)
 	RenderingServer.global_shader_parameter_add("wetness", RenderingServer.GLOBAL_VAR_TYPE_FLOAT, 0.0)
 	RenderingServer.global_shader_parameter_add("signal_clock", RenderingServer.GLOBAL_VAR_TYPE_FLOAT, 0.0)
 
@@ -265,6 +266,13 @@ func set_time(h: float) -> void:
 	var night := 1.0 - smoothstep(-0.12, 0.08, elev)
 	night_value = night
 	RenderingServer.global_shader_parameter_set("night", night)
+	# beleuchtete Fenster nach Uhrzeit: abends viele, nach Mitternacht kaum noch, morgens wieder mehr
+	var lf := 0.1
+	for kv in [[0.0, 0.12], [1.5, 0.05], [4.5, 0.05], [6.0, 0.22], [7.5, 0.3], [9.0, 0.1], [16.0, 0.1], [18.0, 0.3],
+			[20.0, 0.45], [22.0, 0.34], [23.0, 0.22], [24.0, 0.12]]:
+		if hours >= float(kv[0]):
+			lf = float(kv[1])
+	RenderingServer.global_shader_parameter_set("lit_frac", lf)
 	# nachts die Belichtungsautomatik begrenzen: sie hellte die dunkle Stadt sonst auf Tageshelligkeit auf
 	cam_attr.auto_exposure_max_sensitivity = lerpf(2500.0, 130.0, night)
 	sky_mat.set_shader_parameter("sun_dir", sv)
