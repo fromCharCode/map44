@@ -1009,6 +1009,8 @@ def build_buildings_lod2(mosaic: Image.Image) -> list[dict] | None:
                 o["roof_col"] = lk["roof"]
             if lk.get("plain"):
                 o["plain"] = True
+            if "style" in lk:
+                o["style"] = int(lk["style"])
     out += osm_elevated_buildings(out)
     return out
 

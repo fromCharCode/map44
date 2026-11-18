@@ -145,6 +145,9 @@ func _bench(delta: float) -> void:
 					var st := int(m["enter_st"])
 					if st == SignalCtl.RED:
 						red_runs += 1
+						if red_runs <= 12:
+							var ap: Array = m["app"]
+							print("  Rot t=%.1f Auto#%d v %.1f bei (%.0f, %.0f) Knoten %d Haltelinie %.1f m, Gelb-Verz. %.1f, d_stop %.1f" % [t, ac.uid, ac.speed, ac.pos.x, ac.pos.z, int(m["node"]), float(ap[6]) if not ap.is_empty() else -1.0, ac.yellow_b, float(m.get("d_stop", 0.0))])
 					elif st == SignalCtl.YELLOW:
 						yellow_runs += 1
 		if ac._limit == "junction" and ac.speed < 0.3:

@@ -445,8 +445,14 @@ func _point_at(pts: Array, s: float) -> Vector3:
 	return pts[pts.size() - 1]
 
 
-func pick_next(node_id: int, from_edge: int, last_tangent: Vector2) -> Array:
+func pick_next(node_id: int, from_edge: int, last_tangent: Vector2, goal: Vector2 = Vector2.INF, goal_k: float = 0.0) -> Array:
 	## Wählt eine ausgehende Kante (ohne Wende, bevorzugt geradeaus, größere Straßen), Rückgabe [edge, dir] oder [].
+	## Mit goal (Fahrtziel, x/z) werden Ausfahrten in Zielrichtung bevorzugt (goal_k = Zielstrebigkeit).
+	var to_goal := Vector2.ZERO
+	if goal_k > 0.0 and goal != Vector2.INF:
+		var np: Array = nodes[node_id]["pos"]
+		to_goal = goal - Vector2(float(np[0]), float(np[2]))
+		to_goal = to_goal.normalized() if to_goal.length() > 60.0 else Vector2.ZERO
 	var opts: Array = out_edges.get(node_id, [])
 	var cand: Array = []
 	var weights: Array = []
@@ -481,6 +487,8 @@ func pick_next(node_id: int, from_edge: int, last_tangent: Vector2) -> Array:
 			if int(o[1]) != narrow_dir(ei):
 				continue
 			wgt *= 0.3
+		if to_goal != Vector2.ZERO:
+			wgt *= exp(goal_k * Vector2.from_angle(exit_angle(ei, int(o[1]))).dot(to_goal))
 		if _dead_end(ei, int(o[1])):
 			wgt *= 0.004                    # Sackgasse (auch über mehrere Kanten): praktisch nie hineinfahren
 		cand.append(o)

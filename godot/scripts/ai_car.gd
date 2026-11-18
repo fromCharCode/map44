@@ -43,6 +43,18 @@ var t_gap := 1.5              # Zeitlücke zum Vordermann, s
 var s0 := 2.0                 # Abstand im Stand, m
 var a_lat := 2.6              # hingenommene Querbeschleunigung in Kurven, m/s²
 var react_t := 1.0            # Reaktionszeit beim Anfahren (Ampel, Kolonne), s
+var patience := 10.0          # Geduld hinter einem stehenden Hindernis, bis gehupt/umfahren wird, s
+var yellow_b := 3.5           # Verzögerung, die der Fahrer bei Gelb noch in Kauf nimmt (klein = fährt eher durch), m/s²
+var honker := false           # hupt, wenn er aufgehalten wird
+var goal := Vector2.INF       # Fahrtziel (x, z): Abbiegen bevorzugt in diese Richtung
+var goal_k := 1.0             # Zielstrebigkeit (0 = fährt ziellos)
+# Umfahren eines stehenden Hindernisses (Spieler, Wrack): Versatz nach links, solange _evade_o voraus ist
+var _evade := 0.0
+var _evade_o: Object = null
+var _evade_t := 0.0           # Standzeit während des Umfahrens (Abbruch, wenn es klemmt)
+var _back_d := 0.0            # noch zurückzusetzende Strecke vor dem Umfahren (m)
+var _honk_t := 0.0
+var _honk: AudioStreamPlayer3D
 # Folgefahren (Intelligent-Driver-Modell): Vordermann aus dem letzten Denkschritt, dazwischen fortgeschrieben
 var _lead_ok := false
 var _lead_gap := 0.0
@@ -218,6 +230,13 @@ func _make_driver() -> void:
 		if drive_fac >= 0.95:
 			drive_fac = minf(drive_fac + 0.02, 1.20)
 	react_t = r.randf_range(0.6, 1.4)
+	if r.randf() < 0.05:
+		react_t = r.randf_range(2.0, 3.2)             # Träumer: merkt spät, dass es weitergeht
+	# Geduld 5–22 s (Eilige kürzer), Gelb: Vorsichtige bremsen noch bei 4,6 m/s², Eilige nur bis 3,0 m/s² (so reicht die Gelbzeit noch bis zur Haltelinie)
+	patience = lerpf(22.0, 5.0, temper) * r.randf_range(0.8, 1.25)
+	yellow_b = lerpf(4.6, 3.0, temper)
+	honker = r.randf() < lerpf(0.15, 0.75, temper)
+	goal_k = r.randf_range(0.6, 2.4)
 	s0 = r.randf_range(1.8, 2.5)
 	t_gap = lerpf(2.2, 1.0, temper)
 	brake_comf = lerpf(2.0, 3.4, temper)
@@ -385,7 +404,10 @@ func _along_back(pts: Array, s: float) -> Vector2:
 
 
 func _choose_next() -> Array:
-	return traffic.pick_next(cur_node, cur_edge, last_tangent)
+	# Fahrtziel: ein Punkt 1,5–4 km entfernt; ist er erreicht, kommt das nächste
+	if goal == Vector2.INF or Vector2(pos.x, pos.z).distance_to(goal) < 300.0:
+		goal = Vector2(pos.x, pos.z) + Vector2.from_angle(traffic.rng.randf() * TAU) * traffic.rng.randf_range(1500.0, 4000.0)
+	return traffic.pick_next(cur_node, cur_edge, last_tangent, goal, goal_k)
 
 
 func _extend_route() -> void:
@@ -550,6 +572,17 @@ func _drive(delta: float) -> void:
 	if wrecked:
 		_wreck_process(delta)
 		return
+	if _back_d > 0.0:
+		# Zurücksetzen vor dem Umfahren: gerade rückwärts im Schritttempo
+		var st := minf(1.3 * delta, _back_d)
+		_back_d -= st
+		pos.x += sin(heading) * st
+		pos.z += cos(heading) * st
+		speed = 0.0
+		_brake = false
+		wheel_roll -= st / wheel_r
+		_apply_transform()
+		return
 	# Segmentfortschritt
 	while route_i < route.size() - 2:
 		var a: Vector3 = route[route_i]
@@ -620,15 +653,19 @@ func _drive(delta: float) -> void:
 	_limit = ""
 	# Fahrstreifenwechsel: Versatz weich nachführen (erst blinken, dann ziehen)
 	_lane_t += delta
-	var tgt_shift := float(lane_tgt) * lane_w
+	var tgt_shift := float(lane_tgt) * lane_w + _evade
 	if lane_shift != tgt_shift:
-		if _lane_hold > 0.0:
+		if _lane_hold > 0.0 and _evade <= 0.0:
 			_lane_hold -= delta
 		else:
 			var lrate := clampf(absf(tgt_shift - lane_shift) * 1.3, 0.3, maxf(lane_w, 3.0) / 2.8) * clampf(speed / 8.0, 0.15, 1.0)
+			if _evade > 0.0:
+				lrate = maxf(lrate, 1.1)                 # Umfahren: schon im Stand voll einschlagen
 			lane_shift = move_toward(lane_shift, tgt_shift, lrate * delta)
 	# Vorausschaupunkt der Lenkung: wächst oberhalb des Stadttempos mit (ruhiger Geradeauslauf bei 100+)
 	var look := clampf(speed * 0.9, 4.5 + length * 0.15, maxf(14.0 + length * 0.2, speed * 0.7))
+	if _evade > 0.0:
+		look = minf(look, 4.2)                          # Umfahren: früh und deutlich ausscheren
 	var tp := _aim(look)
 	var d := Vector2(tp.x - pos.x, tp.z - pos.z)
 	var fwd0 := Vector2(-sin(heading), -cos(heading))
@@ -755,6 +792,7 @@ func _drive(delta: float) -> void:
 			death = "festgefahren"
 	else:
 		blocked_t = maxf(blocked_t - delta, 0.0)
+	_evade_think(delta)
 	ghost_t = maxf(ghost_t - delta, 0.0)
 	# Kreuzungs-Patt/Stau auflösen: sehr lange an einer Kreuzung wartend, Spieler sieht es nicht -> entfernen
 	if speed < 0.3 and _limit == "junction":
@@ -830,6 +868,106 @@ func _drive(delta: float) -> void:
 	_update_lights(delta)
 	_pp("transform", _tb - _ta)
 	_pp("lights", Time.get_ticks_usec() - _tb)
+
+
+func _standing(o) -> bool:
+	## Steht das Hindernis dauerhaft (Spieler hält, Wrack)? Wartende Fahrzeuge im Verkehr zählen nicht.
+	if o == null or not is_instance_valid(o):
+		return false
+	if o is AICar:
+		var oc := o as AICar
+		return oc.wrecked and (oc.wreck == null or oc.wreck.linear_velocity.length() < 0.4)
+	if o is RigidBody3D:
+		return (o as RigidBody3D).linear_velocity.length() < 0.4
+	return false
+
+
+func _evade_think(delta: float) -> void:
+	## Hupen und Umfahren: steht ein Hindernis länger als die Geduld des Fahrers im Weg, wird gehupt und –
+	## wenn links genug Platz und kein Gegenverkehr ist – langsam links vorbeigefahren.
+	_honk_t = maxf(_honk_t - delta, 0.0)
+	if blocker != null and not is_instance_valid(blocker):
+		blocker = null
+	if _evade_o != null and not is_instance_valid(_evade_o):
+		_evade_o = null
+	var fwd := Vector3(-sin(heading), 0, -cos(heading))
+	var right := Vector3(-fwd.z, 0, fwd.x)
+	if _evade > 0.0:
+		var gone := not _standing(_evade_o)
+		if not gone:
+			var rel: Vector3 = ((_evade_o as AICar).world_pos() if _evade_o is AICar else (_evade_o as Node3D).global_position) - pos
+			gone = rel.dot(fwd) < -(rear_ext + 3.5)
+		_evade_t = _evade_t + delta if speed < 0.2 else 0.0
+		if gone or _evade_t > 12.0:
+			# vorbei – oder es klemmt (zu wenig Platz): zurück in die Spur, später neu versuchen
+			_evade = 0.0
+			_evade_o = null
+			blocked_t = 0.0
+		return
+	if is_bus or speed > 0.3 or _limit != "obstacle" or not _standing(blocker):
+		return
+	if honker and _honk_t <= 0.0 and blocked_t > patience * 0.5 and blocker == traffic.player:
+		_honk_now()
+	if blocked_t < patience:
+		return
+	var op: Vector3 = (blocker as AICar).world_pos() if blocker is AICar else (blocker as Node3D).global_position
+	var ow := (blocker as AICar).width if blocker is AICar else 1.9
+	var need := (width + ow) * 0.5 + 0.55 - (op - pos).dot(right)       # so weit nach links, dass ich vorbeipasse
+	if need > 3.8:
+		return
+	need = maxf(need, 0.4)
+	# Platz links und kein Gegenverkehr? (Fahrschlauch um den Versatz verschoben, 45 m voraus)
+	for o in traffic.nearby_obstacles(pos + fwd * 20.0, 48.0):
+		if o == self or o == blocker:
+			continue
+		var q: Vector3 = (o as AICar).world_pos() if o is AICar else (o as Node3D).global_position
+		var f := (q - pos).dot(fwd)
+		var lat := (q - pos).dot(right) + need
+		if f > -6.0 and f < 45.0 and absf(lat) < width + 0.9:
+			return
+	if not traffic.ignore_player and blocker != traffic.player:
+		var pq: Vector3 = traffic.player.global_position - pos
+		if pq.dot(fwd) > -6.0 and pq.dot(fwd) < 45.0 and absf(pq.dot(right) + need) < width + 0.9:
+			return
+	_evade = need
+	_evade_o = blocker
+	blocked_t = 0.0
+	# zu dicht aufgefahren, um auszuscheren: erst ein Stück zurücksetzen (wenn hinten frei ist)
+	# (für den seitlichen Versatz y braucht ein Wagen mit Wendekreisradius R etwa 2·√(R·y) Anlauf)
+	var gap := (op - pos).dot(fwd) - front_ext - 2.3
+	_back_d = clampf(2.0 * sqrt(6.0 * need) + 0.8 - gap, 0.0, 7.5)
+	_evade_t = 0.0
+	if _back_d > 0.0:
+		for o in traffic.nearby_obstacles(pos, 16.0):
+			if o == self or o == blocker:
+				continue
+			var q2: Vector3 = (o as AICar).world_pos() if o is AICar else (o as Node3D).global_position
+			var fb := (q2 - pos).dot(fwd)
+			if fb < 0.0 and fb > -(rear_ext + _back_d + 5.0) and absf((q2 - pos).dot(right)) < width + 0.6:
+				_back_d = clampf(-fb - rear_ext - 3.2, 0.0, _back_d)
+	if OS.has_environment("DRESDEN_EVADE"):
+		print("EVADE uid %d umfährt %s, Versatz %.1f m, Geduld %.0f s" % [uid, "Spieler" if blocker == traffic.player else "Wrack", need, patience])
+
+
+func _honk_now() -> void:
+	_honk_t = traffic.rng.randf_range(5.0, 14.0)
+	if OS.has_environment("DRESDEN_EVADE"):
+		print("EVADE uid %d hupt" % uid)
+	if _honk == null:
+		var st: AudioStream = load("res://assets/audio/car/horn_ext_loop.ogg")
+		if st == null:
+			return
+		_honk = AudioStreamPlayer3D.new()
+		_honk.stream = st
+		_honk.unit_size = 14.0
+		_honk.max_distance = 120.0
+		_honk.pitch_scale = traffic.rng.randf_range(0.88, 1.14)
+		if AudioServer.get_bus_index(GameSettings.VEHICLE_BUS) >= 0:
+			_honk.bus = GameSettings.VEHICLE_BUS
+		add_child(_honk)
+	_honk.play()
+	var dur := traffic.rng.randf_range(0.35, 1.1)
+	get_tree().create_timer(dur).timeout.connect(func(): if is_instance_valid(_honk): _honk.stop())
 
 
 func _special_limit(_delta: float) -> float:
@@ -1147,7 +1285,7 @@ func _junction_cap(m: Dictionary, d_node: float, delta: float) -> float:
 		m["sig"] = st
 		if st == SignalCtl.RED or st == SignalCtl.RED_YELLOW:
 			must = true
-		elif st == SignalCtl.YELLOW and d_stop > speed * speed / (2.0 * 3.5) + 1.5:
+		elif st == SignalCtl.YELLOW and d_stop > speed * speed / (2.0 * yellow_b) + 1.5:
 			must = true
 	else:
 		var lvl: int = Traffic.LVL[int(app[3])] if not app.is_empty() else 2
@@ -1433,6 +1571,14 @@ func _obstacle_cap() -> float:
 				# mehrstreifig: der Nachbarstreifen gehört nicht zu meinem Fahrschlauch
 				corridor = minf(corridor, maxf(here_lw - 0.3, (width + ow) * 0.5 + 0.1))
 			var lat := rel.dot(right)
+			if _evade > 0.0 and o == _evade_o:
+				# wird gerade umfahren: nur die tatsächliche Überdeckung zählt, langsam vorbeiziehen
+				if absf(lat) < (width + ow) * 0.5 + 0.12 and f > 0.3:
+					var net_e := f - (o_rear + front_ext)
+					vt = minf(vt, (1.5 if net_e > 2.0 else 0.9) if net_e > 0.45 else 0.0)
+				else:
+					vt = minf(vt, 4.5)
+				continue
 			# Gegenverkehr auf eigener Spur ignorieren, wenn er seitlich deutlich versetzt ist
 			if absf(lat) < corridor and f > 0.3:
 				if along < -1.0 and absf(lat) > corridor * 0.55:
@@ -1717,6 +1863,8 @@ func _wreck_process(delta: float) -> void:
 		_lead_ok = false
 		lane_tgt = 0
 		lane_shift = 0.0
+		_evade = 0.0
+		_evade_o = null
 		wreck.queue_free()
 		wreck = null
 		wrecked = false

@@ -43,7 +43,7 @@
  ],
  "bridge_part_dom_force_note": "Nach der Begradigung weicht das A17-Deck Lockwitztal laut DOM abschnittsweise -0,7..+1,3 m ab (Mittel < 0,8 m, sonst abgelehnt): abschnittsweise DOM-Korrektur erzwingen – vorher lagen die Richtungsfahrbahnen bis 1,4 m auseinander",
  "look_by_gid": {
-  "_hinweis": "Aussehen ganzer Gebäude (alle Teile einer GML-Gebäude-ID): wall/roof = Farbe, plain = ohne Gesimse/Balkone",
+  "_hinweis": "Aussehen ganzer Gebäude (alle Teile einer GML-Gebäude-ID): wall/roof = Farbe, plain = ohne Gesimse/Balkone, style = Fassadenstil (0 Gründerzeit, 1 Sandstein/Neoklassik, 2 Platte, 3 Zeilenbau, 4 Glas)",
   "DESNATPU1000EjsO": {
    "wall": "#a79e8c",
    "roof": "#5e3a31",
@@ -58,6 +58,48 @@
    "wall": "#a79e8c",
    "roof": "#5e3a31",
    "plain": true
+  },
+  "DESNATPU1000Gnne": {
+   "wall": "#e6d2a6",
+   "roof": "#a4553f",
+   "style": 1,
+   "_note": "Altmarkt Ostseite (1953–56)"
+  },
+  "DESNATP19o0005Xy": {
+   "wall": "#e6d2a6",
+   "roof": "#a4553f",
+   "style": 1,
+   "_note": "Altmarkt Westseite (1953–56)"
+  },
+  "DESNATPU1000DTA5": {
+   "wall": "#e6d2a6",
+   "roof": "#a4553f",
+   "style": 1,
+   "_note": "Altmarkt Südost"
+  },
+  "DESNATP1gB0001Ic": {
+   "wall": "#e6d2a6",
+   "roof": "#a4553f",
+   "style": 1,
+   "_note": "Altmarkt Südost"
+  },
+  "DESNATP1gB0001Ig": {
+   "wall": "#e6d2a6",
+   "roof": "#a4553f",
+   "style": 1,
+   "_note": "Altmarkt Südost"
+  },
+  "DESNATPU1000EAUr": {
+   "wall": "#e6d2a6",
+   "roof": "#a4553f",
+   "style": 1,
+   "_note": "Wilsdruffer Straße/Altmarkt Nordwest"
+  },
+  "DESNATPU1000Fh0f": {
+   "wall": "#8fa6b5",
+   "roof": "#8a8f8c",
+   "style": 4,
+   "_note": "Kulturpalast (Glasfassade)"
   }
  },
  "passage_min_w": {
