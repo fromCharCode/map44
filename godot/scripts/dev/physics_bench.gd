@@ -16,8 +16,8 @@ extends SceneTree
 ## "Rutschen" = Schwimmwinkel β (Winkel zwischen Fahrzeuglängsachse und Bewegungsrichtung am Schwerpunkt)
 ## und Schräglaufwinkel vorn/hinten.
 
-const A_AXLE := 1.36    # Schwerpunkt -> Vorderachse (m)
-const B_AXLE := 1.56    # Schwerpunkt -> Hinterachse (m)
+const A_AXLE := PlayerCar.A_AXLE    # Schwerpunkt -> Vorderachse (m)
+const B_AXLE := PlayerCar.B_AXLE    # Schwerpunkt -> Hinterachse (m)
 
 var car: PlayerCar
 var driver: Node

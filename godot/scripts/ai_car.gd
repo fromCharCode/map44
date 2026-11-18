@@ -29,8 +29,43 @@ var heading := 0.0            # Gier: Vorwärtsvektor = (-sin, 0, -cos)
 var speed := 0.0
 var v_cruise := 11.0
 var route_v: Array = []       # Tempolimit (m/s) je Routenpunkt (gilt ab diesem Punkt)
-var drive_fac := 1.0          # persönlicher Fahrstil (0,88 .. 1,05 des Limits)
-var accel := 2.4
+var route_ln: Array = []      # Vector2(Fahrstreifenbreite, Zahl der Streifen links von mir) je Routenpunkt; 0 = einstreifig
+# Fahrerprofil (fest je Fahrzeug, siehe _make_driver)
+enum Kind { CAR, VAN, TRUCK, BUS }
+const LANE_CHANGE := true     # Überholen/Fahrstreifenwechsel auf mehrstreifigen Richtungsfahrbahnen (Schalter)
+var kind := Kind.CAR
+var drive_fac := 1.0          # Wunschgeschwindigkeit als Faktor aufs Tempolimit (0,80 .. 1,20)
+var v_free := 36.0            # Wunschtempo ohne Limit (Autobahn-Richtgeschwindigkeit), m/s
+var v_max := 50.0             # Obergrenze des Fahrzeugs bzw. der Fahrzeugart, m/s
+var accel := 2.4              # größte Beschleunigung, m/s²
+var brake_comf := 2.6         # angenehme Bremsverzögerung, m/s²
+var t_gap := 1.5              # Zeitlücke zum Vordermann, s
+var s0 := 2.0                 # Abstand im Stand, m
+var a_lat := 2.6              # hingenommene Querbeschleunigung in Kurven, m/s²
+var react_t := 1.0            # Reaktionszeit beim Anfahren (Ampel, Kolonne), s
+# Folgefahren (Intelligent-Driver-Modell): Vordermann aus dem letzten Denkschritt, dazwischen fortgeschrieben
+var _lead_ok := false
+var _lead_gap := 0.0
+var _lead_v := 0.0
+var _acc := 0.0               # aktuelle Längsbeschleunigung (geglättet)
+var _still_t := 0.0           # Standzeit
+var _go_t := 0.0              # verstrichene Reaktionszeit beim Anfahren
+var _stop_sig := false        # stand vor Ampel/in der Kolonne (volle Reaktionszeit), sonst Vorfahrt achten (kurz)
+var _v_ahead := INF           # vorausschauende Grenze (Tempolimit, Kurven) aus dem Denkschritt
+var _ahead := PackedVector2Array()   # Route voraus, gleichmäßig abgetastet (ab Lotpunkt)
+var _ahead_step := 6.0
+var _ext_t := 0.0
+# Fahrstreifen (nur Richtungsfahrbahnen mit mehreren Streifen): 0 = rechts
+var lane_tgt := 0
+var lane_shift := 0.0         # tatsächlicher Versatz nach links (m)
+var lane_w := 0.0             # Breite des Fahrstreifens, in den gewechselt wurde
+var _lane_t := 0.0            # Zeit seit dem letzten Wechsel
+var _lane_chk := 0.0
+var _lane_must := false       # muss zurück nach rechts (Abbiegen, Streifen endet)
+var _lane_zone := 0.0
+var _lane_ind := 0            # Blinker für den Spurwechsel
+var _lf_gap := INF            # letzte Prüfung: Abstand/Tempo des Vordermanns im Zielstreifen
+var _lf_v := INF
 var wheels := {}
 var wheel_roll := 0.0
 var wheel_r := 0.32
@@ -80,7 +115,14 @@ func setup(t: Traffic, model: String, color: Color, edge: int, dir: int, s: floa
 	if made.has("size"):
 		_box_size = made["size"]
 	else:
-		_box_size = Vector3(1.8, 1.3 if model != "van.glb" else 2.2, length)
+		var box_h := 1.3
+		if model == "van.glb":
+			box_h = 2.2
+		elif model.contains("transporter"):
+			box_h = 1.9
+		elif model.contains("suv"):
+			box_h = 1.65
+		_box_size = Vector3(1.8, box_h, length)
 	width = _box_size.x
 	front_ext = length * 0.5
 	rear_ext = length * 0.5
@@ -88,6 +130,7 @@ func setup(t: Traffic, model: String, color: Color, edge: int, dir: int, s: floa
 	axle_r = length * 0.32
 	_configure()
 	_make_shapes()
+	_make_driver()
 	_think_t = float(uid % 6) * THINK / 6.0
 	_start_route(edge, dir, s)
 
@@ -120,16 +163,19 @@ func _start_route(edge: int, dir: int, s: float) -> void:
 	var seg := maxf(Vector2(pts[start_i + 1].x - pts[start_i].x, pts[start_i + 1].z - pts[start_i].z).length(), 0.001)
 	var p0 := (pts[start_i] as Vector3).lerp(pts[start_i + 1], clampf((s - acc) / seg, 0.0, 1.0))
 	var e: Dictionary = traffic.edges[edge]
-	drive_fac = traffic.rng.randf_range(0.88, 1.05)
 	var vl := _cruise_for(e)
+	var ln := _lane_info(e)
 	route = [p0]
 	route_v = [vl]
+	route_ln = [ln]
 	for i in range(start_i + 1, pts.size()):
 		route.append(pts[i])
 		route_v.append(vl)
+		route_ln.append(ln)
 	if route.size() < 2:
 		route.append(pts[pts.size() - 1] + Vector3(0.01, 0, 0.01))
 		route_v.append(vl)
+		route_ln.append(ln)
 	cur_node = int(e["b"]) if dir == 1 else int(e["a"])
 	_add_marker(edge, dir)
 	var d := Vector2(route[1].x - route[0].x, route[1].z - route[0].z)
@@ -137,14 +183,113 @@ func _start_route(edge: int, dir: int, s: float) -> void:
 	heading = atan2(-d.x, -d.y)
 	pos = p0
 	v_cruise = _cruise_for(e)
-	speed = v_cruise * 0.7
+	speed = v_cruise * (0.7 if v_cruise < 17.0 else 0.9)     # auf Schnellstraßen im Fluss erscheinen
 	_apply_transform()
 	_extend_route()
 
 
+func _make_driver() -> void:
+	## Feste Eigenart des Fahrers. Wunschgeschwindigkeit als Faktor aufs Limit: 12 % Schleicher (0,80–0,90),
+	## 79 % Normalfahrer (um 1,01, Streuung 0,035, begrenzt auf 0,95–1,08), 9 % Raser (1,08–1,20).
+	## Das Temperament (aus dem Faktor, mit Streuung) bestimmt Zeitlücke 2,2–1,0 s, Beschleunigung, angenehme
+	## Bremsverzögerung 2,0–3,4 m/s² und Querbeschleunigung in Kurven 2,0–3,5 m/s². Transporter, Lkw und Busse
+	## sind träger und langsamer.
+	var r := traffic.rng
+	var mf := model_file.to_lower()
+	if is_bus:
+		kind = Kind.BUS
+	elif mf.contains("truck") or mf.contains("lkw") or mf.contains("lorry"):
+		kind = Kind.TRUCK
+	elif mf.contains("van") or mf.contains("transporter"):
+		kind = Kind.VAN
+	else:
+		kind = Kind.CAR
+	var u := r.randf()
+	if u < 0.12:
+		drive_fac = r.randf_range(0.80, 0.90)
+	elif u < 0.91:
+		drive_fac = clampf(r.randfn(1.01, 0.035), 0.95, 1.08)
+	else:
+		drive_fac = r.randf_range(1.08, 1.20)
+	var temper := clampf((drive_fac - 0.85) / 0.3 + r.randf_range(-0.3, 0.3), 0.0, 1.0)
+	var brisk := mf.contains("limo")                # Limousine/Elektro-Limousine: eher zügig unterwegs
+	if brisk:
+		temper = minf(temper + 0.12, 1.0)
+		if drive_fac >= 0.95:
+			drive_fac = minf(drive_fac + 0.02, 1.20)
+	react_t = r.randf_range(0.6, 1.4)
+	s0 = r.randf_range(1.8, 2.5)
+	t_gap = lerpf(2.2, 1.0, temper)
+	brake_comf = lerpf(2.0, 3.4, temper)
+	match kind:
+		Kind.CAR:
+			var small := mf.contains("citycar") or mf.contains("kleinwagen")
+			accel = lerpf(1.7, 3.0, temper) * (0.88 if small else 1.0)
+			if mf.contains("elektro"):
+				accel *= 1.15                              # E-Antrieb: kräftiger Antritt
+			elif mf.contains("suv_gross"):
+				accel *= 0.95
+			a_lat = lerpf(2.0, 3.5, temper)
+			v_free = lerpf(110.0, 170.0, temper) / 3.6
+			v_max = (150.0 if small else 190.0) / 3.6
+			if brisk:
+				v_free = minf(v_free + 10.0 / 3.6, v_max)
+		Kind.VAN:
+			drive_fac = minf(drive_fac, 1.10) * 0.98
+			accel = lerpf(1.3, 1.9, temper)
+			a_lat = lerpf(2.0, 2.8, temper)
+			v_free = lerpf(100.0, 140.0, temper) / 3.6
+			v_max = 150.0 / 3.6
+			t_gap = minf(t_gap + 0.15, 2.2)
+		Kind.TRUCK:
+			drive_fac = minf(drive_fac, 1.03)
+			accel = lerpf(0.7, 1.1, temper)
+			a_lat = lerpf(2.0, 2.4, temper)
+			v_free = lerpf(80.0, 89.0, temper) / 3.6     # Lkw-Limit 80 (Tacho-Toleranz)
+			v_max = v_free
+			t_gap = maxf(t_gap, 1.6)
+			brake_comf = minf(brake_comf, 2.6)
+		Kind.BUS:
+			drive_fac = r.randf_range(0.90, 0.98)
+			accel = r.randf_range(1.1, 1.3)
+			a_lat = 2.0
+			v_free = 80.0 / 3.6
+			v_max = v_free
+			t_gap = maxf(t_gap, 1.6)
+			brake_comf = minf(brake_comf, 2.4)             # stehende Fahrgäste
+	v_free = minf(v_free, v_max)
+
+
 func _cruise_for(e: Dictionary) -> float:
-	var limit := float(e["speed"]) / 3.6
-	return clampf(limit * drive_fac, 3.5, 17.0)
+	## Wunschgeschwindigkeit auf Kante e (m/s): Tempolimit × persönlicher Faktor. Autobahn mit 130 in den Daten
+	## (= nur Richtgeschwindigkeit): persönliches Wunschtempo v_free. Schmale Gegenverkehrsfahrbahnen langsamer
+	## (in den Daten stehen dort oft 100 als Außerorts-Vorgabe). Fahrzeugart begrenzt über v_max.
+	var kmh := float(e["speed"])
+	var v := kmh / 3.6 * drive_fac
+	if kmh >= 129.0 and String(e["cls"]) == "motorway":
+		v = v_free
+	if int(e["oneway"]) == 0:
+		var fw := float(e["width"]) - float(e.get("pl", 0.0)) - float(e.get("pr", 0.0))
+		if fw < 4.6:
+			v = minf(v, 40.0 / 3.6 * drive_fac)
+		elif fw < 5.6:
+			v = minf(v, 70.0 / 3.6 * drive_fac)
+	return clampf(v, 2.8, v_max)
+
+
+func _lane_info(e: Dictionary) -> Vector2:
+	## Fahrstreifen für Spurwechsel: nur Richtungsfahrbahnen (Einbahn) mit mindestens zwei Streifen. Die Breite
+	## entspricht der Markierung (roads.gd: Fahrband gleichmäßig geteilt). Rückgabe (Breite, Streifen links von
+	## der Grundspur) oder (0, 0).
+	if not LANE_CHANGE or is_bus or int(e["oneway"]) == 0:
+		return Vector2.ZERO
+	var n := int(e.get("lanes", 1))
+	if n < 2 or not (String(e["cls"]) in ["motorway", "trunk", "primary", "secondary", "tertiary"]):
+		return Vector2.ZERO
+	var lw := (float(e["width"]) - float(e.get("pl", 0.0)) - float(e.get("pr", 0.0))) / float(n)
+	if lw < 2.9:
+		return Vector2.ZERO
+	return Vector2(lw, float(mini(n - 1, 2)))
 
 
 func release() -> void:
@@ -244,9 +389,15 @@ func _choose_next() -> Array:
 
 
 func _extend_route() -> void:
-	# Hängt Kanten an, bis die Route ca. 100 m voraus reicht
+	# Hängt Kanten an, bis die Route weit genug voraus reicht: mindestens 100 m, bei höherem Tempo Bremsweg plus
+	# Reserve (Tempolimits, Kurven und Vorausfahrende müssen rechtzeitig sichtbar sein), auf mehrstreifigen
+	# Richtungsfahrbahnen zusätzlich die Strecke für einen Überholvorgang
+	var need := maxf(100.0, speed * t_gap + speed * speed / 4.0 + 45.0)
+	if lane_tgt > 0 or (route_i < route_ln.size() and (route_ln[route_i] as Vector2).x > 0.0):
+		need = maxf(need, speed * 9.0 + 90.0)
+	need = minf(need, 420.0)
 	var guard := 0
-	while _route_remaining() < 100.0 and guard < 5:
+	while _route_remaining() < need and guard < 5:
 		guard += 1
 		var nxt := _choose_next()
 		if nxt.is_empty():
@@ -263,6 +414,7 @@ func _extend_route() -> void:
 			break
 		var added := 0
 		var vl := _cruise_for(traffic.edges[ei])
+		var ln := _lane_info(traffic.edges[ei])
 		var tan := last_tangent
 		for i in pts.size():
 			var p: Vector3 = pts[i]
@@ -271,6 +423,7 @@ func _extend_route() -> void:
 				continue
 			route.append(p)
 			route_v.append(vl)
+			route_ln.append(ln)
 			tan = dd.normalized()
 			last = p
 			added += 1
@@ -419,11 +572,15 @@ func _drive(delta: float) -> void:
 	if route_i > 6:
 		route = route.slice(route_i)
 		route_v = route_v.slice(route_i)
+		route_ln = route_ln.slice(route_i)
 		for m in markers:
 			m["ridx"] = int(m["ridx"]) - route_i
 		route_i = 0
 	var _te := Time.get_ticks_usec()
-	_extend_route()
+	_ext_t -= delta
+	if _ext_t <= 0.0 or route.size() - route_i < 4:
+		_ext_t = 0.1
+		_extend_route()
 	_pp("extend", Time.get_ticks_usec() - _te)
 	if route.size() - route_i < 2:
 		dead = true
@@ -436,7 +593,7 @@ func _drive(delta: float) -> void:
 	var rab := Vector2(rb.x - ra.x, rb.z - ra.z)
 	var rap := Vector2(pos.x - ra.x, pos.z - ra.z)
 	var rt := clampf(rap.dot(rab) / maxf(rab.length_squared(), 0.0001), 0.0, 1.0)
-	var off_lim := 7.0
+	var off_lim := 7.0 + lane_shift
 	if absf(wrapf(atan2(-rab.x, -rab.y) - heading, -PI, PI)) > 1.4:
 		off_lim = 14.0                       # mitten im Wenden
 	if (rap - rab * rt).length() > off_lim:
@@ -456,36 +613,40 @@ func _drive(delta: float) -> void:
 		_chk_t = 0.0
 		_chk_pos = pos
 
-	# Zielgeschwindigkeit: Tempolimit hier und vorausschauend, Kurven aus der Routengeometrie
+	# Zielgeschwindigkeit: Wunschtempo des Fahrers auf dieser Straße (Tempolimit × Eigenart); vorausschauend
+	# (niedrigeres Limit, Kurven auf Bremsweg-Entfernung) aus dem Denkschritt (_scan_ahead)
 	v_cruise = float(route_v[mini(route_i, route_v.size() - 1)])
-	var vt := v_cruise
+	var vt := minf(v_cruise, _v_ahead)
 	_limit = ""
-	var acc_s := 0.0
-	for i in range(route_i + 1, mini(route_i + 30, route.size() - 1)):
-		acc_s += Vector2(route[i].x - route[i - 1].x, route[i].z - route[i - 1].z).length()
-		if acc_s > 45.0:
-			break
-		var va := float(route_v[i])
-		if va < vt:
-			vt = minf(vt, sqrt(va * va + 2.0 * 2.2 * acc_s))
-	var look := clampf(speed * 0.9, 4.5 + length * 0.15, 14.0 + length * 0.2)
-	var tp := _lookahead_point(look)
+	# Fahrstreifenwechsel: Versatz weich nachführen (erst blinken, dann ziehen)
+	_lane_t += delta
+	var tgt_shift := float(lane_tgt) * lane_w
+	if lane_shift != tgt_shift:
+		if _lane_hold > 0.0:
+			_lane_hold -= delta
+		else:
+			var lrate := clampf(absf(tgt_shift - lane_shift) * 1.3, 0.3, maxf(lane_w, 3.0) / 2.8) * clampf(speed / 8.0, 0.15, 1.0)
+			lane_shift = move_toward(lane_shift, tgt_shift, lrate * delta)
+	# Vorausschaupunkt der Lenkung: wächst oberhalb des Stadttempos mit (ruhiger Geradeauslauf bei 100+)
+	var look := clampf(speed * 0.9, 4.5 + length * 0.15, maxf(14.0 + length * 0.2, speed * 0.7))
+	var tp := _aim(look)
 	var d := Vector2(tp.x - pos.x, tp.z - pos.z)
 	var fwd0 := Vector2(-sin(heading), -cos(heading))
 	if d.dot(fwd0) < 0.0 and d.length() > 0.5:
-		tp = _lookahead_point(look + 10.0)
+		tp = _aim(look + 10.0)
 		d = Vector2(tp.x - pos.x, tp.z - pos.z)
 	# Kurvenradius aus drei Routenpunkten (unabhängig vom seitlichen Versatz des Fahrzeugs)
-	var c0 := _lookahead_point(minf(look * 0.5, 6.0))
-	var c1 := _lookahead_point(look + 6.0)
-	var c2 := _lookahead_point(look + 18.0)
+	# (auf einem linken Fahrstreifen parallel zur Route gemessen, sonst täuschte der Versatz eine Kurve vor)
+	var c0 := _aim(minf(look * 0.5, 6.0))
+	var c1 := _aim(look + 6.0)
+	var c2 := _aim(look + 18.0)
 	var u1 := Vector2(c1.x - c0.x, c1.z - c0.z)
 	var u2 := Vector2(c2.x - c1.x, c2.z - c1.z)
 	if u1.length() > 1.0 and u2.length() > 1.0:
 		var turn := absf(u1.angle_to(u2))
 		if turn > 0.08:
 			var radius := (u1.length() + u2.length()) * 0.5 / turn
-			vt = minf(vt, maxf(sqrt(2.6 * radius), 3.6))     # Querbeschleunigung ~2,6 m/s²
+			vt = minf(vt, maxf(sqrt(a_lat * radius), 3.6))   # Querbeschleunigung je Fahrer 2,0–3,5 m/s²
 
 	# Kreuzungen, Haltestellen, Hindernisse: alle THINK s neu bewerten (versetzt je Fahrzeug)
 	_since_think += delta
@@ -497,6 +658,7 @@ func _drive(delta: float) -> void:
 		_think_t += THINK
 		var lim := INF
 		_limit_c = ""
+		_scan_ahead()
 		var jcap := _junctions(dt)
 		if jcap < lim:
 			lim = jcap
@@ -507,20 +669,83 @@ func _drive(delta: float) -> void:
 			if ocap < lim:
 				lim = ocap
 				_limit_c = "obstacle"
+		else:
+			_lead_ok = false
+		# Fahrstreifen: alle 0,4 s prüfen (nur auf mehrstreifigen Richtungsfahrbahnen oder wenn links unterwegs)
+		_lane_chk -= dt
+		if _lane_chk <= 0.0:
+			_lane_chk = 0.4
+			if lane_tgt > 0 or lane_shift > 0.0 or (route_ln[mini(route_i, route_ln.size() - 1)] as Vector2).x > 0.0:
+				_lane_think()
+		if _lane_must and lane_shift > 0.5:
+			# kommt nicht nach rechts: vor dem Ende des Streifens verzögern, bis sich eine Lücke findet
+			lim = minf(lim, sqrt(2.0 * 2.0 * maxf(_lane_zone - 25.0, 0.0)))
 		_vt_c = lim
 		prof_think_us += Time.get_ticks_usec() - _tt
 	if _vt_c < vt:
 		vt = _vt_c
 		_limit = _limit_c
 
-	# Beschleunigung
+	# Längsregelung nach dem Intelligent-Driver-Modell: a = a_max · (1 − (v/v0)⁴ − (s*/s)²) mit Wunschabstand
+	# s* = s0 + v·T + v·Δv / (2·√(a_max·b)). v0 ist die gerade zulässige Geschwindigkeit (Limit, Kurve, Kreuzung);
+	# liegt sie unter der gefahrenen, wird zügig, aber stetig auf sie verzögert. Der Abstand zum Vordermann
+	# stammt aus dem Denkschritt und wird dazwischen fortgeschrieben.
 	var prev_speed := speed
-	if vt > speed:
-		speed = minf(speed + accel * delta, vt)
+	var z2 := 0.0
+	if _lead_ok:
+		_lead_gap += (_lead_v - speed) * delta
+		var s_star := s0 + maxf(0.0, speed * t_gap + speed * (speed - _lead_v) / (2.0 * sqrt(accel * brake_comf)))
+		var z := s_star / maxf(_lead_gap, 0.3)
+		z2 = z * z
+	var a_cmd: float
+	var lead_binds := false
+	if speed > vt:
+		var over := speed - vt
+		a_cmd = -clampf(over * 4.0, 0.6, 7.5 if over > 4.0 else 4.5)
+		var a_idm := accel * (1.0 - z2)
+		if a_idm < a_cmd:
+			a_cmd = a_idm
+			lead_binds = true
 	else:
-		speed = maxf(speed - (7.5 if speed - vt > 4.0 else 4.5) * delta, vt)
+		var q := speed / maxf(vt, 0.1)
+		var q4 := q * q * q * q
+		a_cmd = accel * (1.0 - q4 - z2)
+		lead_binds = z2 > 0.5 and z2 > q4
+	a_cmd = maxf(a_cmd, -8.0)
+	if lead_binds and not (_limit == "junction" and vt <= 0.3):
+		_limit = "obstacle"
+	# Anfahren: erst wenn der Vordermann Platz gemacht hat, und nach der Reaktionszeit des Fahrers (an der Ampel
+	# und in der Kolonne voll, beim Einbiegen nach Vorfahrt-Achten verkürzt) -> Kolonnen fahren gestaffelt an
+	if speed < 0.15:
+		_still_t += delta
+		var go := a_cmd > 0.0 and vt > 0.2
+		if go and _lead_ok and _lead_gap < s0 + 0.45:
+			go = false
+		if not go:
+			_go_t = 0.0
+			a_cmd = minf(a_cmd, 0.0)
+			_stop_sig = _limit == "obstacle" or _sig_red()
+		elif _still_t > 1.5:
+			_go_t += delta
+			if _go_t < (react_t if _stop_sig else react_t * 0.3):
+				a_cmd = 0.0
+	else:
+		_still_t = 0.0
+	# Gas weich aufbauen (Ruckbegrenzung), Bremse sofort
+	if speed <= 0.0 and a_cmd <= 0.0:
+		_acc = 0.0
+	elif a_cmd > _acc:
+		_acc = minf(a_cmd, _acc + (15.0 if _acc < 0.0 else 5.0) * delta)
+	else:
+		_acc = a_cmd
+	speed += _acc * delta
+	if _acc > 0.0:
+		speed = minf(speed, maxf(vt, prev_speed))
+	elif not lead_binds:
+		speed = maxf(speed, minf(vt, prev_speed))
 	speed = maxf(speed, 0.0)
-	_brake = speed < prev_speed - 0.02 * delta * 60.0 or (speed < 0.2 and vt < 0.5)
+	# Bremslicht mit Hysterese (leichtes Verzögern = Gas wegnehmen, kein Licht)
+	_brake = _acc < -0.9 or (_brake and _acc < -0.3) or (speed < 0.2 and vt < 0.5)
 	# Steckenbleiben hinter Hindernissen (nicht an Ampeln/Kreuzungen) -> kurz Geistmodus
 	if speed < 0.25 and _limit == "obstacle" and not _queued():
 		blocked_t += delta
@@ -555,7 +780,7 @@ func _drive(delta: float) -> void:
 		tight = true
 		if k == 5:
 			break
-		tp = _lookahead_point(look + 5.0 * float(k + 1))
+		tp = _aim(look + 5.0 * float(k + 1))
 		d = Vector2(tp.x - pos.x, tp.z - pos.z)
 	# Routenende: das letzte Segment wird vom Fortschrittszähler nie abgeschlossen -> Abstand zum Endpunkt prüfen
 	var end_p: Vector3 = route[route.size() - 1]
@@ -611,6 +836,274 @@ func _special_limit(_delta: float) -> float:
 	return INF                     # Busse: Haltestellen
 
 
+func _aim(dist: float) -> Vector3:
+	## Zielpunkt der Lenkung: Routenpunkt in dist voraus; beim Fahren auf einem linken Fahrstreifen vom Lotpunkt
+	## auf der Route aus gemessen und um den Versatz nach links verschoben.
+	if lane_shift < 0.02:
+		return _lookahead_point(dist)
+	var a: Vector3 = route[route_i]
+	var b: Vector3 = route[mini(route_i + 1, route.size() - 1)]
+	var ab := Vector2(b.x - a.x, b.z - a.z)
+	var t := clampf(Vector2(pos.x - a.x, pos.z - a.z).dot(ab) / maxf(ab.length_squared(), 0.0001), 0.0, 1.0)
+	var prev := a.lerp(b, t)
+	var res := prev
+	var dir := ab
+	var acc := 0.0
+	var i := route_i
+	while i < route.size() - 1:
+		var q: Vector3 = route[i + 1]
+		var seg := Vector2(q.x - prev.x, q.z - prev.z)
+		var l := seg.length()
+		if l > 0.01:
+			dir = seg
+		if acc + l >= dist:
+			res = prev.lerp(q, (dist - acc) / maxf(l, 0.001))
+			break
+		acc += l
+		prev = q
+		res = q
+		i += 1
+	if dir.length() < 0.01:
+		return res
+	dir = dir.normalized()
+	return Vector3(res.x + dir.y * lane_shift, res.y, res.z - dir.x * lane_shift)
+
+
+func _sig_red() -> bool:
+	## Zeigt die nächste Ampel auf meinem Weg Rot?
+	for m in markers:
+		if not bool(m["entered"]):
+			var sg := int(m["sig"])
+			return sg == SignalCtl.RED or sg == SignalCtl.RED_YELLOW
+	return false
+
+
+func _scan_ahead() -> void:
+	## Vorausschau (je Denkschritt): tastet die Route ab dem Lotpunkt gleichmäßig ab – Reichweite = Bremsweg aus
+	## der aktuellen Geschwindigkeit plus Reserve – und bestimmt daraus die Grenze _v_ahead: vor einem niedrigeren
+	## Tempolimit und vor Kurven wird so früh verzögert, dass die angenehme Bremsverzögerung des Fahrers genügt
+	## (v² = v_ziel² + 2·b·s). Die Abtastpunkte dienen auch der Erkennung Vorausfahrender in Kurven.
+	var reach := clampf(speed * t_gap + speed * speed / 4.0 + 25.0, 45.0, 240.0)
+	var step := clampf(reach / 20.0, 5.0, 12.0)
+	_ahead_step = step
+	_reach = reach
+	_ahead.clear()
+	if route_i + 1 >= route.size():
+		_v_ahead = INF
+		return
+	var a := Vector2(route[route_i].x, route[route_i].z)
+	var b := Vector2(route[route_i + 1].x, route[route_i + 1].z)
+	var ab := b - a
+	var t0 := clampf((Vector2(pos.x, pos.z) - a).dot(ab) / maxf(ab.length_squared(), 0.0001), 0.0, 1.0)
+	var prev := a + ab * t0
+	_ahead.append(prev)
+	var cap := INF
+	var b_lim := brake_comf * 0.8
+	var s := 0.0
+	var need := step
+	var i := route_i + 1
+	var n := route.size()
+	while i < n and s < reach:
+		var q := Vector2(route[i].x, route[i].z)
+		var l := prev.distance_to(q)
+		if l <= need:
+			s += l
+			need -= l
+			prev = q
+			var va: float = route_v[i]
+			if va < v_cruise:
+				cap = minf(cap, sqrt(va * va + 2.0 * b_lim * maxf(s - 3.0, 0.0)))
+			i += 1
+		else:
+			prev += (q - prev) * (need / l)
+			s += need
+			need = step
+			_ahead.append(prev)
+	if need < step - 0.5:
+		_ahead.append(prev)
+	# Kurven: Richtungsänderung über je zwei Abtastschritte (glättet Knicke der Kartendaten)
+	var m := _ahead.size()
+	for k in range(2, m - 2):
+		var u1 := _ahead[k] - _ahead[k - 2]
+		var u2 := _ahead[k + 2] - _ahead[k]
+		var turn := absf(u1.angle_to(u2))
+		if turn > 0.05:
+			var vc2 := maxf(a_lat * (u1.length() + u2.length()) * 0.5 / turn, 12.96)
+			if vc2 < speed * speed:
+				cap = minf(cap, sqrt(vc2 + 2.0 * brake_comf * float(k - 2) * step))
+	_v_ahead = cap
+
+
+var _reach := 45.0
+var _rp_dir := Vector2.ZERO
+var _lane_hold := 0.0
+
+
+func _route_project(p: Vector2) -> Vector2:
+	## Lage von p zur abgetasteten Route voraus: x = Bogenlänge ab meinem Lotpunkt (−1: nicht an der Route),
+	## y = Querversatz (links positiv). _rp_dir = Routenrichtung an dieser Stelle.
+	var lim := 5.0 + lane_shift
+	var best := lim * lim
+	var res := Vector2(-1.0, 0.0)
+	var s := 0.0
+	for k in _ahead.size() - 1:
+		var a := _ahead[k]
+		var ab := _ahead[k + 1] - a
+		var l2 := ab.length_squared()
+		if l2 < 0.01:
+			continue
+		var l := sqrt(l2)
+		var t := (p - a).dot(ab) / l2
+		if t >= -0.05 and t <= 1.05:
+			var off := p - a - ab * t
+			var d2 := off.length_squared()
+			if d2 < best:
+				best = d2
+				_rp_dir = ab / l
+				res = Vector2(s + t * l, off.dot(Vector2(_rp_dir.y, -_rp_dir.x)))
+		s += l
+	return res
+
+
+# --- Fahrstreifenwechsel ---------------------------------------------------------------------------
+func _lane_think() -> void:
+	## Rechtsfahrgebot und Überholen auf mehrstreifigen Richtungsfahrbahnen. Grundspur ist der rechte Streifen
+	## (dort liegt die Route); überholt wird mit seitlichem Versatz um eine Streifenbreite nach links, wenn der
+	## Vordermann deutlich langsamer ist als gewünscht, links Platz ist und bis zur nächsten Stelle, an der man
+	## rechts sein muss (Abbiegen, Ampel, Ende des Streifens), genug Strecke bleibt. Danach zurück nach rechts.
+	var here: Vector2 = route_ln[mini(route_i, route_ln.size() - 1)]
+	_lane_must = false
+	if lane_tgt > 0:
+		if here.x > 0.0:
+			lane_w = here.x
+		_lane_zone = _free_zone(lane_tgt)
+		_lane_must = _lane_zone < speed * 5.0 + 60.0
+		if (_lane_must or _lane_t > 3.0) and _lane_hold <= 0.0 and _lane_free(lane_tgt - 1, 2 if _lane_must else 1):
+			lane_tgt -= 1
+			_lane_t = 0.0
+			_lane_hold = 0.7
+			return
+		if _lane_must:
+			return
+	if here.x <= 0.0 or lane_tgt >= int(here.y) or _lane_t < 2.5 or speed < 8.0 or kind == Kind.BUS:
+		return
+	if not _lead_ok or not (blocker is AICar):
+		return
+	var want_v := minf(v_cruise, _v_ahead)
+	if _lead_v > want_v - 2.5 or _lead_v < 3.0 or _lead_gap > speed * t_gap * 2.0 + 15.0:
+		return                                   # Vordermann schnell genug, steht (Stau/Ampel) oder noch weit weg
+	if _free_zone(lane_tgt + 1) < speed * 8.0 + 70.0:
+		return
+	lane_w = here.x
+	if not _lane_free(lane_tgt + 1, 0):
+		return
+	if _lf_gap < speed * 3.0 and _lf_v < _lead_v + 1.5:
+		return                                   # links geht es auch nicht schneller
+	lane_tgt += 1
+	_lane_t = 0.0
+	_lane_hold = 0.8
+
+
+func _free_zone(lane: int) -> float:
+	## Strecke voraus (m), auf der Fahrstreifen lane vorhanden ist und keine Kreuzung das Einordnen rechts verlangt
+	var d := 0.0
+	var prev := Vector2(pos.x, pos.z)
+	for i in range(route_i + 1, route.size()):
+		if (route_ln[i] as Vector2).y < float(lane):
+			break
+		var q := Vector2(route[i].x, route[i].z)
+		d += prev.distance_to(q)
+		prev = q
+	for m in markers:
+		var dm := _marker_dist(m)
+		if dm < 0.0:
+			continue
+		if dm > d:
+			break
+		var app: Array = m["app"]
+		if int(m["exit_e"]) < 0 or int(m["move"]) != Move.STRAIGHT \
+				or (not app.is_empty() and (int(app[5]) != -1 or int(app[3]) != 2 or int(app[4]) != 0)):
+			d = minf(d, dm - float(m["jr"]) - 8.0)
+			break
+	return d
+
+
+func _lane_free(lane: int, mode: int) -> bool:
+	## Ist auf Fahrstreifen lane neben mir Platz? mode 0: Ausscheren zum Überholen, 1: freiwillig zurück nach
+	## rechts (nur wenn ich dort nicht gleich wieder aufliefe), 2: muss nach rechts (knappere Lücken).
+	## Merkt Abstand und Tempo des nächsten Vorausfahrenden im Zielstreifen (_lf_gap, _lf_v).
+	_lf_gap = INF
+	_lf_v = INF
+	var fwd := Vector2(-sin(heading), -cos(heading))
+	var right := Vector2(-fwd.y, fwd.x)
+	var me := Vector2(pos.x, pos.z)
+	var tgt := float(lane) * lane_w
+	var obs: Array = traffic.nearby_obstacles(pos, clampf(speed * 3.0 + 50.0, 60.0, 170.0))
+	if not traffic.ignore_player:
+		obs.append(traffic.player)
+	for o in obs:
+		if o == self:
+			continue
+		var op: Vector3
+		var ov2: Vector2
+		var o_fe := 2.25
+		var o_re := 2.25
+		var in_lane := false
+		var known := false
+		if o is AICar:
+			var oc := o as AICar
+			op = oc.world_pos()
+			o_fe = oc.front_ext
+			o_re = oc.rear_ext
+			if not oc.wrecked:
+				known = true
+				var of := Vector2(-sin(oc.heading), -cos(oc.heading))
+				ov2 = of * oc.speed
+				if of.dot(fwd) < 0.5:
+					continue                      # Gegen-/Querverkehr
+				var rel0 := Vector2(op.x, op.z) - me
+				# gleiche Fahrbahn? (grob geometrisch; den Streifen gibt der andere selbst an)
+				if absf(rel0.dot(right) + (oc.lane_shift - lane_shift)) > 3.0 + absf(rel0.dot(fwd)) * 0.07:
+					continue
+				in_lane = absf(oc.lane_shift - tgt) < 0.8 * lane_w or absf(float(oc.lane_tgt) * oc.lane_w - tgt) < 0.5 * lane_w
+			elif oc.wreck != null:
+				var wv := oc.wreck.linear_velocity
+				ov2 = Vector2(wv.x, wv.z)
+		elif o is RigidBody3D:
+			op = (o as Node3D).global_position
+			var pv := (o as RigidBody3D).linear_velocity
+			ov2 = Vector2(pv.x, pv.z)
+		else:
+			continue
+		var rel := Vector2(op.x, op.z) - me
+		var f := rel.dot(fwd)
+		if not known:
+			in_lane = absf(rel.dot(right) + (tgt - lane_shift)) < 2.4 + absf(f) * 0.03
+		if not in_lane:
+			continue
+		var ov := ov2.dot(fwd)
+		if f >= 0.0:
+			var gap := f - (o_re + front_ext)
+			var need := s0 + speed * t_gap * 0.5 + maxf(speed - ov, 0.0) * 2.5
+			if mode == 1:
+				need = s0 + speed * t_gap * 1.5 + maxf(speed - ov, 0.0) * 6.0
+			elif mode == 2:
+				need = s0 + 1.0 + maxf(speed - ov, 0.0) * 1.5
+			if gap < need:
+				return false
+			if gap < _lf_gap:
+				_lf_gap = gap
+				_lf_v = ov
+		else:
+			var gap_b := -f - (o_fe + rear_ext)
+			var need_b := 3.0 + ov * 0.4 + maxf(ov - speed, 0.0) * 3.0
+			if mode == 2:
+				need_b = 2.0 + ov * 0.2 + maxf(ov - speed, 0.0) * 2.0
+			if gap_b < need_b:
+				return false
+	return true
+
+
 # --- Kreuzungslogik --------------------------------------------------------------------------------
 func _junctions(delta: float) -> float:
 	var cap := INF
@@ -620,7 +1113,7 @@ func _junctions(delta: float) -> float:
 		if d_node < -(float(m["jr"]) + 4.0):
 			drop.append(m)
 			continue
-		if d_node > 95.0:
+		if d_node > maxf(95.0, speed * speed / 4.8 + 30.0):
 			break
 		traffic.register(int(m["node"]), self)
 		var c := _junction_cap(m, d_node, delta)
@@ -720,9 +1213,10 @@ func _in_view() -> bool:
 
 
 func _stop_speed(d_stop: float) -> float:
+	## Zulässige Geschwindigkeit, um an der Haltelinie zu stehen (Verzögerung je Fahrer 2,6–3,4 m/s²)
 	if d_stop < 0.6:
 		return 0.0
-	return sqrt(2.0 * 3.2 * (d_stop - 0.6))
+	return sqrt(2.0 * clampf(brake_comf + 0.3, 2.6, 3.4) * (d_stop - 0.6))
 
 
 func _lvl(m: Dictionary) -> int:
@@ -873,12 +1367,39 @@ func _queued() -> bool:
 	return false
 
 
+func _note_leader(gap: float, ov: float, o: Object) -> void:
+	## Merkt den Vorausfahrenden, der nach dem Folgemodell am stärksten bremst (größtes s*/s)
+	var s_star := s0 + maxf(0.0, speed * t_gap + speed * (speed - ov) / (2.0 * sqrt(accel * brake_comf)))
+	var z := s_star / maxf(gap, 0.3)
+	if z > _lead_z:
+		_lead_z = z
+		_lead_ok = true
+		_lead_gap = gap
+		_lead_v = ov
+		blocker = o
+
+
+var _lead_z := 0.0
+
+
 func _obstacle_cap() -> float:
+	## Vorausfahrende und Hindernisse. Im Nahbereich (bis 40 m) geradlinig in Fahrtrichtung, weiter voraus
+	## entlang der Route (Kurven). Der maßgebliche Vordermann geht ins Folgemodell (_lead_*); zurückgegeben wird
+	## nur die harte Grenze für Notfälle (zu dicht, Reißverschluss, Querverkehr).
 	var vt := INF
 	blocker = null
+	_lead_ok = false
+	_lead_z = 0.0
 	var fwd := Vector3(-sin(heading), 0, -cos(heading))
 	var right := Vector3(-fwd.z, 0, fwd.x)
-	var obstacles: Array = traffic.nearby_obstacles(pos, 42.0)
+	var here_lw: float = (route_ln[mini(route_i, route_ln.size() - 1)] as Vector2).x
+	var tgt_shift := float(lane_tgt) * lane_w
+	var obstacles: Array
+	if _reach > 46.0:
+		# Sichtweite über 42 m: Suchkreis nach vorn verschoben (deckt 22 m nach hinten bis Sichtweite nach vorn)
+		obstacles = traffic.nearby_obstacles(pos + fwd * (_reach * 0.5 - 8.0), _reach * 0.5 + 14.0)
+	else:
+		obstacles = traffic.nearby_obstacles(pos, 42.0)
 	if not traffic.ignore_player:
 		obstacles.append(traffic.player)
 	for o in obstacles:
@@ -902,43 +1423,111 @@ func _obstacle_cap() -> float:
 			ovel = (o as RigidBody3D).linear_velocity
 		var rel := op - pos
 		var f := rel.dot(fwd)
-		if f < -olen or f > 40.0:
+		if f < -olen:
 			continue
 		var along := ovel.dot(fwd)
-		var lat_v := ovel.dot(right)
-		var corridor := (width + ow) * 0.5 + 0.35 + clampf(f * 0.04, 0.0, 0.8)
-		var lat := rel.dot(right)
-		# Gegenverkehr auf eigener Spur ignorieren, wenn er seitlich deutlich versetzt ist
-		if absf(lat) < corridor and f > 0.3:
-			if along < -1.0 and absf(lat) > corridor * 0.55:
+		if f <= 40.0:
+			var lat_v := ovel.dot(right)
+			var corridor := (width + ow) * 0.5 + 0.35 + clampf(f * 0.04, 0.0, 0.8)
+			if here_lw > 0.0:
+				# mehrstreifig: der Nachbarstreifen gehört nicht zu meinem Fahrschlauch
+				corridor = minf(corridor, maxf(here_lw - 0.3, (width + ow) * 0.5 + 0.1))
+			var lat := rel.dot(right)
+			# Gegenverkehr auf eigener Spur ignorieren, wenn er seitlich deutlich versetzt ist
+			if absf(lat) < corridor and f > 0.3:
+				if along < -1.0 and absf(lat) > corridor * 0.55:
+					continue
+				var net := f - (o_rear + front_ext)        # lichter Abstand Stoßfänger–Stoßfänger
+				var ov := maxf(along, 0.0)
+				_note_leader(net, ov, o)
+				# harte Grenze: zu dicht -> halten bzw. deutlich langsamer als der Vordermann; sonst die
+				# Geschwindigkeit, aus der mit 6,5 m/s² noch hinter ihm zum Stehen zu kommen ist
+				var allowed := sqrt(ov * ov + 2.0 * 6.5 * maxf(net - 1.2, 0.0))
+				if net < 1.2:
+					allowed = 0.0
+				elif net < 2.2:
+					allowed = minf(allowed, ov * 0.6)
+				if allowed < vt:
+					vt = allowed
+					if allowed < speed:
+						blocker = o
 				continue
-			var gap := f - (o_rear + front_ext) - 1.9
-			var ov := maxf(along, 0.0)
-			var allowed := ov + maxf(gap, 0.0) * 0.8
-			if gap < 1.0:
-				allowed = minf(allowed, ov * 0.5)
-			if gap < 0.0:
-				allowed = 0.0
-			if allowed < vt:
-				vt = allowed
-				blocker = o
+			# nebeneinander (zusammenlaufende Spuren): Reißverschluss – wer weiter hinten ist (bzw. größere Nummer), lässt vor
+			if absf(f) < (olen + length) * 0.5 and absf(lat) < (width + ow) * 0.5 + 0.25 and along > -1.0:
+				if f > 0.0 or (absf(f) < 0.5 and o is AICar and (o as AICar).uid < uid):
+					vt = minf(vt, maxf(along - 1.0, 0.0))
+				continue
+			# Querverkehr: wo ist das Hindernis in 0,4 / 0,8 / 1,6 s?
+			if absf(lat_v) > 0.5:
+				for t in [0.4, 0.8, 1.6]:
+					var lt: float = lat + lat_v * t
+					var ft: float = f + along * t
+					var mine: float = speed * t
+					if absf(lt) < corridor and ft > 0.0 and ft - mine < (olen + length) * 0.5 + 2.5:
+						var gap2: float = ft - (olen + length) * 0.5 - 2.0
+						vt = minf(vt, sqrt(2.0 * 4.5 * maxf(gap2, 0.0)))
+						break
+		# Fernbereich und Kurven: Lage entlang der Route (nur Fahrzeuge, keine Bahnen)
+		if f > 18.0 and (o is AICar or o is RigidBody3D):
+			var pr := _route_project(Vector2(op.x, op.z))
+			if pr.x <= 0.0:
+				continue
+			var o2 := Vector2(ovel.x, ovel.z)
+			var al := o2.dot(_rp_dir)
+			if o2.length() > 1.0 and al < 0.5 * o2.length():
+				continue                              # quert oder kommt entgegen
+			var band := (width + ow) * 0.5 + 0.2
+			var lo := pr.y - lane_shift               # Querlage relativ zu meinem Fahrstreifen (links positiv)
+			if absf(lo) < band or (lane_shift != tgt_shift and absf(pr.y - tgt_shift) < band):
+				_note_leader(pr.x - (o_rear + front_ext), maxf(al, 0.0), o)
+			elif here_lw > 0.0 and lo > band and lo < here_lw * 1.3 and speed > 16.0 and al > 16.0 \
+					and pr.x - olen < speed * 2.5:
+				vt = minf(vt, al + 1.0)               # rechts wird nicht überholt (außer im zähen Verkehr)
+	return minf(vt, _ped_cap())
+
+
+var _ped_t := 0.0              # Standzeit vor Fußgängern (Geduld)
+
+
+func _ped_cap() -> float:
+	## Fußgänger auf der Fahrbahn (Peds.on_road_pts, alle 0,1 s neu): liegt einer voraus in meinem Fahrschlauch,
+	## davor anhalten. Nach 15 s Stehen fährt der Fahrer vorsichtig an (kein Dauerstau vor Stehengebliebenen).
+	if (Peds.on_road_pts.is_empty() and Peds.zebra_waits.is_empty()) or _ahead.size() < 2:
+		_ped_t = 0.0
+		return INF
+	var cap := INF
+	var me := Vector2(pos.x, pos.z)
+	var r2 := (_reach + 4.0) * (_reach + 4.0)
+	for q in Peds.on_road_pts:
+		var p := Vector2(q.x, q.z)
+		if p.distance_squared_to(me) > r2 or absf(q.y - pos.y) > 4.0:
 			continue
-		# nebeneinander (zusammenlaufende Spuren): Reißverschluss – wer weiter hinten ist (bzw. größere Nummer), lässt vor
-		if absf(f) < (olen + length) * 0.5 and absf(lat) < (width + ow) * 0.5 + 0.25 and along > -1.0:
-			if f > 0.0 or (absf(f) < 0.5 and o is AICar and (o as AICar).uid < uid):
-				vt = minf(vt, maxf(along - 1.0, 0.0))
+		var pr := _route_project(p)
+		if pr.x <= 0.0 or absf(pr.y - lane_shift) > width * 0.5 + 1.5:
 			continue
-		# Querverkehr: wo ist das Hindernis in 0,4 / 0,8 / 1,6 s?
-		if absf(lat_v) > 0.5:
-			for t in [0.4, 0.8, 1.6]:
-				var lt: float = lat + lat_v * t
-				var ft: float = f + along * t
-				var mine: float = speed * t
-				if absf(lt) < corridor and ft > 0.0 and ft - mine < (olen + length) * 0.5 + 2.5:
-					var gap2: float = ft - (olen + length) * 0.5 - 2.0
-					vt = minf(vt, sqrt(2.0 * 4.5 * maxf(gap2, 0.0)))
-					break
-	return vt
+		cap = minf(cap, _stop_speed(pr.x - front_ext - 2.0))
+	# Wartende am Zebrastreifen (Peds.zebra_waits, Punkt auf der Straßenmitte): anhalten, wenn das mit der
+	# angenehmen Verzögerung noch geht – sonst durchfahren. Stehe ich, gehen sie los (dann in on_road_pts).
+	for q in Peds.zebra_waits:
+		var p := Vector2(q.x, q.z)
+		if p.distance_squared_to(me) > r2 or absf(q.y - pos.y) > 4.0:
+			continue
+		var pr := _route_project(p)
+		if pr.x <= 0.0 or absf(pr.y - lane_shift) > 4.5:
+			continue
+		var ds := pr.x - front_ext - 2.5
+		if ds < 0.5 or speed * speed > 2.0 * (brake_comf + 0.6) * ds:
+			continue
+		cap = minf(cap, _stop_speed(ds))
+	if cap < 0.5 and speed < 0.3:
+		_ped_t += THINK
+		if _ped_t > 15.0:
+			cap = 1.5
+			if _ped_t > 19.0:
+				_ped_t = 0.0
+	elif cap == INF:
+		_ped_t = 0.0
+	return cap
 
 
 # --- Licht -----------------------------------------------------------------------------------------
@@ -962,6 +1551,13 @@ func _update_lights(delta: float) -> void:
 				var mv := int(m["move"])
 				ind = -1 if mv == Move.LEFT or mv == Move.UTURN else (1 if mv == Move.RIGHT else 0)
 			break
+		# Fahrstreifenwechsel anzeigen
+		if ind == 0:
+			var dl := float(lane_tgt) * lane_w - lane_shift
+			if dl > 0.25:
+				ind = -1
+			elif dl < -0.25:
+				ind = 1
 	_ind = ind
 	var on := 1.0 if traffic.night > 0.3 or traffic.rain > 0.5 else 0.0
 	for li in lights:
@@ -1117,6 +1713,10 @@ func _wreck_process(delta: float) -> void:
 		pos = Vector3(wp.x, wp.y, wp.z)
 		heading = h
 		speed = 0.0
+		_acc = 0.0
+		_lead_ok = false
+		lane_tgt = 0
+		lane_shift = 0.0
 		wreck.queue_free()
 		wreck = null
 		wrecked = false

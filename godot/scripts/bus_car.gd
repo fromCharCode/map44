@@ -34,7 +34,6 @@ func setup_bus(t: Traffic, model: String, ri: int, s_line: float, ei: int, dir: 
 	while next_stop < stops.size() and float(stops[next_stop][0]) < s_line + 20.0:
 		next_stop += 1
 	setup(t, model, Color(0.97, 0.76, 0.03), ei, dir, s_edge)
-	accel = 1.25
 	_find_parts()
 	_make_labels(String(r["ref"]), String(r["to"]))
 
@@ -95,10 +94,13 @@ func player_impact(_dv: Vector3, _w_y: float) -> void:
 
 
 func _cruise_for(e: Dictionary) -> float:
+	## Linienbus: knapp unter dem Limit (Eigenart des Fahrers 0,90–0,98), in der Stadt höchstens 60 km/h,
+	## auf Autobahn/Kraftfahrstraße höchstens 80 km/h.
 	var limit := float(e["speed"]) / 3.6
-	if String(e["cls"]) == "service" or bool(e.get("bus", false)):
+	var cls := String(e["cls"])
+	if cls == "service" or bool(e.get("bus", false)):
 		limit = maxf(limit, 30.0 / 3.6)          # Busspuren/-schleusen sind oft als service mit 15 km/h erfasst
-	return clampf(limit * 0.92, 3.5, 13.4)
+	return clampf(limit * drive_fac, 3.5, v_max if cls in ["motorway", "trunk"] else 16.7)
 
 
 func _find_parts() -> void:
@@ -225,7 +227,7 @@ func _special_limit(delta: float) -> float:
 		var ds := float(st[0]) - (line_s + length * 0.5) + 1.0
 		if ds < -6.0:
 			next_stop += 1
-		elif ds < 70.0:
+		elif ds < 95.0:
 			cap = 0.0 if ds < 0.8 else sqrt(2.0 * 1.6 * maxf(ds - 0.8, 0.0))
 			if ds < 1.5 and speed < 0.35:
 				at_stop = true

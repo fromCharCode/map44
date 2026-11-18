@@ -5,13 +5,29 @@ extends Node3D
 ## Fahrzeuge melden sich an ihrer nächsten Kreuzung an (jreg) und prüfen dort Konflikte mit anderen Fahrzeugen
 ## und dem Spieler.
 
-const MODELS := ["hatchback.glb", "sedan.glb", "van.glb", "citycar.glb"]
-const LENGTHS := {"hatchback.glb": 4.3, "sedan.glb": 4.7, "van.glb": 5.9, "citycar.glb": 3.6,
+const MODELS := ["kompakt_modern.glb", "suv_kompakt.glb", "kleinwagen_modern.glb", "kombi_nord.glb",
+	"limousine_ober.glb", "suv_gross.glb", "elektro_limo.glb", "transporter_modern.glb"]
+# Anteil der Fahrzeugarten im Straßenbild einer deutschen Großstadt; nicht genannte Modelle: 0,1
+const MODEL_SHARE := {"kompakt_modern.glb": 0.24, "suv_kompakt.glb": 0.18, "kleinwagen_modern.glb": 0.16,
+	"kombi_nord.glb": 0.12, "limousine_ober.glb": 0.09, "transporter_modern.glb": 0.08, "suv_gross.glb": 0.07,
+	"elektro_limo.glb": 0.06}
+const LENGTHS := {"kombi_nord.glb": 4.95, "limousine_ober.glb": 4.95, "suv_kompakt.glb": 4.5, "suv_gross.glb": 4.95,
+	"kompakt_modern.glb": 4.3, "kleinwagen_modern.glb": 4.05, "elektro_limo.glb": 4.7, "transporter_modern.glb": 5.15,
+	"hatchback.glb": 4.3, "sedan.glb": 4.7, "van.glb": 5.9, "citycar.glb": 3.6,
 	"bus_solo.glb": 12.0, "bus_articulated.glb": 18.1}
+# Lackfarben wie bei heutigen Neuwagen: rund 30 % Grau/Silber, 25 % Schwarz, 20 % Weiß, 11 % Blau, 7 % Rot,
+# Rest Grün/Beige/Orange (Mehrfachnennung = höherer Anteil; 28 Einträge)
 const COLORS := [
-	Color(0.92, 0.92, 0.9), Color(0.75, 0.76, 0.78), Color(0.12, 0.12, 0.13), Color(0.18, 0.22, 0.34),
-	Color(0.55, 0.08, 0.1), Color(0.35, 0.36, 0.38), Color(0.16, 0.3, 0.22), Color(0.85, 0.82, 0.7),
-	Color(0.9, 0.55, 0.1), Color(0.5, 0.52, 0.55),
+	Color(0.36, 0.37, 0.39), Color(0.36, 0.37, 0.39), Color(0.27, 0.28, 0.30), Color(0.27, 0.28, 0.30),
+	Color(0.50, 0.52, 0.55), Color(0.50, 0.52, 0.55), Color(0.72, 0.73, 0.75), Color(0.72, 0.73, 0.75),
+	Color(0.62, 0.63, 0.64),
+	Color(0.05, 0.05, 0.06), Color(0.05, 0.05, 0.06), Color(0.05, 0.05, 0.06), Color(0.09, 0.09, 0.10),
+	Color(0.09, 0.09, 0.10), Color(0.12, 0.12, 0.14), Color(0.07, 0.08, 0.10),
+	Color(0.93, 0.93, 0.92), Color(0.93, 0.93, 0.92), Color(0.93, 0.93, 0.92), Color(0.88, 0.89, 0.90),
+	Color(0.88, 0.89, 0.90),
+	Color(0.10, 0.16, 0.34), Color(0.14, 0.26, 0.48), Color(0.20, 0.30, 0.42),
+	Color(0.55, 0.07, 0.09), Color(0.68, 0.10, 0.10),
+	Color(0.16, 0.27, 0.21), Color(0.80, 0.42, 0.10),
 ]
 const LVL := [2, 1, 3]       # pri aus junctions.py (0 gleichrangig, 1 wartepflichtig, 2 Vorfahrt) -> Rang
 
@@ -244,6 +260,92 @@ func _process(delta: float) -> void:
 	if (n_bus < bus_target or (_bus_tt and bus_target > 0 and n_bus < 20)) and bus_timer <= 0.0 and not bus_routes.is_empty():
 		bus_timer = 1.5 if not _bus_tt else 0.6
 		_try_spawn_bus(ppos)
+	if stat_on:
+		_stat(delta)
+
+
+# --- Verkehrsstatistik (Prüfstand): Umgebungsvariable DRESDEN_TRAFFICSTAT=1 ------------------------------
+var stat_on := OS.has_environment("DRESDEN_TRAFFICSTAT")
+var _stat_t := 0.0
+var _stat_rep := 0.0
+var _stat_b := {}          # Limit-Klasse -> [n, Summe v, Summe v frei, n frei, Summe Wunsch]
+var _stat_x := {"n": 0, "links": 0, "brems": 0, "hart": 0, "luecke_n": 0, "luecke_s": 0.0, "luecke_min": 9.0, "dicht": 0}
+var _stat_seen := {}
+
+
+func _stat(delta: float) -> void:
+	## Stichprobe alle 0,5 s: Geschwindigkeit je Tempolimit-Klasse (alle / frei fahrende), Zeitlücken beim Folgen,
+	## Bremsanteile, Anteil links fahrender; alle 60 s eine Zeile. Dazu einmal je Fahrzeug die Fahrer-Eigenart.
+	_stat_t += delta
+	_stat_rep += delta
+	if _stat_t >= 0.5:
+		_stat_t = 0.0
+		for c in cars:
+			var ac := c as AICar
+			if ac.wrecked or ac.dead:
+				continue
+			if not _stat_seen.has(ac.uid):
+				_stat_seen[ac.uid] = [ac.kind, ac.drive_fac, ac.t_gap, ac.accel, ac.brake_comf, ac.a_lat, ac.react_t, ac.v_free * 3.6]
+			var want: float = ac.v_cruise * 3.6
+			var k := "≤20" if want < 24.0 else ("30" if want < 40.0 else ("50" if want < 62.0 else ("60–80" if want < 92.0 else ("100" if want < 112.0 else "120+"))))
+			if not _stat_b.has(k):
+				_stat_b[k] = [0, 0.0, 0.0, 0, 0.0]
+			var b: Array = _stat_b[k]
+			b[0] += 1
+			b[1] += ac.speed * 3.6
+			b[4] += want
+			if ac._limit == "" and ac.speed > 2.0:
+				b[2] += ac.speed * 3.6
+				b[3] += 1
+			_stat_x["n"] += 1
+			if ac.lane_shift > 1.0:
+				_stat_x["links"] += 1
+			if ac._acc < -0.9:
+				_stat_x["brems"] += 1
+			if ac._acc < -4.4:
+				_stat_x["hart"] += 1
+			if ac._lead_ok and ac.speed > 5.0 and ac._lead_gap < ac.speed * 3.0:
+				var tg: float = ac._lead_gap / ac.speed
+				_stat_x["luecke_n"] += 1
+				_stat_x["luecke_s"] += tg
+				_stat_x["luecke_min"] = minf(float(_stat_x["luecke_min"]), tg)
+				if tg < 0.6:
+					_stat_x["dicht"] += 1
+	if _stat_rep >= 60.0:
+		_stat_rep = 0.0
+		var line := "VERKEHRSSTAT Tempo je Wunschklasse (n, Ø alle, Ø frei, Ø Wunsch km/h):"
+		for k in ["≤20", "30", "50", "60–80", "100", "120+"]:
+			if _stat_b.has(k):
+				var b: Array = _stat_b[k]
+				line += " [%s: %d, %.0f, %.0f, %.0f]" % [k, b[0], b[1] / maxf(b[0], 1), b[2] / maxf(b[3], 1), b[4] / maxf(b[0], 1)]
+		print(line)
+		var n := maxf(float(_stat_x["n"]), 1.0)
+		print("VERKEHRSSTAT links %.1f %% · bremst %.1f %% · hart (>4,4 m/s²) %.2f %% · Zeitlücke Ø %.2f s, min %.2f s, unter 0,6 s: %.1f %% von %d" % [
+			100.0 * _stat_x["links"] / n, 100.0 * _stat_x["brems"] / n, 100.0 * _stat_x["hart"] / n,
+			float(_stat_x["luecke_s"]) / maxf(float(_stat_x["luecke_n"]), 1.0), float(_stat_x["luecke_min"]),
+			100.0 * _stat_x["dicht"] / maxf(float(_stat_x["luecke_n"]), 1.0), int(_stat_x["luecke_n"])])
+		var fac: Array = []
+		var kinds := [0, 0, 0, 0]
+		var sums := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+		for u in _stat_seen:
+			var d: Array = _stat_seen[u]
+			kinds[int(d[0])] += 1
+			fac.append(float(d[1]))
+			for j in 6:
+				sums[j] += float(d[2 + j])
+		fac.sort()
+		var m := fac.size()
+		if m > 0:
+			var slow := 0
+			var fast := 0
+			for f in fac:
+				if f < 0.93:
+					slow += 1
+				elif f > 1.08:
+					fast += 1
+			print("VERKEHRSSTAT Fahrer %d (Pkw %d, Transporter %d, Lkw %d, Bus %d): Faktor 5/50/95 %% = %.2f/%.2f/%.2f, unter 0,93: %.0f %%, über 1,08: %.0f %% · Ø Zeitlücke %.2f s, Beschl. %.2f, Bremsen %.2f, quer %.2f m/s², Reaktion %.2f s, Wunsch frei %.0f km/h" % [
+				m, kinds[0], kinds[1], kinds[2], kinds[3], fac[int(m * 0.05)], fac[m / 2], fac[mini(int(m * 0.95), m - 1)],
+				100.0 * slow / m, 100.0 * fast / m, sums[0] / m, sums[1] / m, sums[2] / m, sums[3] / m, sums[4] / m, sums[5] / m])
 
 
 ## Verkehrsstärke im Tagesgang (Anteil der Spitzenstunde; Form wie eine städtische Dauerzählstelle werktags:
@@ -293,15 +395,28 @@ func _try_spawn(ppos: Vector3) -> void:
 		var s := rng.randf_range(12.0, maxf(12.5, float(e["len"]) - 12.0))
 		var p := _point_at(pts, s)
 		var pos := Vector3(p.x, p.y, p.z)
-		if not _spawn_ok(pos, ppos, 14.0):
+			# Freiraum zu anderen Fahrzeugen wächst mit dem Tempo der Straße (50: 14 m, 100: 42 m, 130: 58 m)
+		if not _spawn_ok(pos, ppos, 14.0 + maxf(float(e["speed"]) / 3.6 - 14.0, 0.0) * 2.0):
 			continue
 		var car := AICar.new()
 		add_child(car)
-		var model: String = MODELS[rng.randi() % MODELS.size()]
+		var model := _pick_model()
 		car.setup(self, model, COLORS[rng.randi() % COLORS.size()], ei, dir, s)
 		cars.append(car)
 		stats["spawn"] = int(stats["spawn"]) + 1
 		return
+
+
+func _pick_model() -> String:
+	var tot := 0.0
+	for m in MODELS:
+		tot += float(MODEL_SHARE.get(m, 0.1))
+	var r := rng.randf() * tot
+	for m in MODELS:
+		r -= float(MODEL_SHARE.get(m, 0.1))
+		if r <= 0.0:
+			return m
+	return MODELS[0]
 
 
 func _spawn_ok(pos: Vector3, ppos: Vector3, clear: float) -> bool:
