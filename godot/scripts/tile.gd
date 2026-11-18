@@ -170,6 +170,16 @@ func build(k: String, noise: ImageTexture) -> void:
 	if Time.get_ticks_msec() - _t_stops > 150: print("Kachel %s: stops %d ms" % [k, Time.get_ticks_msec() - _t_stops])
 	RenderUtil.gi_off(stops)
 
+	if city.has("sports"):
+		var sports := Sports.new()
+		sports.name = "Sports"
+		_mods.append(sports)
+		if World.quitting:
+			return
+		build_step = "sports"
+		sports.build(terrain, city["sports"])
+		RenderUtil.gi_off(sports)
+
 	if city.has("allotments"):
 		var allot := Allotments.new()
 		allot.name = "Allotments"

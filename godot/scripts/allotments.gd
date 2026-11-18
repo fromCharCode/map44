@@ -106,7 +106,7 @@ func build(t: Terrain, data: Dictionary) -> void:
 
 func _quad(s: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, col: Color, solid := false) -> void:
 	## Viereck a-b-c-d, Normale aus der Reihenfolge (von außen gegen den Uhrzeigersinn gesehen)
-	var n := (c - a).cross(b - a).normalized()
+	var n := (b - a).cross(c - a).normalized()      # sichtbare Seite (Godot: im Uhrzeigersinn)
 	for p in [a, c, b, a, d, c]:
 		s.set_normal(n)
 		s.set_color(col)
