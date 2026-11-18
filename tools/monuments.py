@@ -115,7 +115,7 @@ def tile_monuments(name, denkmale):
         return rtree is not None and any(lines[j].distance(pt) < 2.0 for j in rtree.query(pt.buffer(2.0)))
 
     def facing(pt):
-        """Blick zur nächsten Straße/zum nächsten Weg (Gier: Vorderseite = +z des Modells)"""
+        """Gier, mit der die Vorderseite (−z des Modells) zur nächsten Straße/zum nächsten Weg zeigt"""
         if rtree is None:
             return 0.0
         best = None
@@ -126,7 +126,8 @@ def tile_monuments(name, denkmale):
         if best is None:
             return 0.0
         q = lines[best[1]].interpolate(lines[best[1]].project(pt))
-        return math.atan2(q.x - pt.x, q.y - pt.y)
+        # Vorderseite der Modelle ist Godot −Z (Blender +Y): Basis(UP, gier) dreht +Z zur Straße, daher + π
+        return math.atan2(q.x - pt.x, q.y - pt.y) + math.pi
 
     out, placed = [], []
     f = RAW / name / "osm" / "pois.json"

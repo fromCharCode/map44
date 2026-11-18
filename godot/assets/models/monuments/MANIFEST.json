@@ -1,0 +1,235 @@
+[
+  {
+    "file": "mon_bust.glb",
+    "height": 2.287,
+    "bbox_min": [
+      -0.4,
+      0.0,
+      -0.35
+    ],
+    "bbox_max": [
+      0.4,
+      2.287,
+      0.374
+    ],
+    "tris": 894,
+    "materials": [
+      "Bronze",
+      "Sandstein"
+    ],
+    "notes": "Büste (Kopf und Schultern in Bronze) auf schlanker Sandsteinstele, Tafel vorn (+Y).",
+    "size_bytes": 40508
+  },
+  {
+    "file": "mon_fountain.glb",
+    "height": 2.52,
+    "bbox_min": [
+      -3.105,
+      0.0,
+      -3.105
+    ],
+    "bbox_max": [
+      3.105,
+      2.52,
+      3.105
+    ],
+    "tris": 1532,
+    "materials": [
+      "Sandstein",
+      "Wasser"
+    ],
+    "notes": "Zierbrunnen: rundes Sandsteinbecken Ø 6,2 m mit Wasserfläche, zwei Schalen, Bekrönung.",
+    "size_bytes": 63660
+  },
+  {
+    "file": "mon_fountain_small.glb",
+    "height": 1.22,
+    "bbox_min": [
+      -0.407,
+      0.0,
+      -0.407
+    ],
+    "bbox_max": [
+      0.407,
+      1.22,
+      0.407
+    ],
+    "tris": 272,
+    "materials": [
+      "Bronze",
+      "Sandstein",
+      "Wasser"
+    ],
+    "notes": "Trinkbrunnen: achteckiger Sandsteinpfeiler mit Schale und Bronzeauslauf, Knopf vorn (+Y).",
+    "size_bytes": 17088
+  },
+  {
+    "file": "mon_obelisk.glb",
+    "height": 6.0,
+    "bbox_min": [
+      -1.5,
+      0.0,
+      -1.5
+    ],
+    "bbox_max": [
+      1.5,
+      6.0,
+      1.5
+    ],
+    "tris": 162,
+    "materials": [
+      "Bronze",
+      "Sandstein"
+    ],
+    "notes": "Sandstein-Obelisk auf dreistufigem Unterbau mit Postament, Tafel vorn (+Y).",
+    "size_bytes": 11052
+  },
+  {
+    "file": "mon_reiter.glb",
+    "height": 9.0,
+    "bbox_min": [
+      -1.718,
+      0.0,
+      -2.618
+    ],
+    "bbox_max": [
+      1.718,
+      9.0,
+      2.618
+    ],
+    "tris": 5524,
+    "materials": [
+      "Bronze",
+      "Sandstein"
+    ],
+    "notes": "Reiterstandbild (Vorbild König Johann): schreitendes Pferd mit Reiter in Bronze, Mantel und Zepter, hoher Sandsteinsockel mit Bronzefries. Pferdekopf zeigt nach +Y.",
+    "size_bytes": 197012
+  },
+  {
+    "file": "mon_reiter_gold.glb",
+    "height": 8.5,
+    "bbox_min": [
+      -1.65,
+      0.0,
+      -2.35
+    ],
+    "bbox_max": [
+      1.65,
+      8.5,
+      2.35
+    ],
+    "tris": 5472,
+    "materials": [
+      "Gold",
+      "Sandstein"
+    ],
+    "notes": "Goldener Reiter (Vorbild August der Starke): steigendes Pferd, Reiter mit Umhang und ausgestrecktem Feldherrnstab, vergoldet, Sandsteinsockel 5 m mit goldenen Inschrifttafeln. Pferdekopf zeigt nach +Y.",
+    "size_bytes": 197156
+  },
+  {
+    "file": "mon_sculpture.glb",
+    "height": 2.4,
+    "bbox_min": [
+      -0.95,
+      0.0,
+      -0.75
+    ],
+    "bbox_max": [
+      0.95,
+      2.4,
+      0.75
+    ],
+    "tris": 1692,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "Stahl"
+    ],
+    "notes": "Moderne Plastik: zwei verdrehte Bronzekörper mit Stahlring auf flachem Granitsockel.",
+    "size_bytes": 60616
+  },
+  {
+    "file": "mon_statue.glb",
+    "height": 4.256,
+    "bbox_min": [
+      -0.987,
+      0.0,
+      -0.987
+    ],
+    "bbox_max": [
+      0.987,
+      4.256,
+      0.987
+    ],
+    "tris": 1816,
+    "materials": [
+      "Bronze",
+      "Sandstein"
+    ],
+    "notes": "Standbild: Bronzefigur mit Mantel auf profiliertem Sandsteinsockel, Tafel vorn (+Y).",
+    "size_bytes": 75836
+  },
+  {
+    "file": "mon_stele.glb",
+    "height": 2.2,
+    "bbox_min": [
+      -0.75,
+      0.0,
+      -0.375
+    ],
+    "bbox_max": [
+      0.75,
+      2.2,
+      0.375
+    ],
+    "tris": 84,
+    "materials": [
+      "Bronze",
+      "Sandstein"
+    ],
+    "notes": "Gedenkstele aus Sandstein mit Giebel, Bronzetafeln vorn (+Y).",
+    "size_bytes": 7292
+  },
+  {
+    "file": "mon_stone.glb",
+    "height": 1.1,
+    "bbox_min": [
+      -0.95,
+      0.0,
+      -0.65
+    ],
+    "bbox_max": [
+      0.95,
+      1.1,
+      0.65
+    ],
+    "tris": 376,
+    "materials": [
+      "Bronze",
+      "Granit"
+    ],
+    "notes": "Gedenkstein: Granitfindling mit kleiner Bronzetafel vorn (+Y) auf flacher Platte.",
+    "size_bytes": 17536
+  },
+  {
+    "file": "mon_war.glb",
+    "height": 3.5,
+    "bbox_min": [
+      -1.6,
+      0.0,
+      -1.4
+    ],
+    "bbox_max": [
+      1.6,
+      3.5,
+      1.4
+    ],
+    "tris": 396,
+    "materials": [
+      "Bronze",
+      "Sandstein"
+    ],
+    "notes": "Kriegerdenkmal: Stufenunterbau, Sandsteinpfeiler mit Bronzekranz und Tafeln, Kreuz obenauf.",
+    "size_bytes": 22904
+  }
+]
