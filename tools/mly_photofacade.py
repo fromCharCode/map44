@@ -85,7 +85,30 @@ def fit(img, L, H, d_pose, along, cam_h):
     return best
 
 
-def facade(im, c, p0, p1, H, cam_h=2.3, ppm=28.0):
+def pano_orig(im):
+    """Rundumbild in Originalgröße (für die endgültige Textur), zwischengespeichert; None, wenn nicht abrufbar"""
+    f = mf.CACHE / f"{im['id']}_orig.jpg"
+    if not f.exists():
+        try:
+            url = im.get("thumb_original_url")
+            try:
+                data = mf.get(url, binary=True, auth=False) if url else None
+            except Exception:                                    # noqa: BLE001 – Adresse abgelaufen
+                data = None
+            if data is None:
+                d = mf.get(f"https://graph.mapillary.com/{im['id']}?fields=thumb_original_url")
+                data = mf.get(d["thumb_original_url"], binary=True, auth=False)
+            f.write_bytes(data)
+        except Exception:                                        # noqa: BLE001
+            return None
+    try:
+        return np.asarray(Image.open(f).convert("RGB"))
+    except Exception:                                            # noqa: BLE001
+        return None
+
+
+def facade(im, c, p0, p1, H, cam_h=2.3, ppm=28.0, fixed=None):
+    """fixed = (d, Versatz): Anpassung überspringen und mit dem Originalbild in voller Auflösung abtasten"""
     """(Texturbild, Info) oder (None, Grund). p0 -> p1 läuft für den Betrachter von links nach rechts."""
     L = float(np.linalg.norm(p1 - p0))
     dirv = (p1 - p0) / L
@@ -97,13 +120,19 @@ def facade(im, c, p0, p1, H, cam_h=2.3, ppm=28.0):
         return None, "Kamera hinter/zu nah an der Wand"
     R = mf.rodrigues(im["computed_rotation"])
     pano = mw.pano_2048(im)
-    img = view(pano, R, nrm)
+    img = view(pano, R, nrm) if fixed is None else None
     xl, xr = (-L / 2 - along) / d_pose, (L / 2 - along) / d_pose
     if xl < -TH * 0.95 or xr > TH * 0.95:
         return None, "Wand nicht im Bildfeld"
-    bf = fit(img, L, H, d_pose, along, cam_h)
-    if bf is None:
-        return None, "Traufe oberhalb des Bildfelds (zu nah)"
+    if fixed is None:
+        bf = fit(img, L, H, d_pose, along, cam_h)
+        if bf is None:
+            return None, "Traufe oberhalb des Bildfelds (zu nah)"
+    else:
+        bf = (0.0, fixed[0], fixed[1], 1.0, 1.0, 1.0)
+        big = pano_orig(im)
+        if big is not None and big.shape[1] > pano.shape[1]:
+            pano = big
     score, d, sh, sl, sr, skyq = bf
     el, er = (-L / 2 - along - sh) / d, (L / 2 - along - sh) / d
     top, bot = (H - cam_h) / d, -cam_h / d
@@ -122,7 +151,7 @@ def facade(im, c, p0, p1, H, cam_h=2.3, ppm=28.0):
     sx = ((lon / (2 * math.pi) + 0.5) * pw).astype(int) % pw
     sy = np.clip(((0.5 - lat / math.pi) * ph).astype(int), 0, ph - 1)
     tex = pano[sy, sx]
-    return tex, {"d": round(d, 1), "d_pose": round(d_pose, 1), "versatz": round(sh, 1), "guete": round(score, 2),
+    return tex, {"d": float(d), "d_pose": round(d_pose, 1), "versatz": float(sh), "guete": round(float(score), 2),
                  "kanten": [round(sl, 2), round(sr, 2)], "traufe": round(skyq, 2)}
 
 
@@ -249,6 +278,14 @@ def tile_facades(name, max_cand=4):
                     best = (tex, info, im, p0, p1)
             if best:
                 tex, info, im, p0, p1 = best
+                # endgültige Textur aus dem Originalbild (schärfer), mit der gefundenen Lage
+                c_im = next(c_ for i_, c_ in images if i_["id"] == im["id"])
+                try:
+                    hi, _ = facade(im, c_im, p0, p1, H, ppm=48.0, fixed=(info["d"], info["versatz"]))
+                    if hi is not None:
+                        tex = hi
+                except Exception as ex:                              # noqa: BLE001
+                    print("  Fehler (Original)", im["id"], ex, flush=True)
                 fn = f"{len(res):04d}.dds"
                 dds_bc1.save_dds(Image.fromarray(tex), out_dir / fn)
                 res.append({"a": [round(float(p0[0]), 2), round(float(p0[1]), 2)], "b": [round(float(p1[0]), 2), round(float(p1[1]), 2)],
