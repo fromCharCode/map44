@@ -60,9 +60,11 @@ def _research():
                 by_way[int(str(w).lstrip("w"))] = spec
             except ValueError:
                 pass
-        if b.get("osm_area_id"):
+        for aid in [b.get("osm_area_id")] + list(b.get("osm_area_ids") or []):
+            if not aid:
+                continue
             try:
-                by_area[int(str(b["osm_area_id"]).lstrip("w"))] = spec
+                by_area[int(str(aid).split("/")[-1].lstrip("w"))] = spec     # "way/264360388" (vorher nie getroffen)
             except ValueError:
                 pass
     return by_way, by_area
@@ -79,9 +81,19 @@ def style_tile(name, by_way, by_area):
     if not cf.exists() or not of.exists():
         return 0
     city = json.loads(cf.read_text(encoding="utf-8"))
-    rails = city.get("bridge_rails", [])
-    if not rails:
+    n = style_rails(name, city.get("bridge_rails", []), by_way, by_area)
+    if n:
+        cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
+    return n
+
+
+def style_rails(name, rails, by_way=None, by_area=None):
+    """Bauart/Farbe/Höhe für eine Geländerliste setzen (auch aus bridge_decks.py nach dem Neuaufbau der Geländer)."""
+    of = RAW / name / "osm" / "bridges.json"
+    if not rails or not of.exists():
         return 0
+    if by_way is None:
+        by_way, by_area = _research()
     ways, areas = [], []
     for el in json.loads(of.read_text(encoding="utf-8")).get("elements", []):
         g = el.get("geometry") or []
@@ -131,7 +143,6 @@ def style_tile(name, by_way, by_area):
         del r[5:]
         r += [spec[0], spec[1], spec[2]]
         n += 1
-    cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
     return n
 
 

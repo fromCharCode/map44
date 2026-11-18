@@ -482,6 +482,22 @@ def deck_layout(city, raw_walk_lines):
             mode_rest = "conc"
         else:
             mode_rest = "walkflat"                           # reine Fußgängerbrücke: Plattenbelag auf Deckhöhe
+        # Mittelstreifen: Restflächen, die fast ringsum an Fahrbahnen grenzen (zwischen Richtungsfahrbahnen), sind
+        # erhöhte Betonkappen, kein gepflasterter Gehweg (Flügelwegbrücke)
+        MED = Polygon()
+        if mode_rest == "walk" and not fast and road_b:
+            urb = UR.buffer(0.3)
+            med = []
+            rest_all = deck2d.difference(UR)
+            for g in getattr(rest_all, "geoms", [rest_all]):
+                if g.geom_type != "Polygon" or g.area < 2.0:
+                    continue
+                bl = g.exterior.length
+                if bl > 1.0 and g.exterior.intersection(urb).length / bl >= 0.85:
+                    med.append(g.buffer(0.02))
+            if med:
+                MED = unary_union(med)
+                stats["median"] = stats.get("median", 0) + len(med)
         out = {"top": [], "top_walk": [], "top_ballast": [], "top_conc": [], "curb": []}
         # Fahrbahn auf dem Profil statt auf der LoD2-Ebene, wenn diese in der Fahrbahn > 0,3 m abweicht: sonst Stufe
         # zum Füllstück daneben (A17 Lockwitztal: LoD2-Deck quer verkippt, 1,5 m Sprung mitten in der Fahrbahn)
@@ -548,6 +564,9 @@ def deck_layout(city, raw_walk_lines):
             if mode_rest == "walk" and fast and road_b:
                 _fill(out["top_conc"], rest, pl, WALK_RAISE)    # erhöhte Betonkappe (Autobahnbrücke)
             elif mode_rest == "walk":
+                if not MED.is_empty and rest.intersects(MED):
+                    _fill(out["top_conc"], rest.intersection(MED), pl, WALK_RAISE)
+                    rest = rest.difference(MED)
                 _fill(out["top_walk"], rest, pl, WALK_RAISE)
             elif mode_rest == "walkflat":
                 _fill(out["top_walk"], rest, pl, 0.0)
@@ -1328,7 +1347,7 @@ def missing_rails(city, terrain, x0, z0, ext_rails=()):
     return out
 
 
-def raise_rails(city, extra=None, ext_roads=()):
+def raise_rails(city, extra=None, ext_roads=(), name=None):
     """Brückengeländer über erhöhten Gehwegen um die Bordhöhe anheben (wiederholbar über bridge_rails0)."""
     if "bridge_rails0" not in city:
         city["bridge_rails0"] = [list(r) for r in city.get("bridge_rails", [])]
@@ -1388,8 +1407,84 @@ def raise_rails(city, extra=None, ext_roads=()):
             if W is not None and W.contains(Point(0.5 * (r2[0] + r2[2]), 0.5 * (r2[1] + r2[3]))):
                 r2[4] = round(float(r2[4]) + WALK_RAISE, 3)
             out.append(r2)
-    city["bridge_rails"] = out
+    if name:
+        from bridge_styles import style_rails                # Bauart je Bauwerk (auch für ergänzte Stücke)
+        style_rails(name, out)
+    city["bridge_rails"] = _kanzel_rails(city, out)
     return cut
+
+
+def _kanzel_rails(city, rails):
+    """Pfeilerkanzeln (bridge_arches.py "kanzeln"): Brüstung an der Kanzel öffnen und im Halbrund um sie herumführen,
+    dazu der Kanzelboden auf Gehweghöhe (bridge_arches["kz_tris"], Sandstein, mit Kollision)."""
+    ar = city.get("bridge_arches")
+    if not isinstance(ar, dict):
+        return rails
+    tris, norms = [], []
+    for kx, kz, nx, nz, R, yd, stone, own in ar.get("kanzeln", []):
+        if own:                                              # Deck hat dort schon eine Ausbuchtung mit Geländer
+            continue
+        tx, tz = -nz, nx
+        best = None                                          # Geländer, das die Kanzelsehne quert
+        for r in rails:
+            dx, dz = r[2] - r[0], r[3] - r[1]
+            ln = math.hypot(dx, dz)
+            if ln < 0.5 or abs((dx * tx + dz * tz) / ln) < 0.9:
+                continue
+            sa, sb = (r[0] - kx) * tx + (r[1] - kz) * tz, (r[2] - kx) * tx + (r[3] - kz) * tz
+            if min(sa, sb) > R - 0.6 or max(sa, sb) < -(R - 0.6):
+                continue
+            va, vb = (r[0] - kx) * nx + (r[1] - kz) * nz, (r[2] - kx) * nx + (r[3] - kz) * nz
+            v0 = va + (vb - va) * (0.0 - sa) / (sb - sa) if abs(sb - sa) > 1e-6 else va
+            if abs(v0) < 2.0 and abs(float(r[4]) - yd) < 1.5 and (best is None or abs(v0) < abs(best[0])):
+                best = (v0, r)
+        if best is None:
+            v0, y, spec = 0.0, yd, ["stone", "#6E7378", 1.1]
+        else:
+            v0, y, spec = best[0], float(best[1][4]), list(best[1][5:]) or ["stone", "#6E7378", 1.1]
+        if stone:
+            spec = ["stone", "#6E7378", 1.1]
+        hc = R - 0.3                                         # halbe Sehne
+        keep = []
+        for r in rails:
+            dx, dz = r[2] - r[0], r[3] - r[1]
+            ln = math.hypot(dx, dz)
+            sa, sb = (r[0] - kx) * tx + (r[1] - kz) * tz, (r[2] - kx) * tx + (r[3] - kz) * tz
+            va, vb = (r[0] - kx) * nx + (r[1] - kz) * nz, (r[2] - kx) * nx + (r[3] - kz) * nz
+            if (ln < 0.01 or abs((dx * tx + dz * tz) / ln) < 0.9 or abs(0.5 * (va + vb) - v0) > 1.2
+                    or abs(float(r[4]) - y) > 1.0 or min(sa, sb) >= hc or max(sa, sb) <= -hc):
+                keep.append(r)
+                continue
+            lo, hi = (0, 2) if sa < sb else (2, 0)           # Reststücke links und rechts der Sehne
+            s_lo, s_hi = min(sa, sb), max(sa, sb)
+            if s_lo < -hc - 0.3:
+                q = list(r)
+                f = (-hc - sa) / (sb - sa)
+                q[lo], q[lo + 1] = r[lo], r[lo + 1]
+                q[hi], q[hi + 1] = round(r[0] + dx * f, 2), round(r[1] + dz * f, 2)
+                keep.append(q)
+            if s_hi > hc + 0.3:
+                q = list(r)
+                f = (hc - sa) / (sb - sa)
+                q[hi], q[hi + 1] = r[hi], r[hi + 1]
+                q[lo], q[lo + 1] = round(r[0] + dx * f, 2), round(r[1] + dz * f, 2)
+                keep.append(q)
+        rails = keep
+        cx, cz = kx + nx * v0, kz + nz * v0                  # Sehnenmitte auf der Geländerlinie
+        dep = max(R - 0.3 - v0, 1.2)                         # Tiefe der Ausbuchtung
+        NS = 8
+        arc = [(cx + tx * hc * math.cos(math.pi * j / NS) + nx * dep * math.sin(math.pi * j / NS),
+                cz + tz * hc * math.cos(math.pi * j / NS) + nz * dep * math.sin(math.pi * j / NS)) for j in range(NS + 1)]
+        for p1, p2 in zip(arc[:-1], arc[1:]):
+            rails.append([round(p1[0], 2), round(p1[1], 2), round(p2[0], 2), round(p2[1], 2), round(y, 3)] + spec)
+        yf = y - 0.01                                        # Boden: Fächer + Streifen 0,8 m unter den Gehweg hinein
+        ia, ib = (cx + tx * hc - nx * 0.8, cz + tz * hc - nz * 0.8), (cx - tx * hc - nx * 0.8, cz - tz * hc - nz * 0.8)
+        for a, b, c in [((cx, cz), p1, p2) for p1, p2 in zip(arc[:-1], arc[1:])] + [(arc[0], arc[-1], ib), (arc[0], ib, ia)]:
+            tris.extend([round(a[0], 3), round(yf, 3), round(a[1], 3), round(b[0], 3), round(yf, 3), round(b[1], 3),
+                         round(c[0], 3), round(yf, 3), round(c[1], 3)])
+            norms.extend([0.0, 1.0, 0.0])
+    ar["kz_tris"], ar["kz_n"] = tris, norms
+    return rails
 
 
 def write_cache(name):
@@ -1498,7 +1593,7 @@ def tile_decks(name, decks):
         city["bridge_rails0"] = [list(r) for r in city.get("bridge_rails", [])]
     extra = missing_rails(city, ter, e_km * 1000.0 - 411000.0, -((n_km + 2) * 1000.0 - 5656200.0), ext_rails)
     st["rails_add"] = len(extra)
-    st["rails_cut"] = raise_rails(city, extra, neighbour_roads(name))
+    st["rails_cut"] = raise_rails(city, extra, neighbour_roads(name), name)
     st["poles"] = bridge_tram_poles(city)
     st["lamps"] = lift_lamps(city)
     city["bridge_meshes"] = [bm for bm in city["bridge_meshes"] if not str(bm.get("id", "")).startswith("ext:")]

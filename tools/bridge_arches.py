@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 from pyproj import Transformer
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import linemerge
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -236,6 +236,39 @@ def tile_arches(name, bridges):
                 best = (dd, float(np.interp(ln.project(p), cum, ys)))
         return best[1] if best else None
 
+    # Deckflächen (LoD2-Decks der Kachel) für Achslage und Kanzeln: seitliche Ausdehnung des Decks an einer Stelle
+    from shapely.ops import unary_union as _uu
+    deck_polys = []
+    for bm in city.get("bridge_meshes", []):
+        t_ = bm.get("top0") or bm.get("top") or []
+        ps_ = []
+        for i in range(0, len(t_) - 8, 9):
+            pg = Polygon([(t_[i], t_[i + 2]), (t_[i + 3], t_[i + 5]), (t_[i + 6], t_[i + 8])])
+            if pg.area > 1e-4:
+                ps_.append(pg.buffer(0.02))
+        if ps_:
+            deck_polys.append(_uu(ps_))
+    dk_tree = STRtree(deck_polys) if deck_polys else None
+
+    def deck_span(cx_, cz_, ux, uz):
+        """(lo, hi) des Decks quer zur Achse am Punkt (Teilstück, das den Punkt enthält bzw. ≤ 3 m daneben liegt)"""
+        if dk_tree is None:
+            return None
+        cut_ = LineString([(cx_ - ux * 45.0, cz_ - uz * 45.0), (cx_ + ux * 45.0, cz_ + uz * 45.0)])
+        hit = [deck_polys[int(i)] for i in dk_tree.query(cut_) if deck_polys[int(i)].intersects(cut_)]
+        if not hit:
+            return None
+        inter = cut_.intersection(_uu(hit))
+        parts_ = [g for g in getattr(inter, "geoms", [inter]) if g.geom_type == "LineString" and g.length > 3.0]
+        if not parts_:
+            return None
+        c_ = Point(cx_, cz_)
+        g = min(parts_, key=lambda q: q.distance(c_))
+        if g.distance(c_) > 3.0:
+            return None
+        vs = sorted((q[0] - cx_) * ux + (q[1] - cz_) * uz for q in (g.coords[0], g.coords[-1]))
+        return vs[0], vs[1]
+
     tris, norms = [], []
 
     def tri(a, b, c, n):
@@ -250,6 +283,7 @@ def tile_arches(name, bridges):
     count = 0
     way_ids, lod2_ids = set(), set()
     piers_out = []
+    kanzeln = []                                           # [x, z, nx, nz, R, deck_y, nur_stein]
     steel_tris, steel_n = [], []
     steel_col = "#c9ccd0"
     groups = {}                                   # (mat, farbe) -> [tris, n]: Blechträger, Gussstützen, Betonstirn
@@ -624,6 +658,34 @@ def tile_arches(name, bridges):
             continue
         m = linemerge(segs)
         axis = max(getattr(m, "geoms", [m]), key=lambda g: g.length)
+        # Achse auf die Deckmitte rücken: die längste OSM-Linie ist oft ein Radweg oder Gleis am Rand
+        # (Albertbrücke: Bögen und Pfeiler standen 8,5 m neben dem Deck)
+        offs, wids_ = [], []
+        for v in np.linspace(axis.length * 0.1, axis.length * 0.9, 25):
+            c_ = axis.interpolate(v)
+            a_, b_ = axis.interpolate(max(v - 1.0, 0.0)), axis.interpolate(min(v + 1.0, axis.length))
+            tl = math.hypot(b_.x - a_.x, b_.y - a_.y) or 1.0
+            sp_ = deck_span(c_.x, c_.y, -(b_.y - a_.y) / tl, (b_.x - a_.x) / tl)
+            if sp_ is not None:
+                offs.append(0.5 * (sp_[0] + sp_[1]))
+                wids_.append(sp_[1] - sp_[0])
+        try:
+            bw_ = float(b.get("width_m") or 0.0)
+        except (TypeError, ValueError):
+            bw_ = 0.0
+        deck_w = float(np.median(wids_)) if len(wids_) >= 8 else None
+        # nur wenn das Deck zu diesem Bauwerk gehört (Breite passt): breite Bahndecks fassen mehrere Überbauten zusammen
+        if len(offs) >= 8 and bw_ > 0.0 and float(np.median(wids_)) <= 1.35 * bw_ + 3.0:
+            cen = float(np.median(offs))
+            if 1.0 < abs(cen) < 20.0:
+                pts_ = []
+                for v in np.linspace(0.0, axis.length, max(2, int(axis.length / 2.0) + 1)):
+                    a_, b_ = axis.interpolate(max(v - 1.0, 0.0)), axis.interpolate(min(v + 1.0, axis.length))
+                    tl = math.hypot(b_.x - a_.x, b_.y - a_.y) or 1.0
+                    c_ = axis.interpolate(v)
+                    pts_.append((c_.x - (b_.y - a_.y) / tl * cen, c_.y + (b_.x - a_.x) / tl * cen))
+                axis = LineString(pts_)
+                report.append(f"{b.get('name')}: Achse um {cen:+.1f} m auf die Deckmitte gerückt")
         L = axis.length
         arch_i = b.get("arch") or {}
         ps_i = b.get("pier_stations_m") if isinstance(b.get("pier_stations_m"), dict) else {}
@@ -854,6 +916,67 @@ def tile_arches(name, bridges):
                                 prev = pt
                     report.append(f"Halbbögen {b.get('name')} am Pfeiler s={st2:.0f}")
                 added = True
+            # Gevouteter Hauptträger (Recherche deck_depth_m {field, support}): Kasten/Trog unter dem Deck, über den
+            # Pfeilern tiefer (Eisenbahn-Marienbrücke 2,5 -> 5,8 m, Flügelwegbrücke 4,0 -> 5,5 m, A4-Elbebrücke 3,5 -> 6,0 m)
+            dd_ = _lit(b.get("deck_depth_m")) if b.get("deck_depth_m") else None
+            if isinstance(dd_, dict) and dd_.get("field") and dd_.get("support") and added:
+                try:
+                    d_f, d_s = float(dd_["field"]), float(dd_["support"])
+                except (TypeError, ValueError):
+                    d_f = d_s = 0.0
+                if d_s > d_f + 0.4 and d_f >= 1.2:
+                    steelbox = "steel" in str(b.get("structure") or "")
+                    gcol = ((cols_b or {}).get("steel") if steelbox else (cols_b or {}).get("concrete")) if isinstance(cols_b, dict) else None
+                    Gh = group("steelbox" if steelbox else "concrete", gcol or ("#5a646c" if steelbox else "#a4aaaa"))
+                    two = twin_iv is not None or "zwei getrennte" in str(b.get("structure_de") or "") or (steelbox and bw >= 24.0)
+                    boxes = [(-bw * 0.25 - bw * 0.11, -bw * 0.25 + bw * 0.11), (bw * 0.25 - bw * 0.11, bw * 0.25 + bw * 0.11)] if two \
+                        else [(-bw * 0.3, bw * 0.3)]
+                    ends = [0.5 * (L - S * k)]
+                    for v in sp:
+                        ends.append(ends[-1] + v * k)
+
+                    def depth_at(sv):
+                        for i_ in range(len(ends) - 1):
+                            a_, e_ = ends[i_], ends[i_ + 1]
+                            if a_ - 1e-6 <= sv <= e_ + 1e-6:
+                                reach = 0.45 * (e_ - a_)
+                                f_ = 0.0
+                                if i_ > 0 and sv - a_ < reach:
+                                    f_ = max(f_, (1.0 - (sv - a_) / reach) ** 2)
+                                if i_ < len(ends) - 2 and e_ - sv < reach:
+                                    f_ = max(f_, (1.0 - (e_ - sv) / reach) ** 2)
+                                return d_f + (d_s - d_f) * f_
+                        return d_f
+                    ns_ = max(2, int((ends[-1] - ends[0]) / 2.0) + 1)
+                    for v0, v1 in boxes:
+                        prev = None
+                        for j in range(ns_):
+                            sv = ends[0] + (ends[-1] - ends[0]) * j / (ns_ - 1)
+                            fx, fz, ftx, ftz = frame(sv)
+                            fnx, fnz = -ftz, ftx
+                            ydk = deck_y(fx, fz)
+                            if ydk is None or not in_tile(fx, fz):
+                                prev = None
+                                continue
+                            top_ = ydk - 0.8
+                            bot_ = ydk - depth_at(sv)
+                            sl = LineString([(fx + fnx * v0, fz + fnz * v0), (fx + fnx * v1, fz + fnz * v1)]).buffer(1.2)
+                            for g_, _k, _y, need in bands:           # Lichtraum über Straßen/Gleisen darunter wahren
+                                if g_.intersects(sl):
+                                    bot_ = max(bot_, need + 0.25)
+                            gnd_ = max(ground(fx, fz), water_y(fx, fz))
+                            bot_ = max(bot_, gnd_ + 0.3)
+                            if top_ - bot_ < 0.3:
+                                prev = None
+                                continue
+                            cur = ((fx + fnx * v0, fz + fnz * v0), (fx + fnx * v1, fz + fnz * v1), top_, bot_, (fnx, fnz))
+                            if prev is not None:
+                                (pa, pb, pt, pbt, pn), (ca, cb, ct, cbt, cn) = prev, cur
+                                gquad(Gh, (pa[0], pbt, pa[1]), (ca[0], cbt, ca[1]), (ca[0], ct, ca[1]), (pa[0], pt, pa[1]), (-pn[0], 0.0, -pn[1]))
+                                gquad(Gh, (pb[0], pbt, pb[1]), (cb[0], cbt, cb[1]), (cb[0], ct, cb[1]), (pb[0], pt, pb[1]), (pn[0], 0.0, pn[1]))
+                                gquad(Gh, (pa[0], pbt, pa[1]), (pb[0], pbt, pb[1]), (cb[0], cbt, cb[1]), (ca[0], cbt, ca[1]), (0.0, -1.0, 0.0))
+                            prev = cur
+                    report.append(f"Voutenträger {b.get('name')}: {d_f:.1f} -> {d_s:.1f} m, {len(boxes)} Kasten")
             if added:
                 way_ids.update(ids)
             continue
@@ -879,6 +1002,9 @@ def tile_arches(name, bridges):
         if not (6.0 <= width <= 40.0):
             width = 18.0 if big else 10.0
         hw = width * 0.5
+        if deck_w is not None and 6.0 <= deck_w < width:
+            hw = deck_w * 0.5                                   # Bogenkörper nie breiter als das Deck darüber
+            report.append(f"{b.get('name')}: Bogenbreite {width:.1f} -> {deck_w:.1f} m (Deckbreite)")
         arch = b.get("arch") or {}
         rises = arch.get("rise_m") if isinstance(arch.get("rise_m"), list) else None
         def rise_of(i, sp):
@@ -926,6 +1052,17 @@ def tile_arches(name, bridges):
             tx, tz = q.x - r0.x, q.y - r0.y
             tl = math.hypot(tx, tz) or 1.0
             return p.x, p.y, tx / tl, tz / tl
+
+        # Pfeilerkanzeln: runde, bis zur Brüstung geführte Pfeilervorlagen (Recherche pier_stations_m.kanzeln bzw.
+        # pier_shape). Marienbrücke: an allen Pfeilern, nur oberstrom (unterstrom glatte Betonverbreiterung).
+        kz_st, kz_up, kz_r = [], False, 3.5
+        if isinstance(ps, dict) and ps.get("kanzeln") and piers and len(piers) == npier:
+            kz_st = [float(v) for v in ps["kanzeln"]]
+        nm_ = b.get("name") or ""
+        if "Marienbrücke (Straßen" in nm_ and piers and len(piers) == npier:
+            kz_st, kz_up, kz_r = [float(v) for v in piers], True, 2.4
+        elif "Albertbrücke" in nm_:
+            kz_r = 3.0
 
         # --- Lichtraum: Pfeiler neben die Verkehrsbänder, Bögen über ihnen hoch genug -------------------
         bands = under.bands(footprint(axis, L, hw + 0.5), deck_y) if intervals else []
@@ -1130,7 +1267,65 @@ def tile_arches(name, bridges):
                 gnd = max(ground(px, pz), water_y(px, pz)) - 1.0
                 ytop = gnd + 1.0 + max(1.5, (yd - gnd) * 0.45)
                 half = (e - a) * 0.5
+                is_kz = any(abs((a + e) * 0.5 - v) < 8.0 for v in kz_st) and yd - gnd > 3.0
                 for sd in (1.0, -1.0):
+                    if is_kz and (not kz_up or (nx * sd * 2.8535 + nz * sd * 1.0877) > 0.0):
+                        # Kanzel: Halbzylinder vom Grund bis über die Gehweghöhe, unten breiterer Sockel, oben Gesims
+                        R = min(kz_r, half + 0.6)
+                        # Kanzel an der Deckkante (Kragplatten: Deck breiter als der Bogenkörper); hat das Deck dort
+                        # schon eine eigene Ausbuchtung, bleiben Brüstung und Boden wie sie sind
+                        sm_ = (a + e) * 0.5
+                        exts = []
+                        for ds_ in (-(R + 8.0), -(R + 4.0), R + 4.0, R + 8.0, 0.0):
+                            fx_, fz_, ftx, ftz = frame(sm_ + ds_)
+                            sp_ = deck_span(fx_, fz_, -ftz, ftx)
+                            exts.append(None if sp_ is None else (sp_[1] if sd > 0 else -sp_[0]))
+                        near = [v for v in exts[:4] if v is not None]
+                        kb = hw
+                        own = 0
+                        if near:
+                            kb = min(max(hw, min(near) - 0.25), hw + 4.0)
+                            if exts[4] is not None and exts[4] - min(near) > 1.0:
+                                own = 1
+                        bx_, bz_ = px + nx * kb * sd, pz + nz * kb * sd
+                        NS = 12
+
+                        def ring(rad, _bx=bx_, _bz=bz_, _sd=sd):
+                            return [(_bx + tx * rad * math.cos(math.pi * j / NS) + nx * _sd * rad * math.sin(math.pi * j / NS),
+                                     _bz + tz * rad * math.cos(math.pi * j / NS) + nz * _sd * rad * math.sin(math.pi * j / NS))
+                                    for j in range(NS + 1)]
+
+                        def shell(rad, y0, y1, _sd=sd):
+                            pts_ = ring(rad)
+                            for j in range(NS):
+                                am = math.pi * (j + 0.5) / NS
+                                nrm = (tx * math.cos(am) + nx * _sd * math.sin(am), 0.0, tz * math.cos(am) + nz * _sd * math.sin(am))
+                                p1, p2 = pts_[j], pts_[j + 1]
+                                quad((p1[0], y0, p1[1]), (p2[0], y0, p2[1]), (p2[0], y1, p2[1]), (p1[0], y1, p1[1]), nrm)
+
+                        def annulus(r0_, r1_, y, up):
+                            i_, o_ = ring(r0_), ring(r1_)
+                            for j in range(NS):
+                                quad((i_[j][0], y, i_[j][1]), (i_[j + 1][0], y, i_[j + 1][1]),
+                                     (o_[j + 1][0], y, o_[j + 1][1]), (o_[j][0], y, o_[j][1]), (0.0, up, 0.0))
+
+                        y_rim = yd + 0.22
+                        shell(R + 0.4, gnd, ytop)                         # Sockel bis Kämpferhöhe
+                        annulus(R, R + 0.4, ytop, 1.0)
+                        shell(R, ytop, y_rim)                             # Schaft
+                        shell(R + 0.18, yd - 0.45, yd - 0.1)              # umlaufendes Gesims
+                        annulus(R, R + 0.18, yd - 0.45, -1.0)
+                        annulus(R, R + 0.18, yd - 0.1, 1.0)
+                        annulus(R - 0.5, R, y_rim, 1.0)                   # Mauerkrone unter der Brüstung
+                        if kb > hw + 0.05:                                # Wangen zurück zur Stirnwand
+                            for lg in (-1.0, 1.0):
+                                w0 = (px + nx * hw * sd + tx * R * lg, pz + nz * hw * sd + tz * R * lg)
+                                w1 = (bx_ + tx * R * lg, bz_ + tz * R * lg)
+                                quad((w0[0], gnd, w0[1]), (w1[0], gnd, w1[1]), (w1[0], y_rim, w1[1]), (w0[0], y_rim, w0[1]),
+                                     (tx * lg, 0.0, tz * lg))
+                        kanzeln.append([round(bx_, 2), round(bz_, 2), round(nx * sd, 4), round(nz * sd, 4),
+                                        round(R, 2), round(yd, 2), 1 if kz_up else 0, own])
+                        continue
                     base = (px + nx * hw * sd, pz + nz * hw * sd)
                     tip = (px + nx * (hw + 2.2) * sd, pz + nz * (hw + 2.2) * sd)
                     l = (base[0] - tx * half, base[1] - tz * half)
@@ -1152,7 +1347,7 @@ def tile_arches(name, bridges):
                 lod2_ids.update(lod.get("ids") or [])
     gpiers = generic_piers(city, way_ids, under, ground, deck_y, in_tile, report)
     city["bridge_arches"] = {"tris": [round(v, 3) for v in tris], "n": norms, "ways": sorted(way_ids),
-                             "lod2": sorted(lod2_ids), "piers": piers_out, "gpiers": gpiers,
+                             "lod2": sorted(lod2_ids), "piers": piers_out, "kanzeln": kanzeln, "gpiers": gpiers,
                              "steel": {"tris": [round(v, 3) for v in steel_tris], "n": steel_n, "color": steel_col},
                              "groups": [{"mat": m, "color": c, "tris": [round(v, 3) for v in g[0]], "n": g[1]}
                                         for (m, c), g in groups.items() if g[0]]}

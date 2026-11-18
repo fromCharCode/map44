@@ -994,6 +994,9 @@ func _bridge_arches(data: Dictionary) -> void:
 			smat.albedo_color = Color(String(gr.get("color", "#4a4846")))
 			smat.metallic = 0.55
 			smat.roughness = 0.55
+			if String(gr.get("mat", "")) == "steelbox":
+				smat.metallic = 0.15                          # lackierter Stahlkasten/-trog (gevouteter Hauptträger)
+				smat.roughness = 0.7
 			gm = smat
 		var gmesh := _tri_mesh(gr["tris"], gr.get("n", []), gm, 1500.0)
 		_static_faces(gmesh.get_faces(), "girder")
@@ -1005,8 +1008,8 @@ func _bridge_arches(data: Dictionary) -> void:
 		sm.roughness = 0.4
 		var stm := _tri_mesh(steel["tris"], steel.get("n", []), sm, 2500.0)
 		_static_faces(stm.get_faces(), "steel")
-	var t: Array = data.get("tris", [])
-	var nn: Array = data.get("n", [])
+	var t: Array = data.get("tris", []) + data.get("kz_tris", [])      # kz: Böden der Pfeilerkanzeln
+	var nn: Array = data.get("n", []) + data.get("kz_n", [])
 	if t.size() < 9:
 		return
 	var v := PackedVector3Array()
