@@ -597,11 +597,12 @@ void fragment() {
 	float fres = 0.04 + 0.96 * pow(1.0 - cos_v, 5.0);
 	float show = pane_m * (1.0 - mull) * (1.0 - fres) * (1.0 - curt * 0.75 * (shop ? 0.0 : 1.0)) * (1.0 - clamp(drape, 0.0, 1.0));
 	vec3 lamp = mix(vec3(1.0, 0.72, 0.42), vec3(0.85, 0.92, 1.0), step(0.78, warm));
-	vec3 interior = room_col * (0.16 * (1.0 - night) + room_lit * night * 1.6 * lamp) * (door_col ? 0.0 : 1.0);
+	// tagsüber sind Räume hinter Glas dunkel (vorher 0,16: Glasfassaden wirkten wie bunte, selbstleuchtende Platten)
+	vec3 interior = room_col * (0.055 * (1.0 - night) + room_lit * night * 1.6 * lamp) * (door_col ? 0.0 : 1.0);
 	if (shop) {
 		// Verkaufsraum: hell, tagsüber beleuchtet; leerstehend dunkel
 		// Verkaufsraum: Regalreihen (dunkle Bänder) vor hellerem Hintergrund, tags gedämpft, nachts beleuchtet
-		interior = vacant ? room_col * 0.04 : room_col * (0.3 * (1.0 - night) + 1.5 * night * lamp);
+		interior = vacant ? room_col * 0.03 : room_col * (0.15 * (1.0 - night) + 1.5 * night * lamp);
 	}
 	EMISSION = emis * 2.6 * night * curt + interior * show + emis * 0.6 * night * (1.0 - curt);
 
