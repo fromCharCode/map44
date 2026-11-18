@@ -18,8 +18,8 @@ var night_value := 0.0
 # Abstimmwerte (für Versuche überschreibbar: DRESDEN_GFX="amb=2.0,sun=4.4,expo=0.3,contrast=1.05,ssao=1.5,fog=1.0")
 # Himmelslicht 2,2 statt 1,1: Schattenseiten waren fast schwarz (Sonne zu Himmel etwa 5:1 wie draußen, vorher 10:1);
 # Belichtung 0,28 statt 0,35: besonnter Boden brannte weiß aus
-var tune := {"amb": 2.2, "sun": 4.4, "expo": 0.28, "contrast": 1.04, "ssao": 1.4, "fog": 1.0, "sat": 0.9, "lut": 1.0,
-	"sdfgi": 1.0, "vfog": 1.0}
+var tune := {"amb": 1.7, "sun": 4.4, "expo": 0.28, "contrast": 1.04, "ssao": 1.4, "fog": 1.0, "sat": 0.9, "lut": 1.0,
+	"sdfgi": 1.0, "vfog": 1.0, "occ": 0.0, "ssil": 0.8, "cell": 0.3, "gi": 0.0}
 
 
 func _read_tune() -> void:
@@ -90,16 +90,17 @@ func setup(noise: ImageTexture) -> void:
 	env.ssao_intensity = float(tune["ssao"])
 	env.ssao_power = 1.6
 	env.ssil_enabled = true
-	env.ssil_intensity = 0.8
+	env.ssil_intensity = float(tune["ssil"])
 	env.ssr_enabled = true
 	env.ssr_max_steps = 96
 	env.ssr_fade_in = 0.15
 	env.ssr_fade_out = 2.0
 	env.ssr_depth_tolerance = 0.3
-	env.sdfgi_enabled = true
+	env.sdfgi_enabled = false
 	env.sdfgi_cascades = 4
-	env.sdfgi_min_cell_size = 0.3
-	env.sdfgi_use_occlusion = true
+	env.sdfgi_min_cell_size = float(tune["cell"])
+	# Verdeckung aus: sie schluckte in Gassen und an Hauswänden fast das gesamte Himmelslicht (Schatten schwarz)
+	env.sdfgi_use_occlusion = float(tune["occ"]) > 0.5
 	env.sdfgi_bounce_feedback = 0.5
 	env.sdfgi_energy = float(tune["sdfgi"])
 	env.sdfgi_read_sky_light = true
@@ -172,7 +173,9 @@ func _add_post_fx() -> void:
 
 func apply_quality(q: int) -> void:
 	quality = q
-	env.sdfgi_enabled = q >= 2
+	# SDFGI aus (gi=1 schaltet es für Versuche ein): in Straßenschluchten lieferte es fast kein Himmelslicht, Schatten
+	# wurden schwarz. Ohne SDFGI beleuchtet der Himmel die Schattenseiten direkt (wie auf Stufe „Mittel“).
+	env.sdfgi_enabled = q >= 2 and float(tune["gi"]) > 0.5
 	env.ssao_enabled = q >= 1
 	env.ssil_enabled = q >= 2
 	env.ssr_enabled = q >= 1
