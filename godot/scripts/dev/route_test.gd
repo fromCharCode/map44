@@ -28,6 +28,9 @@ var _active := false
 var _results: Array = []
 var _out := ""
 var _len := 0.0
+var _recov := 0                   # Rangierversuche (zurücksetzen und neu ansetzen) auf dieser Strecke
+var _recov_t := 0.0
+var _trace := OS.get_environment("DRESDEN_ROUTETRACE") != ""
 
 
 func start(m: Node, args: Dictionary) -> void:
@@ -68,6 +71,8 @@ func _next() -> void:
 	_max_dy = -99.0
 	_best = 0
 	_why = ""
+	_recov = 0
+	_recov_t = 0.0
 	main.world.enabled = false
 	await main.world.load_now(_tile)
 	for i in 3:
@@ -139,6 +144,17 @@ func _physics_process(delta: float) -> void:
 			var d := Vector2(b[0] - a[0], b[1] - a[1]).normalized()
 			var n := Vector2(-d.y, d.x)
 			pts.append(Vector3(float(chain[i][0]) + n.x * off, float(chain[i][2]), float(chain[i][1]) + n.y * off))
+		# Stützpunkte auf höchstens 3 m verdichten: bei langen Geraden sprang der „nächste Punkt“ sonst 20 m vor
+		# einer Biegung auf den Knickpunkt, das Ziel lag dann schon hinter der Biegung und das Auto kürzte ab
+		var dense: Array = []
+		for i in pts.size() - 1:
+			var pa: Vector3 = pts[i]
+			var pb: Vector3 = pts[i + 1]
+			var nseg := maxi(int(ceil(Vector2(pb.x - pa.x, pb.z - pa.z).length() / 3.0)), 1)
+			for j in nseg:
+				dense.append(pa.lerp(pb, float(j) / float(nseg)))
+		dense.append(pts[pts.size() - 1])
+		pts = dense
 		# nur der Teil im Kachelinneren (8 m Rand): im Test ist nur diese Kachel geladen – am Rand hing das Auto
 		# halb über dem Nichts und blieb stecken, ohne dass die Straße schuld war
 		var ke := int(_tile.split("_")[0])
@@ -173,7 +189,15 @@ func _physics_process(delta: float) -> void:
 		if i0 > 0 and pts.size() - i0 >= 3:
 			pts = pts.slice(i0)
 		var p0: Vector3 = pts[0]
-		var p1: Vector3 = pts[mini(3, pts.size() - 1)]
+		# Startrichtung: Tangente über die ersten ~6 m. Vorher zeigte das Auto auf den vierten Punkt – bei langen
+		# Stücken lag der bis zu 130 m weit hinter einer Biegung, das Auto stand dann 15° schräg in der Fahrbahn
+		var p1: Vector3 = pts[1]
+		var acc1 := 0.0
+		for i in range(1, pts.size()):
+			acc1 += Vector2(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z).length()
+			p1 = pts[i]
+			if acc1 >= 6.0:
+				break
 		var dir := p1 - p0
 		dir.y = 0.0
 		dir = dir.normalized()
@@ -204,6 +228,8 @@ func _physics_process(delta: float) -> void:
 		if _why == "":
 			_why = "Rücksetzen bei (%.0f,%.0f)" % [_last.x, _last.z]
 	_last = p
+	if _trace and Engine.get_physics_frames() % 30 == 0:
+		print("ROUTETEST Spur (%.1f,%.1f,y=%.2f) v %.1f Lenk %.2f Punkt %d" % [p.x, p.z, p.y, player.linear_velocity.length(), player.in_steer, _best])
 	var best := _best
 	var bd := INF
 	for i in range(maxi(_best - 5, 0), mini(_best + 30, pts.size())):
@@ -212,10 +238,12 @@ func _physics_process(delta: float) -> void:
 			bd = d
 			best = i
 	_best = best
-	# Zielpunkt ~8 m voraus
+	# Zielpunkt voraus: 8 m bei Fahrt, bei langsamer Fahrt kürzer (4 m) – mit festen 8 m schnitt das Auto enge
+	# Ecken direkt hinter Pfeilern und an Geländern so stark, dass es daran hängen blieb
+	var look := clampf(player.linear_velocity.length() * 0.9, 4.0, 8.0)
 	var acc := 0.0
 	var k := best
-	while k < pts.size() - 1 and acc < 8.0:
+	while k < pts.size() - 1 and acc < look:
 		acc += Vector2(pts[k + 1].x - pts[k].x, pts[k + 1].z - pts[k].z).length()
 		k += 1
 	var tgt: Vector3 = pts[k]
@@ -248,6 +276,20 @@ func _physics_process(delta: float) -> void:
 		_stuck_t += delta
 	else:
 		_stuck_t = 0.0
+	# Rangieren: hängt das Auto an einem Objekt am Fahrbahnrand (Kurve geschnitten), setzt es wie ein Fahrer
+	# höchstens zweimal zurück und fährt neu an. Ist die Straße wirklich versperrt, bleibt es wieder hängen.
+	if _recov_t > 0.0:
+		_recov_t -= delta
+		player.in_throttle = 0.0
+		player.in_brake = 0.7 if _recov_t > 0.6 else 0.0          # Bremse im Stand = rückwärts
+		player.in_steer = clampf(ang * 2.0, -1.0, 1.0)
+		_stuck_t = 0.0
+		return
+	if _stuck_t > 4.0 and _recov < 2:
+		_recov += 1
+		_recov_t = 3.2
+		_stuck_t = 0.0
+		return
 	var done := best >= pts.size() - 2 and bd < 6.0
 	var fail := _stuck_t > 4.0 or _t > maxf(90.0, 20.0 + _len / 9.0)
 	if fail and _why == "":
@@ -265,8 +307,8 @@ func _physics_process(delta: float) -> void:
 			_why += " <K %s lokal %s n %s>" % [BridgeAudit.owner_of(co) if co != null else "RID", str((player.global_transform.affine_inverse() * ds.get_contact_collider_position(ci)).snappedf(0.01)), str(ds.get_contact_local_normal(ci).snappedf(0.01))]
 		_why += " {Gas %.2f Bremse %.2f Lenk %.2f Gang %d %.0f/min vmax %.1f Kurve %.2f Rad-ω %s}" % [player.in_throttle, player.in_brake, player.in_steer, player.gear, player.rpm, vmax, turn, str([snappedf(player.wheels["FL"]["omega"], 0.1), snappedf(player.wheels["RL"]["omega"], 0.1)])]
 	if done or fail:
-		_finish(done and _resets == 0, "ROUTETEST %s %s:%d: %d/%d Punkte, Rücksetzen %d, Höhe über Profil %.2f … %.2f m %s" % [
-			"DURCHFAHREN" if done and _resets == 0 else "ABBRUCH", _tile, _wid, best, pts.size(), _resets, _min_dy, _max_dy, _why])
+		_finish(done and _resets == 0, "ROUTETEST %s %s:%d: %d/%d Punkte, Rücksetzen %d, Rangieren %d, Höhe über Profil %.2f … %.2f m %s" % [
+			"DURCHFAHREN" if done and _resets == 0 else "ABBRUCH", _tile, _wid, best, pts.size(), _resets, _recov, _min_dy, _max_dy, _why])
 
 
 func _blockers(car: RigidBody3D) -> String:
