@@ -755,9 +755,37 @@ func _tunnel(tun: Surf, ps: Dictionary, col: Color) -> void:
 		var rc := c - left * hw
 		var z0 := Vector2.ZERO
 		var uvs := [z0, z0, z0, z0]
-		tun.quad(Vector3(la.x, a.y - 0.3, la.z), Vector3(lc.x, c.y - 0.3, lc.z), Vector3(lc.x, top, lc.z), Vector3(la.x, top, la.z), -left, col, uvs, Vector2.ZERO, d)
-		tun.quad(Vector3(ra.x, a.y - 0.3, ra.z), Vector3(rc.x, c.y - 0.3, rc.z), Vector3(rc.x, top, rc.z), Vector3(ra.x, top, ra.z), left, col, uvs, Vector2.ZERO, d)
+		# Seitenwände in Stücken; wo eine andere Durchfahrt abzweigt oder kreuzt, bleibt die Wand offen
+		# (sonst ragte die Wand des Abzweigs als Vorsprung in die Hauptdurchfahrt, z. B. im Georgentor)
+		var seg_len := Vector2(c.x - a.x, c.z - a.z).length()
+		var nseg := maxi(1, int(ceil(seg_len / 1.0)))
+		for k in nseg:
+			var t0 := float(k) / float(nseg)
+			var t1 := float(k + 1) / float(nseg)
+			var m0 := a.lerp(c, t0)
+			var m1 := a.lerp(c, t1)
+			for sgn in [1.0, -1.0]:
+				var w0: Vector3 = m0 + left * hw * sgn
+				var w1: Vector3 = m1 + left * hw * sgn
+				if _in_other_passage(ps, Vector2((w0.x + w1.x) * 0.5, (w0.z + w1.z) * 0.5)):
+					continue
+				tun.quad(Vector3(w0.x, m0.y - 0.3, w0.z), Vector3(w1.x, m1.y - 0.3, w1.z), Vector3(w1.x, top, w1.z), Vector3(w0.x, top, w0.z), -left * sgn, col, uvs, Vector2.ZERO, d)
 		tun.quad(Vector3(la.x, top, la.z), Vector3(lc.x, top, lc.z), Vector3(rc.x, top, rc.z), Vector3(ra.x, top, ra.z), Vector3.DOWN, col.darkened(0.15), uvs, Vector2.ZERO, d)
+
+
+func _in_other_passage(me: Dictionary, p: Vector2) -> bool:
+	## Liegt der Punkt im Lichtraum einer anderen Durchfahrt?
+	for ps in passages:
+		if ps == me:
+			continue
+		var pp: Array = ps["pts"]
+		var hw2 := float(ps["w"]) * 0.5 - 0.15
+		for i in pp.size() - 1:
+			var a2 := Vector2(pp[i][0], pp[i][1])
+			var b2 := Vector2(pp[i + 1][0], pp[i + 1][1])
+			if Geometry2D.get_closest_point_to_segment(p, a2, b2).distance_to(p) < hw2:
+				return true
+	return false
 
 
 func _trim_strip(trim: Surf, p0: Vector2, p1: Vector2, tdir: Vector2, nrm: Vector3, ref: float, y_top: float, eave_h: float, style: int, col: Color) -> void:

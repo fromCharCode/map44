@@ -59,5 +59,8 @@
    "roof": "#5e3a31",
    "plain": true
   }
+ },
+ "passage_min_w": {
+  "DESNATPU1000EjsO": 7.0
  }
 }

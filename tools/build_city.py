@@ -2182,6 +2182,8 @@ def build_passages(buildings):
                 for x, z in g.coords:
                     e, n = x + ORIGIN_E, ORIGIN_N - z
                     pts.append([round(x, 2), round(z, 2), round(ground(e, n), 2)])
+                _og = owner.rpartition("_")[0] if owner.rpartition("_")[2].isdigit() else owner
+                w = max(w, float(OVERRIDES.get("passage_min_w", {}).get(_og, 0.0)))    # z. B. Georgentor
                 out.append({"b": owner, "bs": [pid for pid, _ in crossed], "pts": pts, "w": round(w, 2), "h": round(h, 2)})
     return out
 
