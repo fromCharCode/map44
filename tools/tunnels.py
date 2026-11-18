@@ -113,6 +113,74 @@ def node_near(x, z, rad=3.0):
     return (tn, best[1]) if best else None
 
 
+def approach(pt, inward, w):
+    """Anfahrtstrog vor einem Portal: der Straße ab dem Portal nach außen folgen, solange das Gelände neben der
+    Fahrbahn höher liegt (Einschnitt). Ergebnis [[x, z, y, wand_links, wand_rechts], …] (Wandhöhe über der Fahrbahn,
+    0 = keine), links/rechts in Laufrichtung vom Portal weg – oder None."""
+    t = _tile(tile_of(*pt))
+    if t is None:
+        return None
+    best = None
+    for r in t["roads"]:
+        ps = r["pts"]
+        if len(ps) < 2 or r.get("bridge") or r["cls"] not in VEH:
+            continue
+        for end, seq in ((0, ps), (-1, ps[::-1])):
+            d = math.hypot(ps[end][0] - pt[0], ps[end][1] - pt[1])
+            if d > 4.0:
+                continue
+            dx, dz = seq[1][0] - seq[0][0], seq[1][1] - seq[0][1]
+            dl = math.hypot(dx, dz) or 1.0
+            if (dx * inward[0] + dz * inward[1]) / dl > 0.2:
+                continue                                    # führt in den Tunnel hinein
+            if best is None or d < best[0]:
+                best = (d, seq, r)
+    if best is None:
+        return None
+    _d, seq, road = best
+    ln = LineString([(q[0], q[1]) for q in seq])
+    cum = np.concatenate([[0.0], np.cumsum([math.dist(a_[:2], b_[:2]) for a_, b_ in zip(seq[:-1], seq[1:])])])
+    ys = [q[2] for q in seq]
+    others = [(np.array([[q[0], q[1], q[2]] for q in r["pts"]]), float(r["width"]) * 0.5 + 0.6)
+              for r in t["roads"] if r is not road and r["cls"] in VEH and len(r["pts"]) >= 2]
+    e = max(w, float(road["width"])) * 0.5 + 0.35
+    out = []
+    L = min(ln.length, 240.0)
+    n = max(2, int(L / 2.0) + 1)
+    for i in range(n):
+        s_ = L * i / (n - 1)
+        p = ln.interpolate(s_)
+        a_, b_ = ln.interpolate(max(s_ - 1.0, 0.0)), ln.interpolate(min(s_ + 1.0, ln.length))
+        dl = math.hypot(b_.x - a_.x, b_.y - a_.y) or 1.0
+        nx, nz = -(b_.y - a_.y) / dl, (b_.x - a_.x) / dl
+        y = float(np.interp(s_, cum, ys))
+        hs = []
+        for sd in (-1.0, 1.0):                              # −n = links der Laufrichtung (Godot: x/z-Ebene)
+            wx, wz = p.x + nx * e * sd, p.y + nz * e * sd
+            tops = [raw_at(p.x + nx * (e + o) * sd, p.y + nz * (e + o) * sd) for o in (0.8, 1.6, 2.6, 3.6)]
+            tops = [v for v in tops if v is not None]
+            h = (max(tops) - y) if tops else 0.0
+            for arr, rad in others:                          # andere Fahrbahn auf gleicher Höhe direkt daneben: keine Wand
+                dd = np.hypot(arr[:, 0] - wx, arr[:, 1] - wz)
+                j = int(dd.argmin())
+                if dd[j] < rad + 1.5 and abs(arr[j, 2] - y) < 1.5:
+                    h = 0.0
+                    break
+            hs.append(h)
+        out.append([round(p.x, 2), round(p.y, 2), round(y, 3), hs[0], hs[1]])
+    # glätten (Oberkante folgt dem Gelände ohne Zacken), Ende des Einschnitts suchen
+    for k in (3, 4):
+        v = np.array([q[k] for q in out])
+        sm = np.array([v[max(i - 2, 0):i + 3].max() for i in range(len(v))])
+        sm = np.array([sm[max(i - 2, 0):i + 3].mean() for i in range(len(sm))])
+        for i, q in enumerate(out):
+            q[k] = round(min(float(sm[i]) + 0.15, 9.0), 2) if sm[i] >= 0.7 else 0.0
+    last = max((i for i, q in enumerate(out) if q[3] > 0 or q[4] > 0), default=-1)
+    if last < 3:
+        return None
+    return out[:last + 2]
+
+
 def chains():
     ways = {}
     for d in sorted(RAW.iterdir()):
@@ -165,6 +233,7 @@ def _in_city(ids, ln):
 def build():
     dry = "--dry" in sys.argv
     per_tile = {}
+    troughs = {}           # Kachel -> Anfahrtströge
     graph_add = {}         # Kachel -> [(Kante, Endknoten aus Nachbarkachel oder None)]
     n_ch = 0
     for ln, tags, ids in chains():
@@ -241,6 +310,16 @@ def build():
             print(f"  (übersprungen: {name or tags.get('highway')}, {L:.0f} m, Röhre {(n - sum(box)) * STEP:.0f} m)")
             continue
         n_ch += 1
+        # Anfahrtströge: senkrechte Betonwände statt der gezackten Geländeböschung neben der Rampe
+        for pt, inw in ((a, (cs[1][0] - cs[0][0], cs[1][1] - cs[0][1])), (b, (cs[-2][0] - cs[-1][0], cs[-2][1] - cs[-1][1]))):
+            il = math.hypot(*inw) or 1.0
+            tr = approach(pt, (inw[0] / il, inw[1] / il), w)
+            if tr:
+                for tn in {tile_of(q[0], q[1]) for q in tr}:
+                    x0_, z0_ = tile_origin(tn)
+                    sub = [q for q in tr if x0_ - MARGIN <= q[0] < x0_ + 2000 + MARGIN and z0_ - MARGIN <= q[1] < z0_ + 2000 + MARGIN]
+                    if len(sub) >= 2:
+                        troughs.setdefault(tn, []).append({"w": round(w, 2), "pts": sub})
         print(f"  Tunnel {name or tags.get('highway')}: {L:.0f} m, y {ya:.1f} → {yb:.1f}, Breite {w:.1f} m, "
               f"Bauwerk {sum(box) * STEP:.0f} m / Röhre {(n - sum(box)) * STEP:.0f} m")
         tiles = {tile_of(p[0], p[1]) for p in pts}
@@ -281,7 +360,8 @@ def build():
                     "width": round(w, 2), "len": round(L - ea - eb, 1), "bridge": False, "pts": epts, "name": name,
                     "wid": 0, "pl": 0.0, "pr": 0.0, "prio": True, "rb": False, "bus": False, "tunnel": True}
             graph_add.setdefault(ta, []).append((edge, None if tb == ta else ndb))
-    print(f"{n_ch} Tunnelketten, Kacheln: {len(per_tile)}, Verkehrskanten: {sum(len(v) for v in graph_add.values())}")
+    print(f"{n_ch} Tunnelketten, Kacheln: {len(per_tile)}, Verkehrskanten: {sum(len(v) for v in graph_add.values())}, "
+          f"Anfahrtströge: {sum(len(v) for v in troughs.values())}")
     if dry:
         return
     for d in sorted(TILES.iterdir()):
@@ -291,9 +371,13 @@ def build():
         tl = per_tile.get(d.name, [])
         city = json.loads(cf.read_text(encoding="utf-8"))
         had = bool(city.get("tunnels"))
-        if not tl and not had:
+        if not tl and not had and not troughs.get(d.name) and "troughs" not in city:
             continue
         city["tunnels"] = tl
+        if troughs.get(d.name):
+            city["troughs"] = troughs[d.name]
+        else:
+            city.pop("troughs", None)
         # Verkehrskanten: alte Tunnelkanten/-knoten entfernen (wiederholbar), neue anhängen
         g = city.get("graph")
         if g is not None:

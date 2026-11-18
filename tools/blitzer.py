@@ -1,6 +1,6 @@
 """Blitzer (stationäre Geschwindigkeits- und Rotlichtüberwachung) je Kachel: city["speedcams"].
 
-  python tools/blitzer.py            (alle Kacheln; ohne Neubau)
+  python tools/blitzer.py [E,N ...]  (ohne Argument: alle Kacheln; ohne Neubau)
   python tools/blitzer.py --fetch    (Daten neu von Overpass holen)
 
 Quelle: OpenStreetMap (© OpenStreetMap-Mitwirkende, ODbL): Knoten highway=speed_camera und Relationen
@@ -102,7 +102,10 @@ def main():
         fetch()
     cams = cameras()
     n = 0
+    only = {a.replace(",", "_") for a in sys.argv[1:] if not a.startswith("--")}
     for d in sorted(p for p in TILES.iterdir() if p.is_dir()):
+        if only and d.name not in only:
+            continue
         cf = d / "city.json"
         if not cf.exists():
             continue

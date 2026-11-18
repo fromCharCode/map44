@@ -120,6 +120,7 @@ func build(k: String, noise: ImageTexture) -> void:
 		tunnels.name = "Tunnels"
 		_mods.append(tunnels)
 		tunnels.build(terrain, city["tunnels"], center_of(e_km, n_km))
+		tunnels.build_troughs(city.get("troughs", []))
 		var tm := tunnels.mask_image()
 		if tm != null and not OS.has_environment("DRESDEN_NOTUNMASK"):
 			terrain.set_tunnel_mask(tm)
@@ -168,6 +169,18 @@ func build(k: String, noise: ImageTexture) -> void:
 	stops.build(terrain, city.get("stops", {}))
 	if Time.get_ticks_msec() - _t_stops > 150: print("Kachel %s: stops %d ms" % [k, Time.get_ticks_msec() - _t_stops])
 	RenderUtil.gi_off(stops)
+
+	if city.has("allotments"):
+		var allot := Allotments.new()
+		allot.name = "Allotments"
+		_mods.append(allot)
+		if World.quitting:
+			return
+		build_step = "allotments"
+		var _t_al := Time.get_ticks_msec()
+		allot.build(terrain, city["allotments"])
+		if Time.get_ticks_msec() - _t_al > 150: print("Kachel %s: allotments %d ms" % [k, Time.get_ticks_msec() - _t_al])
+		RenderUtil.gi_off(allot)
 
 	parked = ParkedCars.new()
 	parked.name = "Parked"

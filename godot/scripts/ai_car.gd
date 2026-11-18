@@ -306,6 +306,9 @@ func _lane_info(e: Dictionary) -> Vector2:
 	if n < 2 or not (String(e["cls"]) in ["motorway", "trunk", "primary", "secondary", "tertiary"]):
 		return Vector2.ZERO
 	var lw := (float(e["width"]) - float(e.get("pl", 0.0)) - float(e.get("pr", 0.0))) / float(n)
+	var mwl := Traffic.mw_layout(e)
+	if mwl.y > 0.0:
+		lw = mwl.y                                       # Autobahn: 3,75 m neben dem Standstreifen
 	if lw < 2.9:
 		return Vector2.ZERO
 	return Vector2(lw, float(mini(n - 1, 2)))

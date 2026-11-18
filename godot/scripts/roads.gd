@@ -34,6 +34,18 @@ func build(t: Terrain, c: Dictionary, idx: RoadIndex) -> void:
 	for rl in city["rails"]:
 		_rail(rl)
 	_flush(_mk, mark_mat, 230.0)
+	if not _gr.is_empty():
+		var gm := StandardMaterial3D.new()
+		gm.albedo_color = Color(0.62, 0.64, 0.66)
+		gm.metallic = 0.75
+		gm.roughness = 0.42
+		gm.cull_mode = BaseMaterial3D.CULL_DISABLED
+		_flush3d(_gr, gm, 420.0, true)
+	if not _gp.is_empty():
+		var pm := StandardMaterial3D.new()
+		pm.albedo_color = Color(0.93, 0.93, 0.91)
+		pm.roughness = 0.6
+		_flush3d(_gp, pm, 260.0, false)
 	_flush(_rl, rail_mat, 260.0)
 	for b in city["bridges"]:
 		_bridge(b)
@@ -222,6 +234,19 @@ func _markings(r: Dictionary) -> void:
 	if tm > 0.0 and (dw * 0.5 - tm) < 2.75:
 		tm = 0.0                                        # Gleise liegen im Fahrstreifen (zu schmal für eigenen Bereich)
 	var m := (a + b) * 0.5
+	var mwl := Traffic.mw_layout(r)
+	if mwl.y > 0.0:
+		# Autobahn-Richtungsfahrbahn: Fahrstreifen 3,75 m, Leitlinie 6/12 m, Breitstriche (0,30 m) als Fahrbahn-
+		# begrenzung; rechts davon der Standstreifen
+		var l0 := a + mwl.x
+		for k in range(1, lanes):
+			_line_strip(_mk, pts, l0 + mwl.y * float(k), 0.15, 6.0, 12.0, skip, deck)
+		_line_strip(_mk, pts, l0 - 0.15, 0.3, 0.0, 0.0, w * 0.5 + 2.5, deck)
+		_line_strip(_mk, pts, l0 + mwl.y * float(lanes) + 0.15, 0.3, 0.0, 0.0, w * 0.5 + 2.5, deck)
+		_motorway_furniture(r, a, b)
+		return
+	if mw and not two_way:
+		_motorway_furniture(r, a, b)
 	if two_way:
 		var per := maxi(lanes / 2, 1)
 		if dw < 5.4:
@@ -248,6 +273,92 @@ func _markings(r: Dictionary) -> void:
 	if edge:
 		_line_strip(_mk, pts, b - 0.3, 0.13 if not mw else 0.2, 0.0, 0.0, w * 0.5 + 2.5, deck)
 		_line_strip(_mk, pts, a + 0.3, 0.13 if not mw else 0.2, 0.0, 0.0, w * 0.5 + 2.5, deck)
+
+
+var _gr := {}        # Schutzplanken (Zellen)
+var _gp := {}        # Leitpfosten
+
+
+func _motorway_furniture(r: Dictionary, a: float, b: float) -> void:
+	## Schutzplanken beidseits der Richtungsfahrbahn (Mittelstreifen und Außenrand) und Leitpfosten alle 50 m.
+	## Nicht auf Brücken (dort stehen Geländer/Kappen) und nicht, wo eine andere Fahrbahn anschließt
+	## (Ein-/Ausfädelstreifen, Rampen).
+	if bool(r["bridge"]):
+		return
+	var pts: Array = r["pts"]
+	var rid := int(r["id"])
+	var s_tot := 0.0
+	for side in [-1.0, 1.0]:
+		var off: float = (a - 0.8) if side < 0.0 else (b + 0.8)
+		var prev = null
+		var s_run := 0.0
+		var next_post := 25.0
+		for i in pts.size() - 1:
+			var p0 := Vector2(pts[i][0], pts[i][1])
+			var p1 := Vector2(pts[i + 1][0], pts[i + 1][1])
+			var l := p0.distance_to(p1)
+			if l < 0.01:
+				continue
+			var t := (p1 - p0) / l
+			var n := Vector2(-t.y, t.x)
+			var steps := maxi(1, int(ceil(l / 4.0)))
+			for k in steps + 1:
+				var f := float(k) / float(steps)
+				var q := p0 + t * (l * f) + n * off
+				var y := lerpf(float(pts[i][2]), float(pts[i + 1][2]), f)
+				var free := true
+				var hit := index.nearest(q.x, q.y, 4.5)
+				if not hit.is_empty():
+					var hr: Dictionary = hit["road"]
+					var hw := float(hr["width"]) * 0.5 + 0.5
+					if int(hr["id"]) != rid and float(hit["d"]) < hw and absf(float(hit["py"]) - y) < 2.0 \
+							and not (String(hr["cls"]) in ["footway", "path", "cycleway", "steps", "track"]):
+						free = false
+				var cur := Vector3(q.x, y, q.y)
+				if free and prev != null and k > 0:
+					_guard_seg(prev, cur, Vector3(n.x, 0, n.y) * side)
+				if free and k > 0:
+					s_run += l / float(steps)
+					if s_run >= next_post:
+						next_post += 50.0
+						_post(cur + Vector3(n.x, 0, n.y) * side * 0.5, Vector3(t.x, 0, t.y))
+				prev = cur if free else null
+		s_tot += s_run
+
+
+func _guard_seg(p0: Vector3, p1: Vector3, out: Vector3) -> void:
+	## Stahlschutzplanke: Holm 0,31 m hoch (Oberkante 0,75 m), Pfosten alle 4 m
+	var bk := _bucket(_gr, _cell(p0.x, p0.z))
+	var th := out * 0.04
+	var y0 := Vector3(0, 0.44, 0)
+	var y1 := Vector3(0, 0.75, 0)
+	var ym := Vector3(0, 0.595, 0)
+	var dent := out * 0.035                                  # Mittelsicke des W-Profils
+	# Fahrbahnseite: zwei Wulste mit Sicke
+	_quad(bk, p0 - th + y0, p1 - th + y0, p1 - th + dent + ym, p0 - th + dent + ym)
+	_quad(bk, p0 - th + dent + ym, p1 - th + dent + ym, p1 - th + y1, p0 - th + y1)
+	# Rückseite und Oberkante
+	_quad(bk, p1 + th + y0, p0 + th + y0, p0 + th + y1, p1 + th + y1)
+	_quad(bk, p0 - th + y1, p1 - th + y1, p1 + th + y1, p0 + th + y1)
+	# Pfosten am Segmentanfang
+	var t := (p1 - p0).normalized() * 0.05
+	var po := p0 + out * 0.09
+	_quad(bk, po - t - out * 0.05, po + t - out * 0.05, po + t - out * 0.05 + y1, po - t - out * 0.05 + y1)
+	_quad(bk, po + t + out * 0.05, po - t + out * 0.05, po - t + out * 0.05 + y1, po + t + out * 0.05 + y1)
+	_quad(bk, po - t + out * 0.05, po - t - out * 0.05, po - t - out * 0.05 + y1, po - t + out * 0.05 + y1)
+	_quad(bk, po + t - out * 0.05, po + t + out * 0.05, po + t + out * 0.05 + y1, po + t - out * 0.05 + y1)
+
+
+func _post(p: Vector3, t: Vector3) -> void:
+	## Leitpfosten (Zeichen 620): weiß, 1,0 m über Grund, mit schwarzem Band
+	var bk := _bucket(_gp, _cell(p.x, p.z))
+	var n := Vector3(-t.z, 0, t.x) * 0.06
+	var tt := t * 0.04
+	var up := Vector3(0, 1.0, 0)
+	_quad(bk, p - n - tt, p + n - tt, p + n - tt + up, p - n - tt + up)
+	_quad(bk, p + n + tt, p - n + tt, p - n + tt + up, p + n + tt + up)
+	_quad(bk, p - n + tt, p - n - tt, p - n - tt + up, p - n + tt + up)
+	_quad(bk, p + n - tt, p + n + tt, p + n + tt + up, p + n - tt + up)
 
 
 func _crossings() -> void:
@@ -313,6 +424,33 @@ func _flush(buckets: Dictionary, mat: Material, range_end: float) -> void:
 		mi.visibility_range_end_margin = 30.0
 		mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 		add_child(mi)
+
+
+func _flush3d(buckets: Dictionary, mat: Material, range_end: float, solid: bool) -> void:
+	## wie _flush, aber mit Flächennormalen (aufrechte Bauteile) und wahlweise Kollision
+	var faces := PackedVector3Array()
+	for key in buckets:
+		var b: Dictionary = buckets[key]
+		if b["v"].is_empty():
+			continue
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var vv: PackedVector3Array = b["v"]
+		for idx in b["i"]:
+			st.add_vertex(vv[idx])
+		st.generate_normals()
+		var mesh := st.commit()
+		var mi := MeshInstance3D.new()
+		mi.mesh = mesh
+		mi.material_override = mat
+		mi.visibility_range_end = range_end
+		mi.visibility_range_end_margin = 30.0
+		mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+		add_child(mi)
+		if solid:
+			faces.append_array(mesh.get_faces())
+	if solid:
+		_static_faces(faces, "guard")
 
 
 func _tris_to_surface(flat: Array, uv_mode: int) -> Dictionary:

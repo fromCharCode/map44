@@ -212,6 +212,61 @@ func _q(s: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, n: Vecto
 		_faces.append_array(PackedVector3Array([a, b, c, a, c, d]))
 
 
+func build_troughs(data: Array) -> void:
+	## Anfahrtströge vor den Portalen (tools/tunnels.py "troughs"): senkrechte Betonwände neben der Rampe,
+	## [x, z, y, wand_links, wand_rechts] je Stützpunkt.
+	_faces = PackedVector3Array()                    # Tunnelflächen sind schon als Kollision angelegt
+	for tr in data:
+		var st := _new_st()
+		var pts: Array = tr["pts"]
+		var e := float(tr["w"]) * 0.5 + 0.35
+		var n := pts.size()
+		for i in n - 1:
+			var a := Vector3(float(pts[i][0]), float(pts[i][2]), float(pts[i][1]))
+			var b := Vector3(float(pts[i + 1][0]), float(pts[i + 1][2]), float(pts[i + 1][1]))
+			var tg := Vector3(b.x - a.x, 0, b.z - a.z).normalized()
+			var nr := Vector3(-tg.z, 0, tg.x)
+			for k in 2:
+				var sd := -1.0 if k == 0 else 1.0
+				var h0 := float(pts[i][3 + k])
+				var h1 := float(pts[i + 1][3 + k])
+				if h0 <= 0.0 and h1 <= 0.0:
+					continue
+				var o := nr * e * sd
+				var th := nr * 0.45 * sd
+				var dn := Vector3(0, 0.4, 0)
+				var a0 := a + o - dn
+				var b0 := b + o - dn
+				var a1 := a + o + Vector3(0, h0, 0)
+				var b1 := b + o + Vector3(0, h1, 0)
+				var s: SurfaceTool = st["outer"]
+				if sd < 0.0:
+					_q(s, b0, a0, a1, b1, -nr * sd, true)
+				else:
+					_q(s, a0, b0, b1, a1, -nr * sd, true)
+				if sd > 0.0:
+					_q(s, a1, b1, b1 + th, a1 + th, Vector3.UP)
+				else:
+					_q(s, b1, a1, a1 + th, b1 + th, Vector3.UP)
+				# Rückseite (falls das Gelände dahinter abfällt)
+				if sd < 0.0:
+					_q(s, a0 + th, b0 + th, b1 + th, a1 + th, nr * sd)
+				else:
+					_q(s, b0 + th, a0 + th, a1 + th, b1 + th, nr * sd)
+		_flush_st(st)
+	if not _faces.is_empty():
+		var body := StaticBody3D.new()
+		body.collision_layer = 1
+		var cs := CollisionShape3D.new()
+		var sh := ConcavePolygonShape3D.new()
+		sh.backface_collision = true
+		sh.set_faces(_faces)
+		cs.shape = sh
+		body.add_child(cs)
+		add_child(body)
+		_faces = PackedVector3Array()
+
+
 func _tunnel(tn: Dictionary, x0: float, z0: float) -> void:
 	var st := _new_st()
 	var pts: Array = tn["pts"]

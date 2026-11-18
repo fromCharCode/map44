@@ -152,6 +152,20 @@ func approach(node_id: int, ei: int, dir: int) -> Array:
 	return []
 
 
+## Querschnitt einer Autobahn-Richtungsfahrbahn (Pipeline: Breite = Streifen × 3,75 m + Standstreifen 2,5 m +
+## Randstreifen 0,5 m): (Randstreifen links, Streifenbreite, Standstreifen rechts) oder ZERO, wenn die Breite keinen
+## Standstreifen hergibt. Markierung (roads.gd), Spurlage und Spurwechsel der KI richten sich danach.
+static func mw_layout(e: Dictionary) -> Vector3:
+	if not (String(e["cls"]) in ["motorway", "trunk"]) or int(e["oneway"]) == 0:
+		return Vector3.ZERO
+	var n := maxi(int(e.get("lanes", 1)), 1)
+	var dw := float(e["width"]) - float(e.get("pl", 0.0)) - float(e.get("pr", 0.0))
+	var sh := dw - float(n) * 3.75 - 0.5
+	if sh < 1.5:
+		return Vector3.ZERO
+	return Vector3(0.5, 3.75, sh)
+
+
 ## Seitlicher Versatz der Fahrspur (rechts der Fahrtrichtung) für Kante e in Richtung dir.
 ## Berücksichtigt Parkstreifen (pl/pr) und mehrstreifige Straßen (rechte Spur).
 func lane_offset(e: Dictionary, dir: int) -> float:
@@ -165,6 +179,10 @@ func lane_offset(e: Dictionary, dir: int) -> float:
 		var t := a
 		a = -b
 		b = -t
+	var mwl := mw_layout(e)
+	if mwl.y > 0.0:
+		# rechter Fahrstreifen links neben dem Standstreifen
+		return a + mwl.x + (float(maxi(int(e.get("lanes", 1)), 1)) - 0.5) * mwl.y
 	var two_way := int(e["oneway"]) == 0
 	if two_way and b - a < 4.6:
 		return (a + b) * 0.5          # Gasse: in der Mitte (KI fährt sie nur in einer Richtung)

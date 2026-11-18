@@ -1747,12 +1747,15 @@ def find_underpasses(parts) -> set:
             polys.append(LineString(c).buffer(w * 0.5 + 1.0, cap_style="flat"))
     cover_u = unary_union(polys) if polys else Polygon()
     merged = linemerge(list(ways.values()))
+    lines = [ln for ln in getattr(merged, "geoms", [merged]) if ln.length >= 0.5]
     out = set()
-    for ln in getattr(merged, "geoms", [merged]):
-        if ln.length < 0.5:
-            continue
+    for ln in lines:
         frac = ln.intersection(cover_u).length / ln.length if not cover_u.is_empty else 0.0
-        if ln.length < 40.0 or frac >= 0.5:
+        # kurzes Stück, das an eine weitere Tunnelkette anschließt (Einfahrt vor einer Verzweigung im Tunnel: Wiener
+        # Platz, 35 m vor dem Abzweig zur Tiefgarage), ist Teil des Tunnels – sonst fehlte die ganze Röhre
+        ends = (Point(ln.coords[0]), Point(ln.coords[-1]))
+        joined = ln.length + sum(o.length for o in lines if o is not ln and any(o.distance(e) < 0.5 for e in ends))
+        if (ln.length < 40.0 and joined < 40.0) or frac >= 0.5:
             zone = ln.buffer(0.5)
             out |= {wid for wid, w in ways.items() if zone.contains(w.interpolate(0.5, normalized=True))}
     return out
@@ -1876,12 +1879,14 @@ def build_roads(surface: RoadSurface):
         else:
             if cls in DRIVE:
                 splat_roads.append(line.buffer(w / 2, cap_style="round", join_style="round"))
+                if cls in ("motorway", "motorway_link"):
+                    FAST_CORRIDOR.append(line.buffer(w / 2 + 30.0, cap_style="flat"))
             elif cls == "pedestrian":
                 splat_plaza.append(line.buffer(w / 2, cap_style="round", join_style="round"))
             else:
                 splat_walk.append(line.buffer(w / 2, cap_style="round", join_style="round"))
             sw = tags.get("sidewalk", "")
-            if cls in DRIVE and cls != "service":
+            if cls in DRIVE and cls not in ("service", "motorway", "motorway_link"):     # Autobahn: Bankett statt Gehweg
                 from width_override import sidewalk_width
                 sides = []
                 if sw in ("both", "left", "right", "yes"):
@@ -2001,6 +2006,9 @@ def draw_layer(geoms, blur=0.6) -> Image.Image:
             for h in p.interiors:
                 d.polygon(to_px(h.coords), fill=0)
     return im.filter(ImageFilter.GaussianBlur(blur)) if blur else im
+
+
+FAST_CORRIDOR = []       # Trassenband der Autobahnen (build_roads): dort Grünstreifen statt Platzpflaster
 
 
 def alkis_plazas():
@@ -2986,7 +2994,24 @@ def main() -> None:
     print(f"  {len(roads)} Straßen, {len(bridges)} Brücken, {len(rails)} Gleisstücke", flush=True)
     grass, forest, parking, plaza, water = collect_areas()
     print("Splat-Karten ...", flush=True)
-    road_img, walk_img, plaza_img = build_splats(layers, grass, forest, parking, plaza + alkis_plazas(), water)
+    plz = plaza + alkis_plazas()
+    if FAST_CORRIDOR:
+        # Autobahn: das ALKIS-Flurstück "Straßenverkehr" umfasst Böschungen, Mittelstreifen und Bankette – dort Gras
+        # statt Pflaster (die Trasse lag in einem 60 m breiten gepflasterten Band)
+        cor = unary_union(FAST_CORRIDOR)
+        verge = []
+        keep = []
+        for pg in plz:
+            if pg.intersects(cor):
+                verge.append(pg.intersection(cor))
+                rest = pg.difference(cor)
+                keep += [g for g in getattr(rest, "geoms", [rest]) if isinstance(g, Polygon) and g.area > 20]
+            else:
+                keep.append(pg)
+        plz = keep
+        grass = grass + [g for v in verge for g in getattr(v, "geoms", [v]) if isinstance(g, Polygon) and g.area > 5]
+        print(f"  Autobahn: {len(verge)} Verkehrsflächen im Trassenband als Grünstreifen", flush=True)
+    road_img, walk_img, plaza_img = build_splats(layers, grass, forest, parking, plz, water)
     raise_curbs(road_img, walk_img, plaza_img)
     trees, lamps, signals, crossings, stops, props = build_points(water)
     print(f"  {len(trees)} Bäume, {len(lamps)} Laternen, {len(signals)} Ampeln, {len(crossings)} Übergänge", flush=True)
