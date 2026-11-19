@@ -895,6 +895,74 @@ static func edge(out: Dictionary, cell_of: Callable, levels_f: float, height: fl
 					put.call("box", "d", clampf(float(i) * ln / float(nz), 0.08, ln - 0.08), zy0, 0.14, zy1 - zy0, 0.045)
 
 
+static func chimneys(out: Dictionary, cell_of: Callable, rf: Array, ref: float, seed: float, era: int, style: int) -> void:
+	## Schornsteine auf Steildächern (Altbauten bis in die 1950er, Villen, Dorfkerne): gemauerte Köpfe im oberen
+	## Dachdrittel, je nach Hausgröße ein bis drei Stück. rf = Dachdreiecke (x, y relativ ref, z).
+	if not enabled or not (style in [0, 1, 3, 6]) or era in [11, 12, 15, 16, 17]:
+		return
+	var nv := rf.size() / 3
+	if nv < 6:
+		return
+	var ymin := INF
+	var ymax := -INF
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for q in nv:
+		var y := float(rf[q * 3 + 1])
+		ymin = minf(ymin, y)
+		ymax = maxf(ymax, y)
+		lo = lo.min(Vector2(rf[q * 3], rf[q * 3 + 2]))
+		hi = hi.max(Vector2(rf[q * 3], rf[q * 3 + 2]))
+	var dy := ymax - ymin
+	if dy < 1.8 or dy > 14.0:
+		return
+	var want := clampi(int((hi - lo).length() / 11.0), 1, 3)
+	var cands: Array = []
+	for t in range(0, nv - 2, 3):
+		var a := Vector3(rf[t * 3], rf[t * 3 + 1], rf[t * 3 + 2])
+		var b := Vector3(rf[t * 3 + 3], rf[t * 3 + 4], rf[t * 3 + 5])
+		var c := Vector3(rf[t * 3 + 6], rf[t * 3 + 7], rf[t * 3 + 8])
+		var n := (b - a).cross(c - a)
+		if n.length() < 2.0:
+			continue                                    # nur größere Dachflächen
+		n = n.normalized()
+		if absf(n.y) > 0.93 or absf(n.y) < 0.35:
+			continue                                    # flach oder fast senkrecht (Giebel, Gauben)
+		var m := (a + b + c) / 3.0
+		# Punkt im oberen Dachdrittel: vom Schwerpunkt zum höchsten Eckpunkt hin
+		var top := a if a.y >= b.y and a.y >= c.y else (b if b.y >= c.y else c)
+		var p := m.lerp(top, 0.45)
+		if p.y < ymin + dy * 0.5:
+			continue
+		cands.append([_h11(seed * 53.1 + float(t) * 0.37), p, Vector3(n.x, 0.0, n.z).normalized()])
+	cands.sort_custom(func(x, y): return float(x[0]) < float(y[0]))
+	var placed: Array = []
+	var tone := "r" if era <= 10 or era >= 13 else "c"
+	for cd in cands:
+		if placed.size() >= want:
+			break
+		var p: Vector3 = cd[1]
+		var ok := true
+		for q: Vector3 in placed:
+			if Vector2(q.x - p.x, q.z - p.z).length() < 4.5:
+				ok = false
+		if not ok:
+			continue
+		placed.append(p)
+		var nh: Vector3 = cd[2]
+		var basis := Basis(Vector3.UP.cross(-nh).normalized(), Vector3.UP, -nh)
+		var hgt := (ymax + 0.55) - (p.y - 0.5)
+		var w := 0.62 + 0.3 * _h11(seed * 9.7 + p.x)
+		var key := ["fr_box_%s" % tone, cell_of.call(Vector2(p.x, p.z))]
+		if not out.has(key):
+			out[key] = []
+		(out[key] as Array).append(Transform3D(basis.scaled_local(Vector3(w, hgt, 0.5)), Vector3(p.x, ref + p.y - 0.5, p.z) - nh * 0.25))
+		var keyc := ["fr_box_c", cell_of.call(Vector2(p.x, p.z))]
+		if not out.has(keyc):
+			out[keyc] = []
+		(out[keyc] as Array).append(Transform3D(basis.scaled_local(Vector3(w + 0.12, 0.09, 0.62)), Vector3(p.x, ref + ymax + 0.55, p.z) - nh * 0.31))
+
+
 static func corner(out: Dictionary, cell_of: Callable, pc: Vector2, bis: Vector2, levels_f: float, height: float, style: int,
 		era: int, seed: float, ref: float) -> void:
 	## Ecktürmchen an freien Hausecken (Gründerzeit, Jugendstil, Villen): achteckiger Eckerker ab dem 1. Obergeschoss

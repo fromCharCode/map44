@@ -325,6 +325,8 @@ func _build_cell(key: Vector2i, items: Array) -> void:
 				centroid += Vector3(rf[q * 3], ref + rf[q * 3 + 1], rf[q * 3 + 2])
 			centroid /= nv
 			var ref_pt := centroid - Vector3(0, 1.5, 0)
+			if not _plain_cur and not b.get("stacked", false) and not b.get("elev", false):
+				FacadeRelief.chimneys(_deco, _cell_of, rf, ref, seed01, int(b.get("era", 0)), style)
 			for t in range(0, nv, 3):
 				var a := Vector3(rf[t * 3], ref + rf[t * 3 + 1], rf[t * 3 + 2])
 				var bb := Vector3(rf[t * 3 + 3], ref + rf[t * 3 + 4], rf[t * 3 + 5])
