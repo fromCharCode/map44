@@ -81,6 +81,10 @@ static func _material(tone: String) -> Material:
 			m.albedo_color = Color(0.33, 0.53, 0.46)         # patiniertes Kupfer
 			m.roughness = 0.55
 			m.metallic = 0.3
+		"z":
+			m.albedo_color = Color(0.50, 0.52, 0.53)         # Zinkblech (Dachrinne, Fallrohr)
+			m.roughness = 0.42
+			m.metallic = 0.65
 		"gl":
 			# Verglasung (Erker, Treppenhausbänder): spiegelt den Himmel; vorher fast schwarz -> wirkte wie ein Loch
 			m.albedo_color = Color(0.20, 0.24, 0.29)
@@ -434,6 +438,16 @@ static func edge(out: Dictionary, cell_of: Callable, levels_f: float, height: fl
 		if not out.has(key):
 			out[key] = []
 		(out[key] as Array).append(Transform3D(basis.scaled_local(Vector3(sx, sy, sz)), Vector3(wp.x, y, wp.y) + nrm * (0.01 + zoff)))
+	# Dachrinne und Fallrohr (Zinkblech) an Steildächern: Rinne vor der Traufe über die ganze Länge, das Fallrohr an
+	# einem Ende der Fassade bis zum Boden – an fast jedem Haus vorhanden und von der Straße aus gut zu sehen
+	if pitched and era < 16 and ln >= 5.0:
+		put.call("box", "z", ln * 0.5, ref + height - 0.05, ln, 0.11, 0.15, 0.02)
+		var hp := _h11(seed * 17.3 + 0.37)
+		if hp > 0.25:
+			var pa := 0.16 if hp > 0.62 else ln - 0.16
+			put.call("box", "z", pa, ref + 0.25, 0.10, height - 0.30, 0.10, 0.03)
+			put.call("box", "z", pa, ref + height - 0.34, 0.16, 0.30, 0.16, 0.02)          # Einlaufkasten
+			put.call("box", "i", pa, ref, 0.12, 0.26, 0.12, 0.03)                           # Standrohr (Guss)
 	# Fensterachsen (Mitte, Spalte)
 	var cols: Array = []
 	var c0 := int(floor(acc / pitch))
