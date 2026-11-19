@@ -467,6 +467,25 @@ static func edge(out: Dictionary, cell_of: Callable, levels_f: float, height: fl
 	var y_eave := ref + height - ch
 	var shop_all := has_shop or (style in [0, 3, 6] and _h11(seed * 3.3) > 0.88 and height > 6.0)
 	var mid := ncol / 2
+	# Kellerfenster im Sockel (liegend, vergittert) unter jeder zweiten Fensterachse – an fast allen unterkellerten
+	# Häusern bis in die 1950er
+	if era <= 10 and not shop_all and height >= 6.0:
+		var koff := int(seed * 97.0) % 2
+		for cc in cols:
+			if (int(cc[1]) + koff) % 2 != 0:
+				continue
+			var ka: float = cc[0]
+			put.call("box", "k", ka, ref + 0.08, 0.86, 0.44, 0.09)
+			put.call("box", "i", ka, ref + 0.13, 0.72, 0.34, 0.10)
+			for gi in 4:
+				put.call("box", "z", ka - 0.27 + 0.18 * float(gi), ref + 0.13, 0.025, 0.34, 0.115)
+	# Schneefanggitter über der Traufe steiler Dächer zur Straße
+	if pitched and era <= 10 and ln >= 6.0 and _h11(seed * 31.7) > 0.2:
+		put.call("box", "i", ln * 0.5, ref + height + 0.22, ln - 0.6, 0.025, 0.025, -0.32)
+		put.call("box", "i", ln * 0.5, ref + height + 0.34, ln - 0.6, 0.025, 0.025, -0.36)
+		var nst := maxi(2, int(ln / 1.6))
+		for si in nst + 1:
+			put.call("box", "i", 0.3 + (ln - 0.6) * float(si) / float(nst), ref + height + 0.08, 0.03, 0.30, 0.03, -0.34)
 	if era >= 16:
 		# Epoche 17 (Kirchen): dieselbe Gliederung schlanker, ohne Brüstung und Vasen
 		var gal := era == 16
