@@ -383,7 +383,7 @@ def _fill(out, geom, pl, dy):
             _emit(out, pts[0], pts[1], pts[2], (0.0, 1.0, 0.0))
 
 
-def deck_layout(city, raw_walk_lines):
+def deck_layout(city, raw_walk_lines, ext_roads=()):
     rails_y = []
     for r in city.get("rails", []):
         if r.get("bridge") and len(r["pts"]) >= 2:
@@ -392,6 +392,12 @@ def deck_layout(city, raw_walk_lines):
     for r in city.get("roads", []):
         # auch Fahrwege OHNE Brückenkennzeichnung, die auf dem Deck liegen (on_deck prüft die Höhe): Autobahn-
         # fortsetzung auf dem Deckende bekam sonst die erhöhte Betonkappe in die Fahrspur
+        if (r.get("bridge") or r.get("cls") not in WALK_CLS_DECK) and len(r["pts"]) >= 2:
+            roads_y.append((LineString([(p[0], p[1]) for p in r["pts"]]), [p[2] for p in r["pts"]],
+                            float(r["width"]) - float(r.get("pl", 0.0)) - float(r.get("pr", 0.0)) + 0.0, r.get("cls", "")))
+    # Fahrbahnen der Nachbarkacheln: Ein LoD2-Deck gehört nur einer Kachel, reicht aber über die Kachelgrenze. Ohne
+    # sie blieb die Deckhälfte jenseits der Grenze Beton bzw. Gehweg (A 17 Lockwitztal, Meixstraße).
+    for r in ext_roads:
         if (r.get("bridge") or r.get("cls") not in WALK_CLS_DECK) and len(r["pts"]) >= 2:
             roads_y.append((LineString([(p[0], p[1]) for p in r["pts"]]), [p[2] for p in r["pts"]],
                             float(r["width"]) - float(r.get("pl", 0.0)) - float(r.get("pr", 0.0)) + 0.0, r.get("cls", "")))
@@ -1540,7 +1546,8 @@ def neighbour_roads(name, margin=80.0):
             for r in nb.get("roads", []):
                 if len(r.get("pts", [])) >= 2 and any(x0 - margin < q[0] < x0 + 2000.0 + margin and
                                                        z0 - margin < q[1] < z0 + 2000.0 + margin for q in r["pts"]):
-                    out.append({"pts": r["pts"], "width": r["width"], "bridge": r.get("bridge")})
+                    out.append({"pts": r["pts"], "width": r["width"], "bridge": r.get("bridge"), "cls": r.get("cls", ""),
+                                "pl": r.get("pl", 0.0), "pr": r.get("pr", 0.0)})
     return out
 
 
@@ -1553,6 +1560,8 @@ def tile_decks(name, decks):
     # Nachbardecks vorübergehend als "ext:" einhängen (Brücken über Kachelgrenzen: ein LoD2-Teil gehört nur einer
     # Kachel) – für Deckbreite, Füllstücke, Geländer und Laternen; vor Deckaufbau und Speichern wieder entfernt
     ext_parts, ext_rails = neighbours(name)
+    # Platten unter Bahnbrücken (tools/rail_slabs.py) sind kein Teil dieses Schritts; rail_slabs.py legt sie danach neu an
+    city["bridges"] = [b for b in city.get("bridges", []) if b.get("kind") != "rail"]
     # alte Füllstücke zuerst weg (sonst zählen sie bei der Deckbreite als Deck und erhalten sich selbst)
     city["bridge_meshes"] = [bm for bm in city.get("bridge_meshes", []) if not str(bm.get("id", "")).startswith(("ext:", "fill:"))]
     ext = [{"id": f"ext:{i}", "top": t, "top0": t} for i, t in enumerate(ext_parts)]
@@ -1587,13 +1596,14 @@ def tile_decks(name, decks):
     own = [bm for bm in city["bridge_meshes"] if not str(bm.get("id", "")).startswith("ext:")]
     allm = city["bridge_meshes"]
     city["bridge_meshes"] = own
-    st = deck_layout(city, raw_walk)
+    nbr_roads = neighbour_roads(name)
+    st = deck_layout(city, raw_walk, nbr_roads)
     city["bridge_meshes"] = own + [bm for bm in allm if str(bm.get("id", "")).startswith("ext:")]
     if "bridge_rails0" not in city:
         city["bridge_rails0"] = [list(r) for r in city.get("bridge_rails", [])]
     extra = missing_rails(city, ter, e_km * 1000.0 - 411000.0, -((n_km + 2) * 1000.0 - 5656200.0), ext_rails)
     st["rails_add"] = len(extra)
-    st["rails_cut"] = raise_rails(city, extra, neighbour_roads(name), name)
+    st["rails_cut"] = raise_rails(city, extra, nbr_roads, name)
     st["poles"] = bridge_tram_poles(city)
     st["lamps"] = lift_lamps(city)
     city["bridge_meshes"] = [bm for bm in city["bridge_meshes"] if not str(bm.get("id", "")).startswith("ext:")]

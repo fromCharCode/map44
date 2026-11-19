@@ -525,6 +525,10 @@ func _lod2_bridge(bm: Dictionary, stone := false) -> void:
 	var mats: Array = [deck_mat, concrete_mat, concrete_dark_mat, _walk_mat(), _ballast_mat(), _kappe_mat(), _kappe_mat()]
 	if stone:
 		mats = [deck_mat, masonry_mat(), masonry_mat(), _walk_mat(), _ballast_mat(), masonry_mat(), masonry_mat()]
+	if String(bm.get("id", "")).begins_with("fill:"):
+		# ergänzte Deckfläche unter einer Fahrbahn ohne LoD2-Deck (bridge_decks.py): das ist die Fahrbahn selbst –
+		# als Betonfläche fehlten dort Asphalt und Fahrstreifen (A 17, zweite Richtungsfahrbahn)
+		mats[5] = deck_mat
 	# Deckaufbau (tools/bridge_decks.py): Asphalt nur in Fahrbahnbreite, Gehweg +15 cm, Schotterbett, Betonkappe
 	var keys := ["top", "side", "bot", "top_walk", "top_ballast", "top_conc", "curb"]
 	for i in keys.size():
