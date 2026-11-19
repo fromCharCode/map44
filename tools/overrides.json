@@ -27,9 +27,12 @@
  "skip_bridge_parts_note": "Carolabrücke: Teileinsturz 11.09.2024, Abriss 2025 (data/research/bruecken.md); LoD2-Daten zeigen noch den Altbestand",
  "road_width": {
   "30129851": 10.2,
-  "254555706": 5.0
+  "254555706": 5.0,
+  "36875941": 5.1,
+  "10089405": 7.0,
+  "80294954": 6.5
  },
- "road_width_note": "Feste Fahrbahnbreiten (OSM-Weg-ID -> m), z. B. Blaues Wunder: 10,20 m zwischen den Fachwerkträgern; Loschwitzer Wiesenweg unter dem Blauen Wunder (254555706): 5,0 m (Wohnstraße, maxheight=below_default) statt 7,5 m Flurstücksbreite – sonst reichte die Fahrbahn 1,25 m in den Uferpfeiler",
+ "road_width_note": "Feste Fahrbahnbreiten (OSM-Weg-ID -> m), z. B. Blaues Wunder: 10,20 m zwischen den Fachwerkträgern; Loschwitzer Wiesenweg unter dem Blauen Wunder (254555706): 5,0 m (Wohnstraße, maxheight=below_default) statt 7,5 m Flurstücksbreite – sonst reichte die Fahrbahn 1,25 m in den Uferpfeiler; Röderweg an der Brücke Prof.-Nagel-Straße (36875941): 5,1 m wie der Anschlussabschnitt statt 8,1 m – sonst lagen Brückenecke und Treppe in der Fahrbahn; Brücken Oederaner Straße (10089405, Deck 16,6 m) und Sternstraße (80294954, Deck 13,8 m): 7,0 m bzw. 6,5 m geschätzt statt gemessener 4,95 m für zwei Fahrstreifen (die Flurstücksmessung versagt auf Brücken)",
  "skip_tunnels": [
   "Coventrystraße"
  ],

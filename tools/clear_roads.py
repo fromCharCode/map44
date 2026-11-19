@@ -21,6 +21,40 @@ NO_DRIVE = {"footway", "path", "cycleway", "steps", "pedestrian", "track", "brid
 KEEP_FURN = {"traffic_cone", "construction_fence", "bus_stop", "stop_pole"}
 
 
+def trim_steps(city):
+    """Treppen: OSM schließt sie an die Straßenachse an – die ersten Stufen lägen in der Fahrbahn. Das Stück im
+    Fahrband (ebenerdige Straßen, ohne Parkstreifen) wird abgeschnitten, wenn ein Treppenende darin liegt."""
+    trimmed = 0
+    sl, sh = [], []
+    for r in city.get("roads", []):
+        if r.get("cls") in NO_DRIVE or r.get("nomv") or r.get("bridge") or r.get("tunnel") or len(r.get("pts", [])) < 2:
+            continue
+        sl.append(LineString([q[:2] for q in r["pts"]]))
+        sh.append(max((float(r.get("width") or 5.0) - float(r.get("pl", 0.0)) - float(r.get("pr", 0.0))) * 0.5, 1.5) + 0.15)
+    if sl and city.get("steps"):
+        stree = STRtree(sl)
+        for st in city["steps"]:
+            pts = st.get("pts") or []
+            if len(pts) < 2:
+                continue
+            ln = LineString([q[:2] for q in pts])
+            rest = ln
+            for end in (Point(pts[0][:2]), Point(pts[-1][:2])):
+                for j in stree.query(end.buffer(12.0)):
+                    if sl[int(j)].distance(end) < sh[int(j)]:
+                        rest = rest.difference(sl[int(j)].buffer(sh[int(j)], cap_style="flat"))
+            if rest.equals(ln):
+                continue
+            parts = [g for g in getattr(rest, "geoms", [rest]) if g.geom_type == "LineString" and g.length >= 1.2]
+            if not parts:
+                continue
+            g = max(parts, key=lambda q: q.length)
+            if g.length < ln.length - 0.05:
+                st["pts"] = [[round(x, 2), round(z, 2)] for x, z in g.coords]
+                trimmed += 1
+    return trimmed
+
+
 def tile_clear(name, dry=False):
     cf = TILES / name / "city.json"
     if not cf.exists():
@@ -124,6 +158,9 @@ def tile_clear(name, dry=False):
     if cut:
         n["Mauern/Zäune unterbrochen"] = cut
         city["barriers"] = bars
+    tr_ = trim_steps(city)
+    if tr_:
+        n["Treppen an der Fahrbahnkante gekürzt"] = tr_
     if n and not dry:
         cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
     if n:
@@ -132,6 +169,20 @@ def tile_clear(name, dry=False):
 
 
 def main():
+    if "--steps" in sys.argv:        # nur die Treppen kürzen, alles andere bleibt
+        args = [x.replace(",", "_") for x in sys.argv[1:] if not x.startswith("--")]
+        tot = 0
+        for d in sorted(TILES.iterdir()):
+            cf = d / "city.json"
+            if not cf.exists() or (args and d.name not in args):
+                continue
+            city = json.loads(cf.read_text(encoding="utf-8"))
+            k = trim_steps(city)
+            if k and "--dry" not in sys.argv:
+                cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
+            tot += k
+        print(f"Treppen an der Fahrbahnkante gekürzt: {tot}")
+        return
     dry = "--dry" in sys.argv
     args = [a.replace(",", "_") for a in sys.argv[1:] if not a.startswith("--")]
     names = args or sorted(p.name for p in TILES.iterdir() if p.is_dir())
