@@ -84,9 +84,13 @@ def fix_tile(name, dry=False):
     for r in city.get("roads", []):
         if r.get("cls") in ("steps", "footway", "path", "pedestrian", "cycleway") and len(r["pts"]) >= 2:
             # Wege, die die Kante hinaufführen (Rampen), nicht absenken
-            ys = [float(q[2]) for q in r["pts"] if len(q) >= 3]
-            if ys and max(ys) - min(ys) > 1.5:
-                sd.line([px(q) for q in r["pts"]], fill=255, width=int(float(r["width"]) + 8))
+            # nur die Abschnitte, die selbst steigen (über 8 %): Eine Promenade, die über ihre ganze Länge ein paar
+            # Meter Höhe gewinnt, ist keine Rampe – sonst blieben an ihr entlang Stücke der alten Böschung stehen
+            for q0, q1 in zip(r["pts"], r["pts"][1:]):
+                if len(q0) >= 3 and len(q1) >= 3:
+                    ln = ((q1[0] - q0[0]) ** 2 + (q1[1] - q0[1]) ** 2) ** 0.5
+                    if ln > 0.5 and abs(float(q1[2]) - float(q0[2])) / ln > 0.08:
+                        sd.line([px(q0), px(q1)], fill=255, width=int(float(r["width"]) + 8))
     keep_slope = np.asarray(sim) > 0
     keep_slope = ndimage.binary_dilation(keep_slope, iterations=4)     # Treppen und Rampen samt Umfeld bleiben, wie sie sind
     up = new & (val > terr + 0.15) & ~keep_slope
