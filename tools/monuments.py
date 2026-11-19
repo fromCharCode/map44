@@ -180,11 +180,13 @@ def tile_monuments(name, denkmale):
                 if key_ in str(m_[5]):
                     m_[0], m_[4] = val_[0], float(val_[1])
                     break
-        # Nachgebaute Einzeldenkmäler (tools/overrides.json "monument_at": [[x, z, radius, modell, maßstab, gier|null]]):
+        # Nachgebaute Einzeldenkmäler (tools/overrides.json "monument_at": [[x, z, radius, modell, maßstab, gier|null(, dx, dz)]]):
         # der Eintrag im Umkreis bekommt das eigene Modell (leerer Modellname = Eintrag entfernen) – Namen allein sind mehrdeutig (mehrere Schiller-, Körner-
         # und Lutherdenkmäler in der Stadt)
         ov_all = json.loads((ROOT / "tools" / "overrides.json").read_text(encoding="utf-8"))
-        for ax, az, ar, amodel, ascale, ayaw in ov_all.get("monument_at", []):
+        for ent_ in ov_all.get("monument_at", []):
+            ax, az, ar, amodel, ascale, ayaw = ent_[:6]
+            adx, adz = (float(ent_[6]), float(ent_[7])) if len(ent_) >= 8 else (0.0, 0.0)
             best = None
             for m_ in out:
                 d_ = math.hypot(m_[1] - ax, m_[2] - az)
@@ -195,6 +197,8 @@ def tile_monuments(name, denkmale):
                 continue
             if best:
                 best[1][0], best[1][4] = amodel, float(ascale)
+                if (adx or adz) and math.hypot(best[1][1] - ax, best[1][2] - az) < 0.6:
+                    best[1][1], best[1][2] = round(best[1][1] + adx, 2), round(best[1][2] + adz, 2)   # von der Fahrbahn abrücken
                 if ayaw is not None:
                     best[1][3] = float(ayaw)
         # Bäume, die im Grundriss eines nachgebauten Denkmals stehen (große Becken, Stufenanlagen), entfallen –
