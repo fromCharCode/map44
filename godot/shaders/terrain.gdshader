@@ -95,7 +95,12 @@ void fragment() {
 	vec2 wuv = wpos.xz;
 	vec2 huv = (wpos.xz - tile_center + world_size * 0.5) / world_size;
 	//@TUNNEL_CUT
-	vec4 s0 = texture(splat0, huv);
+	// Straßenmaske mit vier versetzten Abtastungen glätten: Die Maske hat 0,5 m je Pixel und nur einen Pixel
+	// Kantenübergang – beim Schärfen unten wurden schräge Kanten zu einer Treppe mit halbmeterlangen Zacken
+	// („angebissene“ Fahrbahnränder). Geglättet liegt die 50-%-Linie einer geraden Kante wieder gerade.
+	vec2 spx = vec2(0.75) / vec2(textureSize(splat0, 0));
+	vec4 s0 = 0.25 * (texture(splat0, huv + spx) + texture(splat0, huv - spx)
+		+ texture(splat0, huv + vec2(spx.x, -spx.y)) + texture(splat0, huv + vec2(-spx.x, spx.y)));
 	vec4 s1 = texture(splat1, huv);
 	vec4 s2 = texture(splat2, huv);
 	vec3 oc = texture(ortho, huv).rgb;
@@ -104,7 +109,7 @@ void fragment() {
 	float k = smoothstep(0.35, 0.65, texture(noise_tex, wuv * 0.021 + 0.3).r);
 
 	// Maskenkanten schärfen und aufbrechen
-	vec4 m0 = smoothstep(vec4(0.38) + nz * 0.16, vec4(0.62) + nz * 0.16, s0);
+	vec4 m0 = smoothstep(vec4(0.40) + nz * 0.08, vec4(0.60) + nz * 0.08, s0);
 	vec4 m1 = smoothstep(vec4(0.38) + nz * 0.16, vec4(0.62) + nz * 0.16, s1);
 
 	// Wirksames Gewicht jeder Schicht (von oben nach unten aufmultipliert): komplett verdeckte Schichten und der
