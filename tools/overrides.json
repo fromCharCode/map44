@@ -209,5 +209,59 @@
    40.0,
    "Strompfeiler der Carolabrücke (Abriss 2025)"
   ]
- ]
+ ],
+ "monument_by_name": {
+  "Martin Luther": [
+   "mon_statue",
+   1.75
+  ],
+  "Friedrich August dem Gerechten": [
+   "mon_statue",
+   2.0
+  ],
+  "Friedrich August II": [
+   "mon_statue",
+   1.9
+  ],
+  "Gottfried-Semper-Denkmal": [
+   "mon_statue",
+   1.4
+  ],
+  "Carl Maria von Weber": [
+   "mon_statue",
+   1.5
+  ],
+  "Ernst Rietschel": [
+   "mon_statue",
+   1.5
+  ],
+  "Ludwig Richter": [
+   "mon_statue",
+   1.3
+  ],
+  "Theodor Körner": [
+   "mon_statue",
+   1.5
+  ],
+  "Schillerdenkmal": [
+   "mon_statue",
+   1.4
+  ],
+  "Bismarck": [
+   "mon_statue",
+   1.6
+  ],
+  "Trümmerfrau": [
+   "mon_statue",
+   1.0
+  ],
+  "König Albert": [
+   "mon_reiter",
+   1.0
+  ],
+  "Mozartbrunnen": [
+   "mon_fountain",
+   1.0
+  ]
+ }
 }

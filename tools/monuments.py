@@ -172,6 +172,14 @@ def tile_monuments(name, denkmale):
         out.append([model, round(x, 2), round(z, 2), round(facing(pt), 3), 1.0, o["name"][:48]])
     life = city.setdefault("life", {})
     if out or life.get("monuments"):
+        # Bekannte Standbilder: Modell und Größe von Hand (tools/overrides.json "monument_by_name": Namensteil ->
+        # [modell, maßstab]); die Automatik kennt weder die echte Höhe noch die Art (viele gelten als Stele)
+        ov = json.loads((ROOT / "tools" / "overrides.json").read_text(encoding="utf-8")).get("monument_by_name", {})
+        for m_ in out:
+            for key_, val_ in ov.items():
+                if key_ in str(m_[5]):
+                    m_[0], m_[4] = val_[0], float(val_[1])
+                    break
         life["monuments"] = out
         cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
     if out:
