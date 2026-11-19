@@ -86,12 +86,12 @@ legacy_data() {  # $1 datenversion, $2 zielordner (enthält data/)
 }
 
 # Kartendaten inkrementell (Datenversionen mit Manifest): nur geänderte Pakete laden.
-# Zustand in data/MANIFEST (installierte Pakete) und data/.packs/<paket>.files (deren Dateien) – wird pro
-# Schritt fortgeschrieben, ein abgebrochenes Update setzt beim nächsten Lauf sauber fort. Gelöscht wird erst,
-# wenn alle neuen Pakete geladen und geprüft sind.
+# Zustand in data/MANIFEST (installierte Pakete) und data/.packs/<paket>.files (deren Dateien, vor dem Entpacken
+# geschrieben). Wird pro Schritt fortgeschrieben, ein abgebrochenes Update setzt beim nächsten Lauf sauber fort.
+# Gelöscht wird erst, wenn das Manifest geprüft und alle neuen Pakete geladen und geprüft sind.
 install_data() {  # $1 datenversion, $2 zielordner (enthält data/)
   local need="$1" root="$2" data="$2/data" mf="$DL/data.manifest"
-  local st="$2/data/.packs" inst="$2/data/MANIFEST" have="$2/data/MANIFEST" fresh=0 code todo gone
+  local st="$2/data/.packs" inst="$2/data/MANIFEST" fresh=0 code todo gone n mb i=0 sha size name tag rest f z
   code=$(curl -sSL --retry 5 --retry-delay 3 -o "$mf" -w '%{http_code}' \
     "https://github.com/$REPO/releases/download/$need/map44-$need.manifest") || code="000"
   case "$code" in
@@ -99,11 +99,19 @@ install_data() {  # $1 datenversion, $2 zielordner (enthält data/)
     404) legacy_data "$need" "$root"; return ;;
     *)   die "Manifest der Kartendaten $need nicht abrufbar (HTTP $code) – bitte später erneut versuchen." ;;
   esac
-  if [ ! -f "$inst" ]; then fresh=1; have=/dev/null; fi   # Installation ohne Manifest: einmal alles neu
-  todo=$(awk 'FILENAME==ARGV[1]{h[$1" "$3]=1;next} NF>=4 && !(($1" "$3) in h)' "$have" "$mf")
-  gone=$(awk 'FILENAME==ARGV[1]{w[$1" "$3]=1;next} NF>=4 && !(($1" "$3) in w)' "$mf" "$have")
+  # Manifest prüfen, bevor irgendetwas gelöscht wird
+  if [ ! -s "$mf" ] || grep -Evq '^[0-9a-f]{64} [0-9]+ map44-[^ /]+\.zip [^ /]+( [0-9a-f]{64})?$' "$mf"; then
+    die "Manifest der Kartendaten $need ist leer oder beschädigt – nichts verändert."
+  fi
+  if [ ! -f "$inst" ]; then fresh=1; inst=/dev/null; fi   # Installation ohne Manifest: einmal alles neu
+  todo=$(awk 'FILENAME==ARGV[1]{h[$1" "$3]=1;next} !(($1" "$3) in h)' "$inst" "$mf")
+  # veraltet: installierte Pakete und Dateilisten (auch abgebrochener Entpackvorgänge), die das Manifest nicht nennt
+  gone=""
+  if [ "$fresh" = 0 ]; then
+    gone=$( { awk '{print $3}' "$inst"; ls "$st" 2>/dev/null | sed -n 's/\.files$//p'; } | sort -u \
+            | awk 'FILENAME==ARGV[1]{w[$3]=1;next} !($1 in w)' "$mf" - )
+  fi
   if [ -n "$todo" ]; then
-    local n mb i=0 sha size name tag rest
     n=$(echo "$todo" | wc -l | tr -d ' ')
     mb=$(echo "$todo" | awk '{s+=$2} END{printf "%d", s/1e6}')
     say "Lade die Kartendaten $need: $n Paket(e), rund $mb MB …"
@@ -113,15 +121,15 @@ install_data() {  # $1 datenversion, $2 zielordner (enthält data/)
     done <<< "$todo"
   fi
   # alles geladen – ab hier wird der Bestand verändert
+  inst="$data/MANIFEST"
   rm -f "$data/VERSION"
   if [ "$fresh" = 1 ]; then
     rm -rf "$data"
     mkdir -p "$st"; : > "$inst"
   fi
-  # veraltete Pakete entfernen …
+  # veraltete Pakete entfernen (bricht ein Löschen ab, bleiben Liste und Manifestzeile für den nächsten Lauf) …
   if [ -n "$gone" ]; then
-    local sha size name tag rest f
-    while read -r sha size name tag rest; do
+    while read -r name; do
       if [ -f "$st/$name.files" ]; then
         while read -r f; do case "$f" in */|"") ;; *) rm -f "$root/$f";; esac; done < "$st/$name.files"
         rm -f "$st/$name.files"
@@ -130,17 +138,23 @@ install_data() {  # $1 datenversion, $2 zielordner (enthält data/)
     done <<< "$gone"
     find "$data" -mindepth 1 -type d -empty ! -path "$st" -delete 2>/dev/null || true
   fi
-  # … dann neue entpacken
+  # … dann neue entpacken (Dateiliste zuerst, damit auch ein abgebrochenes Entpacken später aufgeräumt wird)
   mkdir -p "$st"
   if [ -n "$todo" ]; then
-    local sha size name tag rest
     say "Entpacke Kartendaten …"
     while read -r sha size name tag rest; do
-      unzip -oq "$DL/$name" -d "$root"
       unzip -Z1 "$DL/$name" > "$st/$name.files"
+      unzip -oq "$DL/$name" -d "$root"
       echo "$sha $size $name $tag" >> "$inst"
       [ "${MAP44_KEEP_ZIPS:-0}" = 1 ] || rm -f "$DL/$name"
     done <<< "$todo"
+  fi
+  # Reste abgebrochener Updates: Pakete, die das Manifest nicht nennt
+  if [ "${MAP44_KEEP_ZIPS:-0}" != 1 ]; then
+    for z in "$DL"/map44-data-*.zip; do
+      [ -e "$z" ] || continue
+      awk -v n="$(basename "$z")" '$3 == n {f=1} END {exit !f}' "$mf" || rm -f "$z"
+    done
   fi
   echo "$need" > "$data/VERSION"
 }

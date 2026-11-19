@@ -3,16 +3,17 @@
 #
 #   tools/package_release.sh <version> [data-version] [vorherige-data-version]
 #     z. B. tools/package_release.sh v0.1.0 data-v2 data-v1
-#     (vorherige Datenversion: Standard = neuestes data-v*-Release auf GitHub; hat sie kein Manifest,
-#      bricht das Skript ab – erster Vollbau bzw. bewusster Neubau aller Pakete mit MAP44_FULL_DATA=1)
+#     (Vergleichsbasis: das Release der eigenen Datenversion, falls vorhanden – dann müssen die Daten unverändert
+#      sein –, sonst die angegebene bzw. neueste data-v*-Version; ohne gültiges Manifest Abbruch, erster Vollbau
+#      bzw. bewusster Neubau aller Pakete mit MAP44_FULL_DATA=1)
 #   WICHTIG: alte data-v*-Releases nie löschen – neuere Manifeste verweisen auf ihre Pakete.
 #
 # Ergebnis in dist/:
 #   map44-linux-x86_64.zip      Spiel (Programm + .pck + DATA_VERSION + Lizenzen)
 #   map44-windows-x86_64.zip
 #   map44-macos.zip             Dresden.app (Universal, ad-hoc signiert) + DATA_VERSION; Installer: install-macos.sh
-#   map44-<data-version>-<block>.zip  Kartendaten je 2×2-km-Block bzw. "root" (entpacken nach <Spielordner>/data/…);
-#                               nur geänderte Blöcke, unveränderte verweist das Manifest auf ihr älteres Release
+#   map44-<data-version>-t<kachel>.zip  Kartendaten je Kachel bzw. "root" (entpacken nach <Spielordner>/data/…);
+#                               nur geänderte Kacheln, unveränderte verweist das Manifest auf ihr älteres Release
 #   map44-<data-version>.manifest  Zeilen "zip-sha256 größe datei release-tag inhalts-hash" (alle Pakete)
 #   UPLOAD_DATA                 hochzuladende Datendateien (relativ zu dist/, eine je Zeile)
 #   SHA256SUMS
@@ -29,26 +30,41 @@ STAGE="$ROOT/build/stage"
 DIST="$ROOT/dist"
 mkdir -p "$DIST" "$ROOT/build/linux" "$ROOT/build/windows" "$ROOT/build/macos"
 
-echo "==> Vorherige Datenversion (vor dem langen Export prüfen)"
-# Vorherige Datenversion: Pakete mit unverändertem Inhalt werden von dort referenziert statt neu hochgeladen.
-# Ohne vorheriges Manifest bricht das Skript ab – außer MAP44_FULL_DATA=1 erlaubt ausdrücklich den Vollbau.
+echo "==> Vergleichsbasis der Kartendaten (vor dem langen Export prüfen)"
+# Pakete mit unverändertem Inhalt werden aus einem älteren Release referenziert statt neu hochgeladen.
+# Basis: das Release der eigenen Datenversion, falls es schon existiert (reines Spiel-Release), sonst das neueste
+# data-v*-Release. Ohne gültiges Manifest bricht das Skript ab – außer MAP44_FULL_DATA=1 erlaubt den Vollbau.
 PREV_MF="$ROOT/build/prev.manifest"
+SAME_DATA=0        # 1: Release der Datenversion existiert schon – Daten müssen unverändert sein, nichts hochzuladen
+SKIP_DATA=0        # 1: …und ist im alten Format – keine Datenpakete bauen
 rm -f "$PREV_MF"
+mf_ok() {  # $1 manifest: mindestens eine Zeile, alle im 5-Spalten-Format
+  [ -s "$1" ] && ! grep -Evq '^[0-9a-f]{64} [0-9]+ map44-[^ /]+\.zip [^ /]+ [0-9a-f]{64}$' "$1"
+}
 if [ "${MAP44_FULL_DATA:-0}" = 1 ]; then
   echo "    MAP44_FULL_DATA=1 – alle Pakete neu"
   : > "$PREV_MF"
 else
-  if [ -n "${3:-}" ]; then
-    PREV_DATA="$3"
+  TAGS=$(gh release list -L 1000 --json tagName -q '.[].tagName') \
+    || { echo "Fehler: Releases nicht abrufbar (gh offline/nicht angemeldet?)." >&2; exit 1; }
+  if echo "$TAGS" | grep -qx "$DATA_VER"; then
+    SAME_DATA=1
+    if gh release download "$DATA_VER" -p "map44-$DATA_VER.manifest" -O "$PREV_MF" 2>/dev/null; then
+      PREV_DATA="$DATA_VER"
+    else
+      SKIP_DATA=1
+      echo "    $DATA_VER ist bereits veröffentlicht (altes Format) – keine Datenpakete"
+    fi
   else
-    TAGS=$(gh release list -L 1000 --json tagName -q '.[].tagName') \
-      || { echo "Fehler: Releases nicht abrufbar (gh offline/nicht angemeldet?) – Vorversion als 3. Argument angeben." >&2; exit 1; }
-    PREV_DATA=$(echo "$TAGS" | grep -E '^data-v' | grep -vx "$DATA_VER" | head -1 || true)
+    PREV_DATA="${3:-$(echo "$TAGS" | grep -E '^data-v' | head -1 || true)}"
     [ -n "$PREV_DATA" ] || { echo "Fehler: kein data-v*-Release gefunden – für den Vollbau MAP44_FULL_DATA=1 setzen." >&2; exit 1; }
+    gh release download "$PREV_DATA" -p "map44-$PREV_DATA.manifest" -O "$PREV_MF" \
+      || { echo "Fehler: $PREV_DATA hat kein Manifest (altes Format?) – für den Vollbau MAP44_FULL_DATA=1 setzen." >&2; exit 1; }
   fi
-  gh release download "$PREV_DATA" -p "map44-$PREV_DATA.manifest" -O "$PREV_MF" \
-    || { echo "Fehler: $PREV_DATA hat kein Manifest (altes Format?) – für den Vollbau MAP44_FULL_DATA=1 setzen." >&2; exit 1; }
-  echo "    Vergleiche mit $PREV_DATA"
+  if [ "$SKIP_DATA" = 0 ]; then
+    mf_ok "$PREV_MF" || { echo "Fehler: Manifest von $PREV_DATA ist leer oder im falschen Format – für den Vollbau MAP44_FULL_DATA=1 setzen." >&2; exit 1; }
+    echo "    Vergleiche mit $PREV_DATA"
+  fi
 fi
 
 echo "==> Materialtexturen vorbacken (res://texcache)"
@@ -104,11 +120,11 @@ echo "$DATA_VER" > "$P/DATA_VERSION"
 cp README.md THIRD_PARTY.md "$P/" 2>/dev/null || true
 (cd "$P" && zip -q "$DIST/map44-macos.zip" DATA_VERSION README.md THIRD_PARTY.md)
 
-echo "==> Datenpakete (je 2×2-km-Kachelblock)"
-.venv/bin/python - "$STAGE" "$DIST" "$DATA_VER" "$PREV_MF" <<'PY'
+echo "==> Datenpakete (je Kachel)"
+if [ "$SKIP_DATA" = 0 ]; then
+.venv/bin/python - "$STAGE" "$DIST" "$DATA_VER" "$PREV_MF" "$SAME_DATA" <<'PY'
 import hashlib, os, sys, zipfile
-stage, dist, ver, prev_mf = sys.argv[1:5]
-BLOCK = 2  # km; eine Kachel landet immer im selben Paket
+stage, dist, ver, prev_mf, same = sys.argv[1:6]
 
 def sha_file(p):
     h = hashlib.sha256()
@@ -120,8 +136,6 @@ def sha_file(p):
 prev = {}  # gruppe -> Manifestzeile; Spalten: zip-sha256 größe datei release-tag inhalts-hash
 for line in open(prev_mf):
     col = line.split()
-    if len(col) < 5:
-        continue
     prev[col[2].removeprefix(f"map44-{col[3]}-").removesuffix(".zip")] = col
 groups = {}
 for root, _dirs, names in os.walk(os.path.join(stage, "data")):
@@ -129,14 +143,10 @@ for root, _dirs, names in os.walk(os.path.join(stage, "data")):
         p = os.path.join(root, n)
         rel = os.path.relpath(p, stage)
         parts = rel.split("/")
-        g = "root"
-        if parts[1] == "tiles" and len(parts) > 3:
-            try:
-                e, n_ = (int(v) for v in parts[2].split("_"))
-                g = f"t{e // BLOCK * BLOCK}_{n_ // BLOCK * BLOCK}"
-            except ValueError:
-                g = "tx"
+        g = f"t{parts[2]}" if parts[1] == "tiles" and len(parts) > 3 else "root"   # ein Paket je Kachel
         groups.setdefault(g, []).append((rel, p))
+if len(groups) > 900:
+    sys.exit(f"Fehler: {len(groups)} Pakete – GitHub erlaubt höchstens 1000 Dateien je Release")
 manifest, upload, reused = [], [], 0
 for g in sorted(groups):
     files = sorted(groups[g])
@@ -149,6 +159,8 @@ for g in sorted(groups):
         manifest.append(" ".join(prev[g][:5]))
         reused += 1
         continue
+    if same == "1":
+        sys.exit(f"Fehler: Kartendaten weichen vom veröffentlichten {ver} ab (Paket {g}) – neue Datenversion angeben")
     name = f"map44-{ver}-{g}.zip"
     out = os.path.join(dist, name)
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
@@ -164,10 +176,14 @@ mf = f"map44-{ver}.manifest"
 with open(os.path.join(dist, mf), "w") as f:
     f.write("\n".join(manifest) + "\n")
 with open(os.path.join(dist, "UPLOAD_DATA"), "w") as f:   # relativ zu dist/, eine Datei je Zeile
-    f.write("\n".join(upload + [mf]) + "\n")
+    if same != "1":
+        f.write("\n".join(upload + [mf]) + "\n")
+if same == "1":
+    print(f"Kartendaten unverändert gegenüber veröffentlichtem {ver} – nichts hochzuladen")
 mb = sum(os.path.getsize(os.path.join(dist, u)) for u in upload) / 1e6
 print(f"{len(groups)} Datenpakete: {len(upload)} neu ({mb:.0f} MB), {reused} unverändert – Liste in dist/UPLOAD_DATA")
 PY
+fi
 
 echo "==> Prüfsummen"
 (cd "$DIST" && sha256sum map44-linux-x86_64.zip map44-windows-x86_64.zip map44-macos.zip > SHA256SUMS)

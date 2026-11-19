@@ -6,7 +6,8 @@
 # Baut kleine Schein-Releases, ersetzt curl durch Kopieren aus einem lokalen Ordner und prüft:
 # Neuinstallation, Teil-Update, Austausch aller Pakete, Umstieg von einer Installation ohne Manifest (auch mit
 # abgebrochenem Download), alte Datenversion (404) und Serverfehler (5xx). Außerdem, dass install.sh und
-# install-macos.sh denselben Kartendaten-Block enthalten.
+# install-macos.sh denselben Kartendaten-Block enthalten. Ist pwsh installiert, läuft danach tools/test_installer.ps1
+# mit denselben Schein-Releases gegen install.ps1.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO_ROOT="$PWD"
@@ -21,25 +22,34 @@ diff <(block install/install.sh) <(block install/install-macos.sh) >/dev/null \
 ok "Kartendaten-Block in beiden Shell-Installern gleich"
 
 # Packer (Python-Teil aus package_release.sh)
-sed -n "/^\.venv\/bin\/python - \"\$STAGE\" \"\$DIST\" \"\$DATA_VER\" \"\$PREV_MF\" <<'PY'/,/^PY$/p" \
+sed -n "/^\.venv\/bin\/python - \"\$STAGE\" .*<<'PY'$/,/^PY$/p" \
   tools/package_release.sh | sed '1d;$d' > "$T/pack.py"
 [ -s "$T/pack.py" ] || fail "Packer nicht gefunden"
-pack() {  # $1 version, $2 vorheriges manifest oder leer
+pack() {  # $1 version, $2 vorheriges manifest oder leer, $3 1 = Datenversion existiert schon
   mkdir -p "$T/rel/$1"
   local prev="$T/empty"; : > "$prev"; [ -n "${2:-}" ] && prev="$T/rel/$2/map44-$2.manifest"
-  python3 "$T/pack.py" "$T/stage" "$T/rel/$1" "$1" "$prev" >/dev/null
+  python3 "$T/pack.py" "$T/stage" "$T/rel/$1" "$1" "$prev" "${3:-0}" >/dev/null
 }
 tile() { mkdir -p "$T/stage/data/tiles/$1"; echo "$2" > "$T/stage/data/tiles/$1/city.json"; }
 
-tile 410_5654 a; tile 411_5655 b; tile 414_5660 c; echo r > "$T/stage/data/streets.json"
+tile 410_5654 a; tile 412_5656 b; tile 414_5660 c; echo r > "$T/stage/data/streets.json"
 pack data-v1
 touch "$T/stage/data/streets.json"                     # nur Zeitstempel: Paket muss wiederverwendet werden
 echo c2 > "$T/stage/data/tiles/414_5660/city.json"
-rm -r "$T/stage/data/tiles/410_5654" "$T/stage/data/tiles/411_5655"; tile 420_5670 d
+rm -r "$T/stage/data/tiles/410_5654" "$T/stage/data/tiles/412_5656"; tile 420_5670 d
 pack data-v2 data-v1
 grep -q ' map44-data-v1-root.zip data-v1 ' "$T/rel/data-v2/map44-data-v2.manifest" || fail "unverändertes Paket nicht wiederverwendet"
 [ ! -e "$T/rel/data-v2/map44-data-v2-root.zip" ] || fail "unverändertes Paket wurde neu gepackt"
 ok "Packer: unveränderter Inhalt wird referenziert, nicht neu gepackt"
+cp -r "$T/rel/data-v2" "$T/rel/data-v2b"; mv "$T/rel/data-v2b/map44-data-v2.manifest" "$T/rel/data-v2b/map44-data-v2b.manifest"
+python3 "$T/pack.py" "$T/stage" "$T/rel/data-v2" data-v2 "$T/rel/data-v2b/map44-data-v2b.manifest" 1 >/dev/null 2>&1 \
+  || fail "Spiel-Release mit unveränderten Daten bricht ab"
+[ ! -s "$T/rel/data-v2/UPLOAD_DATA" ] || fail "Spiel-Release mit unveränderten Daten will hochladen"
+echo x > "$T/stage/data/tiles/420_5670/extra.json"
+python3 "$T/pack.py" "$T/stage" "$T/rel/data-v2b" data-v2 "$T/rel/data-v2/map44-data-v2.manifest" 1 >/dev/null 2>&1 \
+  && fail "geänderte Daten unter veröffentlichter Datenversion nicht abgelehnt"
+rm -r "$T/rel/data-v2b" "$T/stage/data/tiles/420_5670/extra.json"
+ok "Packer: gleiche Datenversion – unverändert nichts hochzuladen, geändert Abbruch"
 echo r3 > "$T/stage/data/streets.json"; echo c3 > "$T/stage/data/tiles/414_5660/city.json"
 echo d3 > "$T/stage/data/tiles/420_5670/city.json"
 pack data-v3 data-v2                                     # alle Pakete geändert
@@ -71,7 +81,7 @@ files() { (cd "$T/dest" && find data -type f ! -path 'data/.packs/*' | LC_ALL=C 
 
 mkdir -p "$T/dest"
 run data-v1
-[ "$(files)" = "data/MANIFEST data/VERSION data/streets.json data/tiles/410_5654/city.json data/tiles/411_5655/city.json data/tiles/414_5660/city.json " ] \
+[ "$(files)" = "data/MANIFEST data/VERSION data/streets.json data/tiles/410_5654/city.json data/tiles/412_5656/city.json data/tiles/414_5660/city.json " ] \
   || fail "Neuinstallation: $(files)"
 ok "Neuinstallation"
 run data-v2
@@ -85,6 +95,30 @@ data-v3" ] || fail "Austausch aller Pakete"
 [ "$(ls "$T/dest/data/.packs" | wc -l)" = 3 ] || fail "Austausch aller Pakete: Dateilisten"
 ok "Austausch aller Pakete (.packs bleibt erhalten)"
 run data-v3; ok "erneuter Lauf ohne Änderungen"
+
+# beschädigtes Manifest: nichts löschen
+cp "$T/rel/data-v3/map44-data-v3.manifest" "$T/mf.bak"
+for bad in "" "kaputt" "$(head -c 300 "$T/mf.bak")"; do
+  printf '%s' "$bad" > "$T/rel/data-v3/map44-data-v3.manifest"
+  rm -f "$T/dest/data/VERSION"; echo data-v2 > "$T/dest/data/VERSION"
+  out=$(run data-v3 2>&1 || true)
+  [[ "$out" == DIE*beschädigt* ]] || fail "beschädigtes Manifest nicht abgelehnt: $out"
+  [ "$(files)" = "data/MANIFEST data/VERSION data/streets.json data/tiles/414_5660/city.json data/tiles/420_5670/city.json " ] \
+    || fail "beschädigtes Manifest hat Daten verändert: $(files)"
+done
+cp "$T/mf.bak" "$T/rel/data-v3/map44-data-v3.manifest"
+ok "leeres/beschädigtes/abgeschnittenes Manifest: Abbruch ohne Löschen"
+
+# Entpacken abgebrochen (Dateiliste da, Manifestzeile fehlt) und liegengebliebene Zips
+mkdir -p "$T/dest/data/tiles/499_5699"; echo y > "$T/dest/data/tiles/499_5699/city.json"
+echo "data/tiles/499_5699/city.json" > "$T/dest/data/.packs/map44-data-v9-t499_5699.zip.files"
+mkdir -p "$T/dl"; echo z > "$T/dl/map44-data-v9-t499_5699.zip"; echo z > "$T/dl/map44-data-v1-root.zip"
+echo data-v2 > "$T/dest/data/VERSION"
+run data-v3
+[ ! -e "$T/dest/data/tiles/499_5699" ] || fail "Reste abgebrochenen Entpackens nicht entfernt"
+[ ! -e "$T/dest/data/.packs/map44-data-v9-t499_5699.zip.files" ] || fail "verwaiste Dateiliste nicht entfernt"
+[ -z "$(ls "$T/dl" | grep '\.zip$' || true)" ] || fail "liegengebliebene Zips: $(ls "$T/dl")"
+ok "Reste abgebrochenen Entpackens und alte Zips werden entfernt"
 
 # Umstieg von alter Installation: Download bricht ab -> alte Daten unangetastet
 rm -rf "$T/dest/data" "$T/dl"; mkdir -p "$T/dest/data"; echo alt > "$T/dest/data/alt.txt"; echo data-v0 > "$T/dest/data/VERSION"
@@ -100,4 +134,9 @@ out=$(run data-v0 2>&1 || true); [[ "$out" == *LEGACY-ASSETS* ]] || fail "404 f�
 ok "alte Datenversion (404) -> bisheriges Verfahren"
 out=$(MOCK_HTTP=503 run data-v3 2>&1 || true); [[ "$out" == "DIE "*503* ]] || fail "5xx nicht als Fehler gemeldet: $out"
 ok "Serverfehler (503) bricht mit Meldung ab"
+if command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -File tools/test_installer.ps1 "$T/rel" || fail "PowerShell-Test"
+else
+  echo "  übersprungen: install.ps1 (pwsh nicht installiert)"
+fi
 echo "Alle Tests bestanden."
