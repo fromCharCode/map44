@@ -14,12 +14,18 @@ func build(waters: Array, noise: ImageTexture) -> void:
 		var level: float = w["level"] - 0.05
 		var verts := PackedVector3Array()
 		var norms := PackedVector3Array()
+		# Flüsse mit Gefälle (tools/water_slope.py): Wasserhöhe je Ringpunkt statt eines Pegels
+		var ys: Array = w.get("ys", [])
+		var vi := 0
 		for r in rings:
 			for p in r:
 				var yy := level
 				if w.has("plane"):
 					var pl: Array = w["plane"]
 					yy = pl[0] * p[0] + pl[1] * p[1] + pl[2] - 0.05
+				elif vi < ys.size():
+					yy = float(ys[vi]) - 0.05
+				vi += 1
 				verts.append(Vector3(p[0], yy, p[1]))
 				norms.append(Vector3.UP)
 		var idx := PackedInt32Array()

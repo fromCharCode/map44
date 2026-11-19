@@ -150,6 +150,18 @@ func _quad(b: Dictionary, p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3) ->
 		b["i"].append_array([k, k + 1, k + 2, k, k + 2, k + 3])
 
 
+func _deck_mark_y(p: Vector2, t: Vector2, y: float) -> float:
+	## Markierungshöhe auf einer Brücke: Profil + 5 cm. Liegt das Gelände dort auf dem Deck (kurze Brücken,
+	## Widerlager – dann ist es asphaltiert und Plattenbrücken liegen 10 cm darüber), kommt die Linie darüber,
+	## sonst verschwand die Mittellinie auf dem Deck.
+	var g := -INF
+	for off: float in [-2.5, -1.2, 0.0, 1.2, 2.5]:
+		g = maxf(g, terrain.height_at(p.x - t.y * off, p.y + t.x * off))
+	if g > y - 0.1 and g < y + 0.65:
+		return g + 0.15
+	return y + 0.05
+
+
 func _gy(x: float, z: float) -> float:
 	return terrain.height_at(x, z) + 0.05
 
@@ -162,7 +174,9 @@ func _line_strip(bucket_map: Dictionary, pts: Array, offset: float, width: float
 	var total := 0.0
 	for i in pts.size() - 1:
 		total += Vector2(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]).length()
-	if total < 8.0:
+	# kurze Brückenabschnitte (Durchlässe, 3–8 m) bekommen ihre Linie trotzdem – sonst setzte die Mittellinie
+	# auf dem Deck aus
+	if total < (2.0 if on_deck else 8.0):
 		return
 	var step := 1.0
 	for i in pts.size() - 1:
@@ -198,8 +212,8 @@ func _line_strip(bucket_map: Dictionary, pts: Array, offset: float, width: float
 		var n1 := Vector2(-t1.y, t1.x) * width * 0.5
 		var b := _bucket(bucket_map, _cell(p0.x, p0.y))
 		if on_deck:
-			var y0 := float(y_list[i]) + 0.05
-			var y1 := float(y_list[i + 1]) + 0.05
+			var y0 := _deck_mark_y(p0, t0, float(y_list[i]))
+			var y1 := _deck_mark_y(p1, t1, float(y_list[i + 1]))
 			_quad(b, Vector3(p0.x - n0.x, y0, p0.y - n0.y), Vector3(p1.x - n1.x, y1, p1.y - n1.y),
 				Vector3(p1.x + n1.x, y1, p1.y + n1.y), Vector3(p0.x + n0.x, y0, p0.y + n0.y))
 			continue

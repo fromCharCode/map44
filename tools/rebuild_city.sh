@@ -24,6 +24,7 @@ python sports.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "SPO
 python taxi_stands.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "TAXIFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python landmark_looks.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "LOOKFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python water_fill.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "WATERFILLFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
+python water_slope.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "WATERSLOPEFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python terrace_edges.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "TERRACEFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python rail_slabs.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "RAILSLABFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python under_decks.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "UNDERDECKFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt

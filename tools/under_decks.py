@@ -2,13 +2,16 @@
 
   python tools/under_decks.py [E,N ...] [--dry]      (ohne Argument: alle Kacheln)
 
-1. Laternen und Bäume, die unter einem Brückendeck stehen und höher sind als der Raum darunter, stießen durch das
-   Deck (Laternen der unterquerenden Straße mitten auf dem Gleisbett, Bäume auf der Fahrbahn). Sie entfallen.
+1. Laternen und Bäume, die unter einem Brückendeck (LoD2-Deck oder Plattenbrücke) stehen und höher sind als der
+   Raum darunter, stießen durch das Deck (Laternen der unterquerenden Straße mitten auf dem Gleisbett); Bäume
+   standen außerdem auf Decks im Gleis- oder Fahrbahnbereich. Sie entfallen.
    Laternen: Masthöhe 9,5 m angenommen; Bäume: Höhe aus den Baumdaten (Feld 5, sonst 8 m).
 2. Wo das Gelände eine Brückenfahrbahn überdeckt (kurze Brücken, Widerlagerbereiche: Gelände nicht mehr als 0,35 m
    unter dem Straßenprofil), zeigte es dort Gehwegpflaster, Gras oder Waldboden statt Asphalt – die Fahrbahn schien
    vor dem Deck unterbrochen. In diesem Bereich wird die Bodenmaske (splat0.png, Kanal R) in Fahrbahnbreite auf
    Asphalt gesetzt und der Bewuchs (cover.png) gelöscht.
+3. Bewuchs (cover.png) auf Decks, die weniger als 2,5 m über dem Gelände liegen, wird gelöscht (Büsche auf Fahrbahn
+   und Kappe).
 Wiederholbar.
 """
 import json
@@ -46,6 +49,18 @@ def tile_fix(name, dry=False):
             if p.is_valid and p.area > 0.01:
                 tris.append(p)
                 ys.append(float(t[:, 1].min()))
+    # Plattenbrücken (city["bridges"], auch die Bahnbrücken-Platten aus rail_slabs.py): Band in Plattenbreite
+    for b in city.get("bridges") or []:
+        bp = b.get("pts") or []
+        if len(bp) < 2:
+            continue
+        hw = float(b.get("width", 4.0)) * 0.5 + (1.0 if b.get("kind") == "drive" else 0.0)
+        for q0, q1 in zip(bp[:-1], bp[1:]):
+            seg = LineString([(q0[0], q0[1]), (q1[0], q1[1])])
+            if seg.length < 0.05:
+                continue
+            tris.append(seg.buffer(hw, cap_style="flat"))
+            ys.append(min(float(q0[2]), float(q1[2])))
     changed = False
     if tris:
         tree = STRtree(tris)
@@ -62,6 +77,11 @@ def tile_fix(name, dry=False):
             dy = deck_y(x, z)
             return dy is not None and dy - y > 2.0 and y + h > dy - 0.4
 
+        def tree_bad(x, z, y, h):
+            """Baum stößt von unten durch das Deck oder steht auf dem Deck (Stamm im Gleis-/Fahrbahnbereich)"""
+            dy = deck_y(x, z)
+            return dy is not None and dy - y > -1.5 and y + h > dy - 0.4
+
         for key in ("lamps", "lamps0"):
             lst = city.get(key)
             if not lst:
@@ -73,9 +93,23 @@ def tile_fix(name, dry=False):
                 city[key] = keep
                 changed = True
         trees = city.get("trees") or []
-        keep = [t for t in trees if not pokes(t[0], t[1], float(t[2]), float(t[5]) if len(t) > 5 and t[5] else 8.0)]
+        keep = [t for t in trees if not tree_bad(t[0], t[1], float(t[2]), float(t[5]) if len(t) > 5 and t[5] else 8.0)]
         if len(keep) != len(trees):
             st["Bäume"] = len(trees) - len(keep)
+            city["trees"] = keep
+            changed = True
+    # --- 1b. Bäume im Gleis (auch auf Bahnbrücken und Dämmen): Stamm näher als 1,6 m an einer Gleisachse ----------
+    rl = [LineString([(q[0], q[1]) for q in r["pts"]]) for r in city.get("rails", [])
+          if len(r.get("pts", [])) >= 2 and not r.get("tunnel")]
+    if rl and city.get("trees"):
+        rtree = STRtree(rl)
+
+        def on_track(x, z):
+            q = Point(x, z)
+            return any(rl[int(i)].distance(q) < 1.6 for i in rtree.query(q.buffer(1.6)))
+        keep = [t for t in city["trees"] if not on_track(t[0], t[1])]
+        if len(keep) != len(city["trees"]):
+            st["Bäume im Gleis"] = len(city["trees"]) - len(keep)
             city["trees"] = keep
             changed = True
     # --- 2. Gelände über der Brückenfahrbahn: Asphalt in die Bodenmaske --------------------------------------------
@@ -147,6 +181,27 @@ def tile_fix(name, dry=False):
                     if cmm.any() and cov[cmm].any():
                         cov[cmm] = 0
                         Image.fromarray(cov, "RGB").save(cp, optimize=False, compress_level=3)
+    # --- 3. Bewuchs auf Decks: Büsche und Gras des Geländes wuchsen durch flach aufliegende Decks ------------------
+    cp = d / "cover.png"
+    if tris and cp.exists() and tf.exists():
+        ter3 = np.frombuffer(tf.read_bytes(), dtype="<f4").reshape(2000, 2000)
+        cov = np.array(Image.open(cp).convert("RGB"))
+        fc = cov.shape[1] / 2000.0
+        cm = Image.new("L", (cov.shape[1], cov.shape[0]), 0)
+        cd = ImageDraw.Draw(cm)
+        for pg, dy in zip(tris, ys):
+            c0 = pg.centroid
+            cc = int(round(min(max(c0.x - x0 - 0.5, 0.0), 1999.0)))
+            rr = int(round(min(max(c0.y - z0 - 0.5, 0.0), 1999.0)))
+            if dy - float(ter3[rr, cc]) < 2.5:            # Bewuchs (bis ~2 m hoch) würde das Deck erreichen
+                cd.polygon([((x - x0) * fc, (z - z0) * fc) for x, z in pg.exterior.coords], fill=255)
+        cmm = np.asarray(cm) > 0
+        npx = int(np.count_nonzero(cmm & (cov.sum(axis=2) > 0)))
+        if npx:
+            st["m² Bewuchs auf Decks"] = round(npx / (fc * fc))
+            if not dry:
+                cov[cmm] = 0
+                Image.fromarray(cov, "RGB").save(cp, optimize=False, compress_level=3)
     if changed and not dry:
         cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
     if st:
