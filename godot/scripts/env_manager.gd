@@ -18,8 +18,9 @@ var night_value := 0.0
 # Abstimmwerte (für Versuche überschreibbar: DRESDEN_GFX="amb=2.0,sun=4.4,expo=0.3,contrast=1.05,ssao=1.5,fog=1.0")
 # Himmelslicht 2,2 statt 1,1: Schattenseiten waren fast schwarz (Sonne zu Himmel etwa 5:1 wie draußen, vorher 10:1);
 # Belichtung 0,28 statt 0,35: besonnter Boden brannte weiß aus
-var tune := {"amb": 1.7, "sun": 4.4, "expo": 0.28, "contrast": 1.04, "ssao": 1.4, "fog": 1.0, "sat": 0.9, "lut": 1.0,
-	"sdfgi": 1.0, "vfog": 1.0, "occ": 0.0, "ssil": 0.8, "cell": 0.3, "gi": 0.0}
+# Kontrast 1,11 / Sättigung 1,08 / Dunst 0,55 (vorher 1,04 / 0,9 / 1,0): das Bild wirkte flau und bläulich verschleiert
+var tune := {"amb": 1.6, "sun": 4.6, "expo": 0.28, "contrast": 1.11, "ssao": 1.5, "fog": 0.55, "sat": 1.08, "lut": 1.0,
+	"sdfgi": 1.0, "vfog": 0.55, "occ": 0.0, "ssil": 0.9, "cell": 0.3, "gi": 0.0}
 
 
 func _read_tune() -> void:
