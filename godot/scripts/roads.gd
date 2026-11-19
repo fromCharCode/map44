@@ -797,9 +797,19 @@ static func _box_between(st: SurfaceTool, a: Vector3, b: Vector3, side: Vector3,
 func _bridge(b: Dictionary) -> void:
 	## OSM-Brücke ohne LoD2-Deck: Platte 0,9 m mit Betonstirn; Straßenbrücke: Asphalt in Fahrbahnbreite, beidseits
 	## 1 m Kappe/Gehweg (+15 cm, Bordstein), Stahlgeländer; Fußgängerbrücke: Gehwegplatten, Stahlgeländer.
-	var pts: Array = b["pts"]
-	if pts.size() < 2:
+	var pts0: Array = b["pts"]
+	if pts0.size() < 2:
 		return
+	# alle 2,5 m ein Querschnitt, damit das Deck dem aufliegenden Gelände folgen kann (s. u.)
+	var pts: Array = []
+	for i0 in pts0.size() - 1:
+		var qa := Vector3(pts0[i0][0], pts0[i0][1], pts0[i0][2])
+		var qb := Vector3(pts0[i0 + 1][0], pts0[i0 + 1][1], pts0[i0 + 1][2])
+		var nseg := maxi(1, int(ceil(Vector2(qb.x - qa.x, qb.y - qa.y).length() / 2.5)))
+		for k0 in nseg:
+			var qq := qa.lerp(qb, float(k0) / float(nseg))
+			pts.append([qq.x, qq.y, qq.z])
+	pts.append(pts0[pts0.size() - 1])
 	var drive: bool = b["kind"] == "drive"
 	var wc: float = max(b["width"], 2.5)
 	var w := wc + (2.0 if drive else 0.0)
@@ -829,8 +839,8 @@ func _bridge(b: Dictionary) -> void:
 		var g_top := -INF
 		for off: float in [-0.5, -0.25, 0.0, 0.25, 0.5]:
 			g_top = maxf(g_top, terrain.height_at(p.x + n3.x * w * off, p.z + n3.z * w * off))
-		if g_top > p.y - 0.05 and g_top < p.y + 0.65:
-			p.y = g_top + 0.05
+		if g_top > p.y - 0.1 and g_top < p.y + 0.65:
+			p.y = g_top + 0.1
 		# Querschnitt: Außenkante links, Bord links, Bord rechts, Außenkante rechts
 		var cur := [p + n3 * (w * 0.5), p + n3 * (wc * 0.5), p - n3 * (wc * 0.5), p - n3 * (w * 0.5)]
 		if i > 0:
