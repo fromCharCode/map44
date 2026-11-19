@@ -98,10 +98,14 @@ void fragment() {
 	// Straßenmaske mit vier versetzten Abtastungen glätten: Die Maske hat 0,5 m je Pixel und nur einen Pixel
 	// Kantenübergang – beim Schärfen unten wurden schräge Kanten zu einer Treppe mit halbmeterlangen Zacken
 	// („angebissene“ Fahrbahnränder). Geglättet liegt die 50-%-Linie einer geraden Kante wieder gerade.
-	vec2 spx = vec2(0.75) / vec2(textureSize(splat0, 0));
-	vec4 s0 = 0.25 * (texture(splat0, huv + spx) + texture(splat0, huv - spx)
+	// Fünf Abtastungen (Mitte + vier Ecken im Abstand eines Pixels): je breiter geglättet, desto gerader die Kante.
+	vec2 spx = vec2(1.0) / vec2(textureSize(splat0, 0));
+	vec4 s0 = 0.2 * (texture(splat0, huv) + texture(splat0, huv + spx) + texture(splat0, huv - spx)
 		+ texture(splat0, huv + vec2(spx.x, -spx.y)) + texture(splat0, huv + vec2(-spx.x, spx.y)));
-	vec4 s1 = texture(splat1, huv);
+	// Wiesen-, Wald- und Parkflächen genauso (ihre Ränder waren ebenso gezackt)
+	vec2 spx1 = vec2(1.0) / vec2(textureSize(splat1, 0));
+	vec4 s1 = 0.2 * (texture(splat1, huv) + texture(splat1, huv + spx1) + texture(splat1, huv - spx1)
+		+ texture(splat1, huv + vec2(spx1.x, -spx1.y)) + texture(splat1, huv + vec2(-spx1.x, spx1.y)));
 	vec4 s2 = texture(splat2, huv);
 	vec3 oc = texture(ortho, huv).rgb;
 	float nz = texture(noise_tex, wuv * 0.9).r - 0.5;
@@ -109,8 +113,11 @@ void fragment() {
 	float k = smoothstep(0.35, 0.65, texture(noise_tex, wuv * 0.021 + 0.3).r);
 
 	// Maskenkanten schärfen und aufbrechen
-	vec4 m0 = smoothstep(vec4(0.40) + nz * 0.08, vec4(0.60) + nz * 0.08, s0);
-	vec4 m1 = smoothstep(vec4(0.38) + nz * 0.16, vec4(0.62) + nz * 0.16, s1);
+	// Fahrbahn, Gehweg und Pflaster: scharfe, gerade Kante ohne Rauschen (Bordsteinlinie); nur das Gleisbett (a)
+	// und die Grünflächen behalten einen leicht unregelmäßigen Rand
+	vec4 m0 = smoothstep(vec4(0.44), vec4(0.56), s0);
+	m0.a = smoothstep(0.40 + nz * 0.08, 0.60 + nz * 0.08, s0.a);
+	vec4 m1 = smoothstep(vec4(0.42) + nz * 0.05, vec4(0.58) + nz * 0.05, s1);
 
 	// Wirksames Gewicht jeder Schicht (von oben nach unten aufmultipliert): komplett verdeckte Schichten und der
 	// verdeckte Grundboden werden gar nicht erst gelesen (früher lief z. B. unter jeder Straße der ganze Wiesen-/
