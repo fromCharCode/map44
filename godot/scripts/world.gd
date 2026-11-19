@@ -99,6 +99,7 @@ func _attach(t: Tile) -> void:
 			if trace:
 				attach_log.append("%s/%s(%s)" % [m.name, c.name, c.get_class()])
 				_last_att[String(m.name)] = int(_last_att.get(String(m.name), 0)) + 1
+				att0.append("%s/%s" % [m.name, c.name])
 			if trace and Time.get_ticks_usec() - tc > 15000:
 				print("Anhängen %s/%s/%s (%s, %d Kinder): %d ms" % [t.key, m.name, c.name, c.get_class(), c.get_child_count(), (Time.get_ticks_usec() - tc) / 1000])
 			# Geländestücke und geparkte Autos kosten den Renderer im Folgebild ein Vielfaches (gemessen: 120 Geländestücke
@@ -119,6 +120,7 @@ func _attach(t: Tile) -> void:
 	_attaching.erase(t.key)
 	if t.dressing:
 		t.dressing.set_night(night)
+	mark("tile_added " + t.key)
 	if trace:
 		var te := Time.get_ticks_usec()
 		for cn in tile_added.get_connections():
@@ -132,6 +134,16 @@ func _attach(t: Tile) -> void:
 
 
 var _last_att := {}
+static var att0: Array = []
+static var ev: Array = []          # Diagnose: [Bildnummer, Ereignis]
+
+
+static func mark(what: String) -> void:
+	ev.append([Engine.get_process_frames(), what])
+	if ev.size() > 400:
+		ev = ev.slice(200)
+static var att1: Array = []
+static var att2: Array = []
 const ATTACH_COST := {}          # Gewichtung je Modul (Messung 11/2026: die Ruckler hängen nicht an der Stückzahl)
 
 
@@ -144,6 +156,9 @@ func _dist_to_tile(key: String, p: Vector3) -> float:
 
 
 func _process(delta: float) -> void:
+	att2 = att1
+	att1 = att0
+	att0 = []
 	Dressing.clock += delta
 	SignalCtl.clock = Dressing.clock
 	RenderingServer.global_shader_parameter_set("signal_clock", Dressing.clock)
@@ -154,6 +169,7 @@ func _process(delta: float) -> void:
 		_result = null
 		_pending = ""
 		if t:
+			mark("bau fertig " + t.key)
 			_attach(t)
 	_timer -= delta
 	if _timer > 0.0 or not enabled:
@@ -163,6 +179,7 @@ func _process(delta: float) -> void:
 	for k in tiles.keys():
 		if _dist_to_tile(k, focus) > UNLOAD_R:
 			var t: Tile = tiles[k]
+			mark("entladen " + k)
 			tile_removed.emit(t)
 			tiles.erase(k)
 			_unload(t)
@@ -179,6 +196,7 @@ func _process(delta: float) -> void:
 				best = k
 		if best != "":
 			_pending = best
+			mark("bau start " + best)
 			_thread = Thread.new()
 			_thread.start(_job.bind(best), Thread.PRIORITY_LOW)
 

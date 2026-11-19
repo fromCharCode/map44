@@ -82,7 +82,24 @@ func _build_parts(file: String) -> Array:
 		for c in n.get_children():
 			stack.append([c, xf])
 	root.free()
-	return res
+	# Alle Teile zu EINEM Mesh mit einer Fläche je Material zusammenfassen: vorher 12 MultiMesh-Knoten und 33
+	# Zeichenflächen je Modell und Zelle (rund 12 000 Knoten je Kachel – ihr Einhängen ließ den Renderer stocken),
+	# jetzt ein Knoten mit 16 Flächen
+	var by_mat := {}
+	var order: Array = []
+	for part in res:
+		var pm: Mesh = part["mesh"]
+		for i in pm.get_surface_count():
+			var mat := pm.surface_get_material(i)
+			if not by_mat.has(mat):
+				by_mat[mat] = SurfaceTool.new()
+				order.append(mat)
+			(by_mat[mat] as SurfaceTool).append_from(pm, i, part["xf"])
+	var merged := ArrayMesh.new()
+	for mat in order:
+		(by_mat[mat] as SurfaceTool).commit(merged)
+		merged.surface_set_material(merged.get_surface_count() - 1, mat)
+	return [{"mesh": merged, "xf": Transform3D.IDENTITY}]
 
 
 func _cell(x: float, z: float) -> Vector2i:
@@ -126,6 +143,8 @@ func _cars(parked: Array) -> void:
 			inst.visibility_range_end_margin = 25.0
 			inst.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 			add_child(inst)
+			if OS.get_thread_caller_id() != OS.get_main_thread_id():
+				OS.delay_usec(300)                # Renderer-Befehle strecken, siehe RenderUtil.fill_multimesh
 		# Kollision: eine Box je Auto
 		var cell: Vector2i = key[1]
 		if not bodies.has(cell):

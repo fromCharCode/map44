@@ -578,6 +578,8 @@ func _setup_game() -> void:
 	add_child(speed_cams)
 	speed_cams.setup(player, hud, taxi, world)
 	speed_cams.traffic = traffic
+	if OS.get_cmdline_user_args().has("--attachtrace"):
+		FrameProbe.install(self)
 	if args.has("routeguide"):
 		var rg := String(args["routeguide"]).split(",")
 		route_guide.fixed_target = Vector3(float(rg[0]), 0.0, float(rg[1]))

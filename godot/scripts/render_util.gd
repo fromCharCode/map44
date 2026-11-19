@@ -31,6 +31,10 @@ static func fill_multimesh(mm: MultiMesh, xfs: Array, part_xf: Transform3D = Tra
 	mm.instance_count = n
 	if n == 0:
 		return
+	# Im Bau-Thread: Die Renderer-Befehle (anlegen, Puffer füllen) führt der Hauptthread beim nächsten Bild aus.
+	# Ohne Pause kommen dort Hunderte auf einmal an und das Bild stockt (gemessen 80–100 ms je Kachel).
+	if OS.get_thread_caller_id() != OS.get_main_thread_id():
+		OS.delay_usec(350)
 	var uc := mm.use_colors
 	var ud := mm.use_custom_data
 	var stride := 12 + (4 if uc else 0) + (4 if ud else 0)
