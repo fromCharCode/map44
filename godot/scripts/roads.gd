@@ -823,6 +823,14 @@ func _bridge(b: Dictionary) -> void:
 			t2 = Vector2(pts[i + 1][0] - pts[i - 1][0], pts[i + 1][1] - pts[i - 1][1])
 		t2 = t2.normalized()
 		var n3 := Vector3(-t2.y, 0, t2.x)
+		# Kurze Brücken über Gräben liegen im Geländemodell auf Straßenhöhe: Das Gelände (Gehwegpflaster) deckte
+		# dort die Platte zu, die Fahrbahn auf der Brücke war nicht zu sehen. Liegt es bis 0,65 m über dem Deck,
+		# kommt die Deckoberseite 5 cm darüber.
+		var g_top := -INF
+		for off: float in [-0.5, -0.25, 0.0, 0.25, 0.5]:
+			g_top = maxf(g_top, terrain.height_at(p.x + n3.x * w * off, p.z + n3.z * w * off))
+		if g_top > p.y - 0.05 and g_top < p.y + 0.65:
+			p.y = g_top + 0.05
 		# Querschnitt: Außenkante links, Bord links, Bord rechts, Außenkante rechts
 		var cur := [p + n3 * (w * 0.5), p + n3 * (wc * 0.5), p - n3 * (wc * 0.5), p - n3 * (w * 0.5)]
 		if i > 0:

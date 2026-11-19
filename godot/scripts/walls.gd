@@ -26,11 +26,43 @@ func build(t: Terrain, city: Dictionary) -> void:
 			continue                              # nur Freitreppen
 		for q in st0["pts"]:
 			_step_pts.append(Vector2(q[0], q[1]))
+	# Gleise (ohne Tunnel) in ein Raster: Widerlagermauern queren die Gleise und dürfen dort nicht über die
+	# Gleisebene ragen (die 1-m-Brüstung lag sonst als Balken quer über den Schienen)
+	_rail_grid.clear()
+	for rl in city.get("rails", []):
+		if rl.get("tunnel", false):
+			continue
+		var rp: Array = rl["pts"]
+		for i in rp.size() - 1:
+			var ra := Vector2(rp[i][0], rp[i][1])
+			var rb := Vector2(rp[i + 1][0], rp[i + 1][1])
+			var n := maxi(1, int(ceil(ra.distance_to(rb) / 6.0)))
+			for k in n + 1:
+				var q := ra.lerp(rb, float(k) / float(n))
+				var ck := Vector2i(floori(q.x / 8.0), floori(q.y / 8.0))
+				if not _rail_grid.has(ck):
+					_rail_grid[ck] = []
+				(_rail_grid[ck] as Array).append([ra, rb, minf(float(rp[i][2]), float(rp[i + 1][2]))])
 	for b in city["barriers"]:
 		_barrier(b)
 	for st in city["steps"]:
 		_steps(st)
 	_flush(mats)
+
+
+var _rail_grid: Dictionary = {}
+
+
+func _rail_y(p: Vector2, dist: float) -> float:
+	## Höhe des tiefsten Gleises im Umkreis (INF, wenn keines): Mauern dürfen dort nicht über die Schwellen ragen
+	var c := Vector2i(floori(p.x / 8.0), floori(p.y / 8.0))
+	var y := INF
+	for dx in range(-1, 2):
+		for dz in range(-1, 2):
+			for sg in _rail_grid.get(c + Vector2i(dx, dz), []):
+				if Geometry2D.get_closest_point_to_segment(p, sg[0], sg[1]).distance_to(p) < dist:
+					y = minf(y, float(sg[2]))
+	return y
 
 
 func _tri_mat(name: String, tint: float) -> StandardMaterial3D:
@@ -164,8 +196,8 @@ func _barrier(bar: Dictionary) -> void:
 		var ya_top := ga + h
 		var yb_top := gb + h
 		if not tops.is_empty():
-			ya_top = float(tops[i]) + 1.0
-			yb_top = float(tops[i + 1]) + 1.0
+			ya_top = minf(float(tops[i]) + 1.0, _rail_y(a, thick * 0.5 + 3.4) - 0.35)
+			yb_top = minf(float(tops[i + 1]) + 1.0, _rail_y(b, thick * 0.5 + 3.4) - 0.35)
 			ya_bot = float(bots[i]) - 0.6
 			yb_bot = float(bots[i + 1]) - 0.6
 		elif kind == "retaining_wall" or kind == "city_wall":
@@ -178,12 +210,13 @@ func _barrier(bar: Dictionary) -> void:
 			var step_h := maxf(absf(la - ra), absf(lb - rb))
 			if kind == "retaining_wall" or step_h > 1.2:
 				var parapet := 1.0 if kind == "city_wall" else 0.2
-				ya_top = maxf(la, ra) + parapet
-				yb_top = maxf(lb, rb) + parapet
+				ya_top = minf(maxf(la, ra) + parapet, _rail_y(a, thick * 0.5 + 3.4) - 0.35)
+				yb_top = minf(maxf(lb, rb) + parapet, _rail_y(b, thick * 0.5 + 3.4) - 0.35)
 				ya_bot = minf(la, ra) - 0.4
 				yb_bot = minf(lb, rb) - 0.4
 				if kind == "retaining_wall" and bar["h"] != null:
-					ya_top = maxf(ya_top, ga + 0.3)
+					if _rail_y(a, thick * 0.5 + 3.4) == INF:
+						ya_top = maxf(ya_top, ga + 0.3)
 		var cell := _cell(a.x, a.y)
 		if kind == "fence":
 			var f := _bucket(cell, "fence")
