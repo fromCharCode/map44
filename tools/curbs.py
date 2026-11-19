@@ -18,6 +18,7 @@ from shapely.ops import linemerge, unary_union
 ROOT = Path(__file__).resolve().parent.parent
 TILES = ROOT / "data" / "processed" / "tiles"
 ORIGIN_E, ORIGIN_N = 411000.0, 5656200.0
+NO_VEH = {"footway", "path", "cycleway", "steps", "pedestrian", "track", "bridleway", "corridor", "platform"}
 DRIVE = {"motorway", "trunk", "primary", "secondary", "tertiary", "unclassified", "residential", "living_street",
          "motorway_link", "trunk_link", "primary_link", "secondary_link", "tertiary_link"}
 
@@ -130,6 +131,39 @@ def curbs_tile(name):
         pts = [p for p in pts if x0 <= p[0] < x1 and z0 <= p[1] < z1]
         if len(pts) >= 2:
             res.append(pts)
+    # Auf Brücken trägt das Deck seine eigenen Borde. Das Bodenraster darunter zeigt die Brückenfläche oft als
+    # Gehweg; daraus entstanden Bordsteine quer über die Fahrbahn an den Brückenenden (v. a. schmale Zufahrten).
+    # Alles im Fahrband einer Brückenfahrbahn (Achse ± halbe Breite − 0,3 m, an den Enden 6 m verlängert) entfällt.
+    bands = []
+    for r in city.get("roads", []):
+        if not r.get("bridge") or r.get("cls") in NO_VEH or len(r.get("pts", [])) < 2:
+            continue
+        bp = [(q[0], q[1]) for q in r["pts"]]
+        (ax, az), (bx, bz) = bp[0], bp[1]
+        dl = ((bx - ax) ** 2 + (bz - az) ** 2) ** 0.5 or 1.0
+        bp.insert(0, (ax - (bx - ax) / dl * 6.0, az - (bz - az) / dl * 6.0))
+        (ax, az), (bx, bz) = bp[-1], bp[-2]
+        dl = ((bx - ax) ** 2 + (bz - az) ** 2) ** 0.5 or 1.0
+        bp.append((ax - (bx - ax) / dl * 6.0, az - (bz - az) / dl * 6.0))
+        hw = max((float(r["width"]) - float(r.get("pl", 0.0)) - float(r.get("pr", 0.0))) * 0.5 - 0.3, 1.0)
+        bands.append(LineString(bp).buffer(hw, cap_style="flat"))
+    if bands:
+        area = unary_union(bands)
+        cut = []
+        for pts in res:
+            ln = LineString([(q[0], q[1]) for q in pts])
+            if not ln.intersects(area):
+                cut.append(pts)
+                continue
+            rest = ln.difference(area)
+            for g in getattr(rest, "geoms", [rest]):
+                if g.geom_type == "LineString" and g.length >= 1.5:
+                    gp = []
+                    for x, z in g.coords:
+                        q = min(pts, key=lambda o: (o[0] - x) ** 2 + (o[1] - z) ** 2)
+                        gp.append([round(x, 2), round(z, 2), q[2]])
+                    cut.append(gp)
+        res = cut
     city["curbs"] = res
     cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
     return sum(len(c) for c in res)
