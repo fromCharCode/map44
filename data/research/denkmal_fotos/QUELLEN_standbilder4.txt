@@ -1,0 +1,51 @@
+Quellen der Vorlagenfotos, vierte Runde Denkmäler (monuments_named_g.py)
+Alle Fotos von Wikimedia Commons (Vorschau 960 px), nur als Modelliervorlage verwendet – nicht als Textur, nicht im Spiel enthalten.
+Abruf: 2026-11-19 über die Commons-API.
+
+Moritzmonument (mon_moritzmonument.glb)
+  moritzmonument/moritzmonument_0.jpg: File:Moritzmonument in Dresden.jpg – Urheber: Heinz-Josef Lücking – Lizenz: CC BY-SA 3.0 de
+    https://commons.wikimedia.org/wiki/File:Moritzmonument_in_Dresden.jpg
+  moritzmonument/moritzmonument_1.jpg: File:Moritzmonument.jpg – Urheber: Benutzer:Hejkal – Lizenz: CC BY-SA 2.0 de
+    https://commons.wikimedia.org/wiki/File:Moritzmonument.jpg
+  moritzmonument/moritzmonument_2.jpg: File:20070401035DR Dresden-Altstadt Brühlscher Garten Moritzdenkmal.jpg – Urheber: Jörg Blobelt – Lizenz: CC BY-SA 4.0 – Koordinate 51.05411, 13.747
+    https://commons.wikimedia.org/wiki/File:20070401035DR_Dresden-Altstadt_Br%C3%BChlscher_Garten_Moritzdenkmal.jpg
+  moritzmonument/moritzmonument_3.jpg: File:Moritzmonument an der Brühlschen Terasse in Dresen.jpg – Urheber: ErichanderElbe – Lizenz: CC BY-SA 4.0
+    https://commons.wikimedia.org/wiki/File:Moritzmonument_an_der_Br%C3%BChlschen_Terasse_in_Dresen.jpg
+
+Böttger-Stele (mon_boettger_stele.glb)
+  boettger_stele/boettger_stele_0.jpg: File:Stele Hasenberg 1 (Dresden) Johann Friedrich Böttger&Peter Makolies&1982.jpg – Urheber: OTFW, Berlin – Lizenz: CC BY-SA 3.0 – Koordinate 51.05299167, 13.74572778
+    https://commons.wikimedia.org/wiki/File:Stele_Hasenberg_1_(Dresden)_Johann_Friedrich_B%C3%B6ttger%26Peter_Makolies%261982.jpg
+  boettger_stele/boettger_stele_1.jpg: File:Stele Hasenberg 1 (Dresden) Johann Friedrich Böttger&Peter Makolies&19822.jpg – Urheber: OTFW, Berlin – Lizenz: CC BY-SA 3.0 – Koordinate 51.05299167, 13.74572778
+    https://commons.wikimedia.org/wiki/File:Stele_Hasenberg_1_(Dresden)_Johann_Friedrich_B%C3%B6ttger%26Peter_Makolies%2619822.jpg
+  boettger_stele/boettger_stele_2.jpg: File:Stele Hasenberg 1 (Dresden) Johann Friedrich Böttger&Peter Makolies&19824.jpg – Urheber: OTFW, Berlin – Lizenz: CC BY-SA 3.0 – Koordinate 51.05299167, 13.74572778
+    https://commons.wikimedia.org/wiki/File:Stele_Hasenberg_1_(Dresden)_Johann_Friedrich_B%C3%B6ttger%26Peter_Makolies%2619824.jpg
+
+Caroline-Neuber-Denkmal (mon_neuber.glb)
+  neuber/neuber_0.jpg: File:20060411040DR Dresden-Laubegast Denkmal Caroline Neuber.jpg – Urheber: Jörg Blobelt – Lizenz: CC BY-SA 4.0 – Koordinate 51.024532, 13.840155
+    https://commons.wikimedia.org/wiki/File:20060411040DR_Dresden-Laubegast_Denkmal_Caroline_Neuber.jpg
+  neuber/neuber_1.jpg: File:20060411045DR Dresden-Laubegast Denkmal Caroline Neuber.jpg – Urheber: Jörg Blobelt – Lizenz: CC BY-SA 4.0 – Koordinate 51.024532, 13.840155
+    https://commons.wikimedia.org/wiki/File:20060411045DR_Dresden-Laubegast_Denkmal_Caroline_Neuber.jpg
+  neuber/neuber_2.jpg: File:20060411050DR Dresden-Laubegast Denkmal Caroline Neuber.jpg – Urheber: Jörg Blobelt – Lizenz: CC BY-SA 4.0 – Koordinate 51.024532, 13.840155
+    https://commons.wikimedia.org/wiki/File:20060411050DR_Dresden-Laubegast_Denkmal_Caroline_Neuber.jpg
+
+Schiller-Körner-Denkmal (mon_schiller_koerner.glb)
+  schiller_koerner/schiller_koerner_0.jpg: File:20130516055DR Dresden-Loschwitz Schiller-Körner-Denkmal.jpg – Urheber: Jörg Blobelt – Lizenz: CC BY-SA 4.0 – Koordinate 51.057700, 13.813306
+    https://commons.wikimedia.org/wiki/File:20130516055DR_Dresden-Loschwitz_Schiller-K%C3%B6rner-Denkmal.jpg
+  schiller_koerner/schiller_koerner_1.jpg: File:Schiller-Körner-Denkmal in Loschwitz 1.jpg – Urheber: Brücke-Osteuropa – Lizenz: CC0
+    https://commons.wikimedia.org/wiki/File:Schiller-K%C3%B6rner-Denkmal_in_Loschwitz_1.jpg
+  schiller_koerner/schiller_koerner_2.jpg: File:20071009010DR Dresden-Loschwitz Schiller-Körner-Denkmal.jpg – Urheber: Jörg Blobelt – Lizenz: CC BY-SA 4.0 – Koordinate 51.057700, 13.813306
+    https://commons.wikimedia.org/wiki/File:20071009010DR_Dresden-Loschwitz_Schiller-K%C3%B6rner-Denkmal.jpg
+
+Garde-Reiter-Denkmal (mon_gardereiter.glb)
+  gardereiter/gardereiter_0.jpg: File:20120927060DR Dresden-Albertstadt Garde-Reiter-Denkmal.jpg – Urheber: Jörg Blobelt – Lizenz: CC BY-SA 4.0 – Koordinate 51.080773, 13.748740
+    https://commons.wikimedia.org/wiki/File:20120927060DR_Dresden-Albertstadt_Garde-Reiter-Denkmal.jpg
+  gardereiter/gardereiter_1.jpg: File:Dresden, Garde-Reiter-Denkmal 2018 -011.jpg – Urheber: Bybbisch94, Christian Gebhardt – Lizenz: CC BY-SA 4.0 – Koordinate 51.08131549, 13.74856353
+    https://commons.wikimedia.org/wiki/File:Dresden,_Garde-Reiter-Denkmal_2018_-011.jpg
+  gardereiter/gardereiter_2.jpg: File:Dresden, Garde-Reiter-Denkmal 2018 -014.jpg – Urheber: Bybbisch94, Christian Gebhardt – Lizenz: CC BY-SA 4.0 – Koordinate 51.08128853, 13.74845088
+    https://commons.wikimedia.org/wiki/File:Dresden,_Garde-Reiter-Denkmal_2018_-014.jpg
+  gardereiter/gardereiter_3.jpg: File:Dresden Gardereiterdenkmal 1.JPG – Urheber: X-Weinzar – Lizenz: CC BY-SA 3.0 – Koordinate 51.08084874, 13.74876827
+    https://commons.wikimedia.org/wiki/File:Dresden_Gardereiterdenkmal_1.JPG
+
+Friedensdenkmal Kleinpestitz (NICHT gebaut – nur ein Foto auf Commons)
+  friedensdenkmal/friedensdenkmal_0.jpg: File:Dresden, Friedensdenkmal, 17.6.2.40-050337.jpg – Urheber: Albrecht Voß – Lizenz: CC BY-SA 4.0 – Koordinate 51.01427, 13.72715
+    https://commons.wikimedia.org/wiki/File:Dresden,_Friedensdenkmal,_17.6.2.40-050337.jpg

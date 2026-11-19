@@ -69,6 +69,29 @@
     "size_bytes": 77168
   },
   {
+    "file": "mon_boettger_stele.glb",
+    "height": 2.1,
+    "bbox_min": [
+      -0.85,
+      0.0,
+      -0.85
+    ],
+    "bbox_max": [
+      0.85,
+      2.1,
+      0.85
+    ],
+    "tris": 724,
+    "materials": [
+      "Granit",
+      "Porzellan",
+      "Sandstein",
+      "Sandstein_dunkel"
+    ],
+    "notes": "Böttger-Stele (Peter Makolies, 1982) im Brühlschen Garten an der Kasematten-Böschung: schlanke Sandsteinstele mit gefasten Kanten auf Sockel und zwei Bodenplatten, Voluten und Kugel am Kopf, darüber ovaler dunkler Steinrahmen mit weißem Porzellanmedaillon (Profilbildnis Böttgers, blickt nach -X). Vorderseite +Y. Gesamthöhe ca. 2,1 m (geschätzt). Neues Material: Porzellan.",
+    "size_bytes": 42000
+  },
+  {
     "file": "mon_bogenschuetze.glb",
     "height": 9.8,
     "bbox_min": [
@@ -358,6 +381,28 @@
     "size_bytes": 222264
   },
   {
+    "file": "mon_gardereiter.glb",
+    "height": 1.75,
+    "bbox_min": [
+      -7.6,
+      0.0,
+      -6.6
+    ],
+    "bbox_max": [
+      7.6,
+      1.75,
+      0.95
+    ],
+    "tris": 486,
+    "materials": [
+      "GranitDunkel",
+      "Sandstein",
+      "Sandstein_dunkel"
+    ],
+    "notes": "Garde-Reiter-Denkmal im Hechtpark gegenüber Stauffenbergallee 12 (Albertstadt), heutiger Zustand: Sandsteinanlage OHNE die verlorene Reiterfigur – erhöhte Terrasse 15,2 × 6,8 m mit Stufe vorn (+Y), an der Rückseite 14 m lange Brüstungsmauer mit Endpfeilern und zwei Steinbänken, in der Mitte das leere Postament (Quaderfuß, weit ausladende Kehle, Deckplatte mit kleinen Gedenktafeln). Mauer liegt bei Y = 0, Terrasse davor. Gesamthöhe ca. 1,75 m (geschätzt), alle Maße aus Fotos geschätzt.",
+    "size_bytes": 34620
+  },
+  {
     "file": "mon_glasbrunnen.glb",
     "height": 3.908,
     "bbox_min": [
@@ -625,6 +670,54 @@
     "size_bytes": 88520
   },
   {
+    "file": "mon_moritzmonument.glb",
+    "height": 8.4,
+    "bbox_min": [
+      -4.2,
+      0.0,
+      -1.1
+    ],
+    "bbox_max": [
+      4.2,
+      8.4,
+      0.56
+    ],
+    "tris": 3530,
+    "materials": [
+      "Bronze",
+      "GranitDunkel",
+      "Marmor",
+      "Sandstein",
+      "Sandstein_dunkel"
+    ],
+    "notes": "Moritzmonument (Hans Walther II, 1555, mehrfach erneuert; ältestes erhaltenes Denkmal Dresdens) an der Spitze der Jungfernbastei der Brühlschen Terrasse: Sandstein-Ädikula mit zwei toskanischen Säulen (links hell, rechts schwarz), Triglyphengebälk und Relief – Kurfürst Moritz (links im Bild, +X) übergibt seinem Bruder August das Kurschwert, dahinter der Tod, darüber die Dreifaltigkeit; Konsolen, Inschriftfeld, seitliche Flügel mit großen Schrifttafeln und Volutenwangen. WANDDENKMAL: Mauerflucht Y = 0, eigenes Mauerstück 8,4 m breit dahinter (Mauerkrone 7,5 m, geschätzt); Vorderseite +Y. Gesamthöhe 8,4 m (geschätzt aus Figurengröße; Ädikula ab Konsolen 4,85 m, Unterbau bis zum Boden vereinfacht).",
+    "size_bytes": 201256
+  },
+  {
+    "file": "mon_mosaikbrunnen.glb",
+    "height": 5.9,
+    "bbox_min": [
+      -3.287,
+      -0.6,
+      -3.287
+    ],
+    "bbox_max": [
+      3.287,
+      5.9,
+      3.287
+    ],
+    "tris": 5120,
+    "materials": [
+      "Gold",
+      "Granit",
+      "Mosaik",
+      "Mosaik_braun",
+      "Wasser"
+    ],
+    "notes": "Mosaikbrunnen (Poelzig 1926, Großer Garten): runde, nach oben ausschwingende Mosaikschale Ø 5,0 m, 1,1 m hoch, darüber drei übereinander stehende Blütenkelche (Lippen Ø 2,5 / 1,2 / 0,6 m) mit goldenem Rautennetz, oberster Kelch golden mit dunkler Kuppe; 5,9 m hoch. Alle Maße aus Fotos geschätzt; Mosaik nur als Farbflächen (blaugrün/erdbraun) mit Goldrippen. Plattenring Ø 6,6 m, Sockelkranz 0,6 m unter dem Ursprung.",
+    "size_bytes": 205992
+  },
+  {
     "file": "mon_mozartbrunnen.glb",
     "height": 4.202,
     "bbox_min": [
@@ -692,6 +785,52 @@
     ],
     "notes": "Mutter-Anna-Denkmal (Kurfürstin Anna, vor der Annenkirche): Bronzefigur mit Haube, Halskrause und pelzbesetzter Schaube, Gebetbuch an der Brust, Schlüsselbund (Blick +Y) auf dunklem poliertem Syenitsockel mit Goldinschrift, zwei graue Granitstufen. Gesamthöhe ca. 5,5 m (geschätzt).",
     "size_bytes": 103532
+  },
+  {
+    "file": "mon_neuber.glb",
+    "height": 2.6,
+    "bbox_min": [
+      -1.165,
+      0.0,
+      -1.165
+    ],
+    "bbox_max": [
+      1.165,
+      2.6,
+      1.165
+    ],
+    "tris": 2344,
+    "materials": [
+      "Bronze",
+      "Eisen",
+      "GranitDunkel",
+      "Sandstein_dunkel"
+    ],
+    "notes": "Denkmal für Friederike Caroline Neuber (»Neuberin«) in Dresden-Laubegast: schwarz verwitterter Sandsteinpfeiler auf roh behauenem Felssockel, Felder zwischen Ecklisenen mit Fruchtgehängen, vorn (+Y) Bronzemedaillon mit Brustbild unter einer Schleife und Inschrift, seitlich Trophäenreliefs; Gesims, gestuftes Dach mit Girlande und vier Masken. Achteckiges Eisengitter 2,2 m. Gesamthöhe ca. 2,6 m (geschätzt).",
+    "size_bytes": 147404
+  },
+  {
+    "file": "mon_nymphenbrunnen.glb",
+    "height": 2.748,
+    "bbox_min": [
+      -2.947,
+      -0.6,
+      -2.37
+    ],
+    "bbox_max": [
+      2.947,
+      2.748,
+      2.37
+    ],
+    "tris": 6654,
+    "materials": [
+      "Granit",
+      "Sandstein",
+      "Sandstein_dunkel",
+      "Wasser"
+    ],
+    "notes": "Westlicher Nymphenbrunnen (Thomae 1739–42, Neustädter Markt): geschweiftes Sandsteinbecken 5,0 × 3,9 m mit vorgewölbten Langseiten und Wulstrand (Brüstung 0,85 m) auf einer Stufe; im Becken Quadersockel, darauf dunkle Sandsteingruppe: sitzende Nymphe auf Fels mit Delphin, Putto neben ihr (Schauseite +Y). Gesamthöhe ca. 2,7 m. Alle Maße geschätzt, Gruppe stark vereinfacht. Sockelkranz 0,6 m unter dem Ursprung.",
+    "size_bytes": 258668
   },
   {
     "file": "mon_obelisk.glb",
@@ -914,6 +1053,29 @@
     "size_bytes": 95996
   },
   {
+    "file": "mon_schiller_koerner.glb",
+    "height": 4.5,
+    "bbox_min": [
+      -3.3,
+      0.0,
+      -0.6
+    ],
+    "bbox_max": [
+      3.3,
+      4.5,
+      0.95
+    ],
+    "tris": 4090,
+    "materials": [
+      "Granit",
+      "GranitDunkel",
+      "Sandstein",
+      "Sandstein_dunkel"
+    ],
+    "notes": "Schiller-Körner-Denkmal (Martin Pietzsch / Oskar Rost, 1912/13) in der Stützmauer der Schillerstraße gegenüber dem Schillerhäuschen, Dresden-Loschwitz: Wandbrunnen als Nische mit zwei Pfeilern, Zahnschnitt und Segmentdach; Mittelrisalit mit Brunnennische, beidseits Figurenreliefs (links im Bild/+X Schiller und Körner mit Kind, rechts/-X sitzende und stehende Frauen der Familie Körner); davor Brunnenpfeiler mit Putten-Relief und gestuftem Trog. Grau verwitterte Architektur als Material Granit (reine Farbe), Reliefs als Sandstein. WANDDENKMAL: Mauerflucht Y = 0, eigenes Mauerstück 6,6 m breit, 3,7 m hoch, 0,9 m tief dahinter; Vorderseite +Y. Gesamthöhe ca. 4,5 m (geschätzt). Die Straße steigt im Original leicht an (Modell eben).",
+    "size_bytes": 253388
+  },
+  {
     "file": "mon_schillerdenkmal.glb",
     "height": 5.021,
     "bbox_min": [
@@ -933,6 +1095,29 @@
     ],
     "notes": "Schillerdenkmal (Werner/Hempel 1914): Marmorstandbild 3,4 m in Toga mit Buch auf Sockel in schulterhoher Marmorrotunde Ø 7,5 m mit Reliefplatten, Eingang mit zwei Maskenpfeilern und Eisentor vorn (+Y).",
     "size_bytes": 129596
+  },
+  {
+    "file": "mon_schweinetreiberbrunnen.glb",
+    "height": 2.69,
+    "bbox_min": [
+      -1.72,
+      -0.6,
+      -1.72
+    ],
+    "bbox_max": [
+      1.72,
+      2.69,
+      1.72
+    ],
+    "tris": 2376,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "Sandstein",
+      "Wasser"
+    ],
+    "notes": "Schweinetreiberbrunnen (Georg Wrba 1922, Messering 26, ehem. Schlachthof): achteckiges Sandsteinbecken Ø 2,6 m (belegt) mit niedriger breiter Brüstung, quadratischer Sandsteinsockel mit gefastem Schaft und Deckplatte (1,56 m, geschätzt), Bronzeplatte 50 × 55 cm (belegt), darauf vorgebeugter Treiber über dem Schwein, das er an den Ohren packt (Blick +Y, Gruppe 1,1 m, geschätzt); gesamt ca. 2,7 m. Sockelkranz 0,6 m unter dem Ursprung.",
+    "size_bytes": 101668
   },
   {
     "file": "mon_sculpture.glb",
@@ -1018,6 +1203,28 @@
     ],
     "notes": "Standbild: Bronzefigur mit Mantel auf profiliertem Sandsteinsockel, Tafel vorn (+Y).",
     "size_bytes": 75836
+  },
+  {
+    "file": "mon_steinblumenbrunnen.glb",
+    "height": 2.88,
+    "bbox_min": [
+      -1.1,
+      -0.6,
+      -1.1
+    ],
+    "bbox_max": [
+      1.1,
+      2.88,
+      1.1
+    ],
+    "tris": 4154,
+    "materials": [
+      "Bronze",
+      "Sandstein_dunkel",
+      "Wasser"
+    ],
+    "notes": "Steinblumenbrunnen (Gartenheimsiedlung Gruna): dunkler, bauchiger Steintrog 2,2 × 2,2 m mit ausschwingenden Wänden auf zurückgesetztem Fuß (Rand 0,85 m), im Trog profilierter Sockel mit vier Auslaufröhrchen, darauf Steinkegel aus Blättern, Margeritenblüten, Kindern und Vögeln, bekrönt von einem kannelierten Blütenkelch; ca. 2,9 m hoch. Alle Maße geschätzt, Bildwerk nur als Blatt-/Blütenschuppen angedeutet. Fuß reicht 0,6 m unter den Ursprung.",
+    "size_bytes": 226740
   },
   {
     "file": "mon_stele.glb",

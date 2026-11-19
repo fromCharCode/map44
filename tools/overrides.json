@@ -578,7 +578,55 @@
    "mon_fluegelradbrunnen",
    1.0,
    null
+  ],
+  [
+   1644,
+   1124,
+   10,
+   "mon_mosaikbrunnen",
+   1.0,
+   null
+  ],
+  [
+   -670,
+   -2019,
+   10,
+   "mon_schweinetreiberbrunnen",
+   1.0,
+   null
+  ],
+  [
+   4351,
+   1677,
+   10,
+   "mon_steinblumenbrunnen",
+   1.0,
+   null
+  ],
+  [
+   1087,
+   -270,
+   8,
+   "mon_boettger_stele",
+   1.0,
+   null
+  ],
+  [
+   7656,
+   3007,
+   10,
+   "mon_neuber",
+   1.0,
+   null
+  ],
+  [
+   1357,
+   -3365,
+   10,
+   "mon_gardereiter",
+   1.0,
+   null
   ]
  ],
- "monument_at_note": "Nachbauten nach Commons-Fotos (tools/blender/monuments_named_a.py … _f.py). Gebaut, aber ohne belegten Standort nicht aufgestellt: Rietschel, Ludwig Richter (Brühlsche Terrasse), Schalenbrunnen (Dippoldiswalder Platz), Obelisk Garnisonfriedhof (mon_fahnentraeger); Bismarcksäule steht als Gebäude. Pusteblumen: Zuordnung zum namenlosen Brunnen an der Prager Straße vermutet."
+ "monument_at_note": "Nachbauten nach Commons-Fotos (tools/blender/monuments_named_a.py … _f.py). Gebaut, aber ohne belegten Standort nicht aufgestellt: Rietschel, Ludwig Richter (Brühlsche Terrasse), Schalenbrunnen (Dippoldiswalder Platz), Nymphenbrunnen (Neustädter Markt, kein Eintrag in den Daten), Obelisk Garnisonfriedhof (mon_fahnentraeger); Bismarcksäule steht als Gebäude. Pusteblumen: Zuordnung zum namenlosen Brunnen an der Prager Straße vermutet. Wanddenkmäler Moritzmonument und Schiller-Körner-Denkmal gebaut, aber nicht aufgestellt (müssen in die Mauerflucht eingepasst werden; frei aufgestellt stand das Moritzmonument schief auf der Bastion)."
 }
