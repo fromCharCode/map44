@@ -688,23 +688,24 @@ def mon_delphinbrunnen():
     der Stützmauer, davor flaches Becken. Keine Maße belegt; aus Fotos geschätzt."""
     s = Soup()
     S = STONE
+    ZD = -1.5                               # Becken und Mauer reichen als geschlossener Sockel 1,5 m unter den Ursprung (Hanglage)
     # Stützmauer (Rückseite -Y), drei Felder, das mittlere zurückgesetzt
     yw = -2.3
     for cx, w, dy in ((-4.4, 4.2, 0.35), (0.0, 4.6, 0.0), (4.4, 4.2, 0.35)):
-        s.add(stack([(w, 0.7, 0), (w, 0.7, 0.45), (w - 0.05, 0.6, 0.5), (w - 0.05, 0.6, 2.05), (w + 0.05, 0.74, 2.1),
+        s.add(stack([(w, 0.7, ZD), (w, 0.7, 0.45), (w - 0.05, 0.6, 0.5), (w - 0.05, 0.6, 2.05), (w + 0.05, 0.74, 2.1),
                      (w + 0.05, 0.74, 2.25)], S, cx=cx, cy=yw + dy))
         s.add(cbox(cx, yw + dy + 0.31, 0.75, w - 1.0, 0.03, 1.05, S))    # Spiegelfeld
     for cx in (-6.5, -2.3, 2.3, 6.5):
-        s.add(stack([(0.6, 0.9, 0), (0.6, 0.9, 2.12), (0.7, 1.0, 2.16), (0.7, 1.0, 2.30)], S, cx=cx, cy=yw + 0.3))
+        s.add(stack([(0.6, 0.9, ZD), (0.6, 0.9, 2.12), (0.7, 1.0, 2.16), (0.7, 1.0, 2.30)], S, cx=cx, cy=yw + 0.3))
     s.add(railing([(-6.5, yw + 0.3, 0), (-2.3, yw + 0.3, 0), (2.3, yw + 0.3, 0), (6.5, yw + 0.3, 0)], 0.95, IRON,
                   z0=2.30, bars=9, r=0.02))
     # Becken: flache, vorn gerundete Schale
     W, Dp, r, t = 13.0, 5.6, 2.4, 0.35
     cy = 0.45
-    rings = [rrect(W, Dp, r, 4, 0, 0, cy), rrect(W, Dp, r, 4, 0.22, 0, cy), rrect(W - 0.08, Dp - 0.08, r, 4, 0.28, 0, cy),
+    rings = [rrect(W, Dp, r, 4, ZD, 0, cy), rrect(W, Dp, r, 4, 0.22, 0, cy), rrect(W - 0.08, Dp - 0.08, r, 4, 0.28, 0, cy),
              rrect(W - 2 * t, Dp - 2 * t, r - t, 4, 0.28, 0, cy), rrect(W - 2 * t - 0.03, Dp - 2 * t - 0.03, r - t, 4, 0.05, 0, cy)]
     s.add(loft(rings, S, orient=V((0, 0, 1))))
-    s.poly(rrect(W - 2 * t - 0.02, Dp - 2 * t - 0.02, r - t, 4, 0.18, 0, cy), WATER)
+    s.poly(rrect(W - 2 * t - 0.03, Dp - 2 * t - 0.03, r - t, 4, 0.18, 0, cy), WATER)
     # Felsen, Muschelschale
     for i, (x, y, rr, zz) in enumerate(((0.0, -1.2, 0.95, 0.35), (-0.9, -1.3, 0.6, 0.25), (0.9, -1.25, 0.65, 0.25),
                                         (-0.3, -0.75, 0.55, 0.2), (0.5, -0.8, 0.5, 0.2), (-3.2, -1.4, 0.55, 0.2),
@@ -737,7 +738,7 @@ def mon_delphinbrunnen():
     s.add(f)
     return s, ("Delphinbrunnen (Brühlscher Garten): Putto auf Delphin über Muschelschale auf Felsen, vor "
                "dreiteiliger Sandstein-Stützmauer mit Eisengeländer (Rückseite -Y), flaches Becken 13 × 5,6 m "
-               "davor. Maße geschätzt.")
+               "davor; Becken- und Mauersockel reichen 1,5 m unter den Ursprung (Hanglage). Maße geschätzt.")
 
 
 CLOSE = {"mon_cholerabrunnen": ((0, 0, 3.2), 4.2, ((15, 8), (45, 20))),

@@ -25,6 +25,28 @@
     "size_bytes": 337020
   },
   {
+    "file": "mon_bismarcksaeule.glb",
+    "height": 23.0,
+    "bbox_min": [
+      -8.0,
+      0.0,
+      -10.1
+    ],
+    "bbox_max": [
+      8.0,
+      23.0,
+      8.0
+    ],
+    "tris": 1864,
+    "materials": [
+      "Eisen",
+      "Sandstein_dunkel",
+      "Stahl"
+    ],
+    "notes": "Bismarcksäule Räcknitz (Wilhelm Kreis, Entwurf »Götterdämmerung«): dunkler Sandsteinturm auf quadratischem Grundriss mit vier Dreiviertelsäulen an den Ecken, wulstigem Architrav und dreifach gestuftem Aufsatz, zweistufige Terrasse 16 m mit Freitreppe und Eingang nach +Y. Gesamthöhe 23 m (belegt).",
+    "size_bytes": 77168
+  },
+  {
     "file": "mon_bust.glb",
     "height": 2.287,
     "bbox_min": [
@@ -74,7 +96,7 @@
     "height": 3.31,
     "bbox_min": [
       -6.85,
-      0.0,
+      -1.5,
       -3.25
     ],
     "bbox_max": [
@@ -89,8 +111,8 @@
       "Sandstein",
       "Wasser"
     ],
-    "notes": "Delphinbrunnen (Brühlscher Garten): Putto auf Delphin über Muschelschale auf Felsen, vor dreiteiliger Sandstein-Stützmauer mit Eisengeländer (Rückseite -Y), flaches Becken 13 × 5,6 m davor. Maße geschätzt.",
-    "size_bytes": 171488
+    "notes": "Delphinbrunnen (Brühlscher Garten): Putto auf Delphin über Muschelschale auf Felsen, vor dreiteiliger Sandstein-Stützmauer mit Eisengeländer (Rückseite -Y), flaches Becken 13 × 5,6 m davor; Becken- und Mauersockel reichen 1,5 m unter den Ursprung (Hanglage). Maße geschätzt.",
+    "size_bytes": 171492
   },
   {
     "file": "mon_fountain.glb",
@@ -202,6 +224,71 @@
     "size_bytes": 222264
   },
   {
+    "file": "mon_hietzigbrunnen.glb",
+    "height": 4.33,
+    "bbox_min": [
+      -3.7,
+      0.0,
+      -3.7
+    ],
+    "bbox_max": [
+      3.7,
+      4.33,
+      3.7
+    ],
+    "tris": 1580,
+    "materials": [
+      "Granit",
+      "Wasser"
+    ],
+    "notes": "Hietzigbrunnen (Rathausbrunnen, Wrba 1911): achteckiges Granitbecken Ø 6,1 m auf achteckiger Stufe, runder Sockel, große Schale Ø 3,8 m mit acht Ausgusslippen, achteckiger Pfeiler mit Masken und bekrönender Vase; 4,3 m hoch. Maße geschätzt.",
+    "size_bytes": 76132
+  },
+  {
+    "file": "mon_julius_otto.glb",
+    "height": 4.0,
+    "bbox_min": [
+      -2.2,
+      0.0,
+      -2.55
+    ],
+    "bbox_max": [
+      2.2,
+      4.0,
+      1.85
+    ],
+    "tris": 5026,
+    "materials": [
+      "Bronze",
+      "Granit"
+    ],
+    "notes": "Julius-Otto-Denkmal (An der Kreuzkirche): Bronzebüste in Hermenform auf Granitpfeiler mit Namenstafel im Kranz, davor vier Kruzianer in Bronze (zwei sitzend mit Notenbuch, zwei stehend; Blick +Y), dreistufiger Granitunterbau. Gesamthöhe ca. 4,0 m (geschätzt).",
+    "size_bytes": 228356
+  },
+  {
+    "file": "mon_kaestner.glb",
+    "height": 2.6,
+    "bbox_min": [
+      -1.36,
+      0.0,
+      -0.321
+    ],
+    "bbox_max": [
+      1.36,
+      2.6,
+      0.321
+    ],
+    "tris": 1844,
+    "materials": [
+      "Bronze",
+      "Glas",
+      "Sandstein",
+      "Sandstein_dunkel"
+    ],
+    "notes": "Erich-Kästner-Denkmal (Albertplatz, am Kästner-Museum): Bronzefigur des Jungen, seitlich auf der Mauer sitzend und auf den linken Arm gestützt (Brust nach +Y, Beine nach +X), auf einem 2,6 m langen Stück Sandsteinmauer mit Abdeckplatte, Glasfeld und Tafel. Gesamthöhe ca. 2,6 m (geschätzt).",
+    "size_bytes": 81228
+  },
+  {
     "file": "mon_koerner.glb",
     "height": 5.83,
     "bbox_min": [
@@ -221,6 +308,30 @@
     ],
     "notes": "Theodor-Körner-Denkmal (Georgplatz): Bronzefigur mit Mantel, Schwert an der Brust und Schriftrolle (Blick +Y), Granitpostament mit Leier und Schwert im Kranz. Statue 2,83 m, Postament 2,5 m, gesamt ca. 5,8 m.",
     "size_bytes": 100360
+  },
+  {
+    "file": "mon_ludwig_richter.glb",
+    "height": 4.5,
+    "bbox_min": [
+      -5.58,
+      0.0,
+      -4.1
+    ],
+    "bbox_max": [
+      5.58,
+      4.5,
+      1.25
+    ],
+    "tris": 3442,
+    "materials": [
+      "Bronze",
+      "Eisen",
+      "Gold",
+      "Granit",
+      "GranitRot"
+    ],
+    "notes": "Ludwig-Richter-Denkmal (Brühlsche Terrasse, Zustand seit 2013): Bronzesitzfigur auf Baumstumpf mit Skizzenbuch und Stift, Hut zu Füßen (Blick +Y), roter Granitsockel mit Goldinschrift; nach vorn ausschwingende Flügelmauern mit Endpfeilern, Eisenzaun im Bogen und Granitstufe davor. Ursprung = Sockelmitte; Anlage 11 m breit, reicht 4,2 m nach +Y. Gesamthöhe ca. 4,5 m (geschätzt).",
+    "size_bytes": 184648
   },
   {
     "file": "mon_luther.glb",
@@ -246,6 +357,51 @@
     "size_bytes": 101204
   },
   {
+    "file": "mon_marie_gey_brunnen.glb",
+    "height": 5.004,
+    "bbox_min": [
+      -2.06,
+      0.0,
+      -2.06
+    ],
+    "bbox_max": [
+      2.06,
+      5.004,
+      2.06
+    ],
+    "tris": 8328,
+    "materials": [
+      "Bronze",
+      "Sandstein",
+      "Sandstein_dunkel",
+      "Wasser"
+    ],
+    "notes": "Marie-Gey-Brunnen (Wrba, Friedrich-List-Platz): Bronze-Aphrodite mit erhobenen Armen und Trauben auf Muschelschale, die vier sitzende Putten umgeben; Bronzesockel auf quadratischem dunklem Steinblock mit vier Fischkopf-Speiern, Becken 4 m als Quadrat mit gebrochenen Ecken und vier Trinkschälchen. Maße geschätzt. Figur blickt nach +Y.",
+    "size_bytes": 383952
+  },
+  {
+    "file": "mon_moreau.glb",
+    "height": 2.65,
+    "bbox_min": [
+      -1.595,
+      0.0,
+      -1.595
+    ],
+    "bbox_max": [
+      1.595,
+      2.65,
+      1.595
+    ],
+    "tris": 1438,
+    "materials": [
+      "Eisen",
+      "Granit",
+      "GranitDunkel"
+    ],
+    "notes": "Moreau-Denkmal (Räcknitzhöhe): Granitblock mit Inschrift (vorn, +Y), darauf Gusseisenplatte mit antikem Helm mit Kamm, Schwert und Lorbeerkranz; Feldsteine am Fuß, quadratisches Eisengitter 3,1 m. Ohne die drei Eichen. Gesamthöhe ca. 2,65 m (geschätzt).",
+    "size_bytes": 88520
+  },
+  {
     "file": "mon_mozartbrunnen.glb",
     "height": 4.202,
     "bbox_min": [
@@ -269,6 +425,29 @@
     "size_bytes": 234360
   },
   {
+    "file": "mon_mutter_anna.glb",
+    "height": 5.5,
+    "bbox_min": [
+      -2.15,
+      0.0,
+      -2.15
+    ],
+    "bbox_max": [
+      2.15,
+      5.5,
+      2.15
+    ],
+    "tris": 2230,
+    "materials": [
+      "Bronze",
+      "Gold",
+      "Granit",
+      "GranitDunkel"
+    ],
+    "notes": "Mutter-Anna-Denkmal (Kurfürstin Anna, vor der Annenkirche): Bronzefigur mit Haube, Halskrause und pelzbesetzter Schaube, Gebetbuch an der Brust, Schlüsselbund (Blick +Y) auf dunklem poliertem Syenitsockel mit Goldinschrift, zwei graue Granitstufen. Gesamthöhe ca. 5,5 m (geschätzt).",
+    "size_bytes": 103532
+  },
+  {
     "file": "mon_obelisk.glb",
     "height": 6.0,
     "bbox_min": [
@@ -288,6 +467,76 @@
     ],
     "notes": "Sandstein-Obelisk auf dreistufigem Unterbau mit Postament, Tafel vorn (+Y).",
     "size_bytes": 11052
+  },
+  {
+    "file": "mon_pusteblumen.glb",
+    "height": 3.889,
+    "bbox_min": [
+      -5.5,
+      0.0,
+      -3.75
+    ],
+    "bbox_max": [
+      5.5,
+      3.889,
+      3.75
+    ],
+    "tris": 6568,
+    "materials": [
+      "Granit",
+      "Stahl",
+      "Wasser"
+    ],
+    "notes": "Pusteblumenbrunnen (Leoni Wirth 1969, Prager Straße): drei Edelstahl-Pusteblumen (Kugel mit Röhrchenkranz auf Stiel, 3,8 / 3,4 / 2,3 m hoch) in flachem Granit-Rechteckbecken 11 × 7,5 m (lange Seite X). Maße geschätzt.",
+    "size_bytes": 377548
+  },
+  {
+    "file": "mon_queckbrunnen.glb",
+    "height": 4.5,
+    "bbox_min": [
+      -0.975,
+      0.0,
+      -1.755
+    ],
+    "bbox_max": [
+      1.239,
+      4.5,
+      0.975
+    ],
+    "tris": 2530,
+    "materials": [
+      "Eisen",
+      "Lack_rot",
+      "Marmor",
+      "Sandstein",
+      "Sandstein_dunkel",
+      "Wasser"
+    ],
+    "notes": "Queckbrunnen (Hertha-Lindner-Straße): quadratisches Sandstein-Brunnenhaus 1,35 m mit Fries, Zahnschnitt und steinernem Zeltdach, dunkler Sockel 1,95 × 2,73 m mit halbrundem Trog, Wappen und Auslauf vorn (+Y), Schwengel an +X, Storch mit Wickelkindern obenauf; 4,5 m hoch (belegt).",
+    "size_bytes": 161708
+  },
+  {
+    "file": "mon_rebekkabrunnen.glb",
+    "height": 5.7,
+    "bbox_min": [
+      -3.689,
+      0.0,
+      -3.689
+    ],
+    "bbox_max": [
+      3.689,
+      5.7,
+      3.689
+    ],
+    "tris": 4094,
+    "materials": [
+      "Eisen",
+      "Sandstein",
+      "Sandstein_dunkel",
+      "Wasser"
+    ],
+    "notes": "Rebekka-Brunnen (An der Dreikönigskirche): Sandsteintrog 1,10 m, quadratisch mit gerundeten Ecken und vier halbrunden Wandbecken, auf dreistufiger Rundtreppe Ø 7,4 m; achteckige dunkle Sandsteinsäule mit vier Delphinen, darüber Eisengusssäule mit Rebekka (Krug auf dem Kopf); 5,70 m hoch (belegt), Durchmesser geschätzt.",
+    "size_bytes": 185312
   },
   {
     "file": "mon_reiter.glb",
@@ -353,6 +602,49 @@
     "size_bytes": 179188
   },
   {
+    "file": "mon_rosa_luxemburg.glb",
+    "height": 2.5,
+    "bbox_min": [
+      -0.54,
+      0.0,
+      -0.305
+    ],
+    "bbox_max": [
+      0.54,
+      2.5,
+      0.22
+    ],
+    "tris": 152,
+    "materials": [
+      "Bronze",
+      "Sandstein"
+    ],
+    "notes": "Rosa-Luxemburg-Denkmal (Rosa-Luxemburg-Platz, heutiger Zustand): hochrechteckige helle Steinstele mit Bronzerelief (Profilbildnis, vorn = +Y). Gesamthöhe ca. 2,5 m (geschätzt).",
+    "size_bytes": 9768
+  },
+  {
+    "file": "mon_schalenbrunnen_prager.glb",
+    "height": 5.22,
+    "bbox_min": [
+      -6.0,
+      0.0,
+      -4.0
+    ],
+    "bbox_max": [
+      6.0,
+      5.22,
+      4.0
+    ],
+    "tris": 2126,
+    "materials": [
+      "Granit",
+      "Stahl",
+      "Wasser"
+    ],
+    "notes": "Schalenbrunnen (Leoni Wirth, früher Prager Straße, seit 2021 Dippoldiswalder Platz): zehn flache Edelstahlschalen Ø 1,4–2,9 m auf Rohrbündeln in 1,5–5,2 m Höhe, eine an gebogenem Arm, in Rechteckbecken 12 × 8 m (lange Seite X). Maße und Anordnung geschätzt.",
+    "size_bytes": 95996
+  },
+  {
     "file": "mon_schillerdenkmal.glb",
     "height": 5.021,
     "bbox_min": [
@@ -415,6 +707,27 @@
     ],
     "notes": "Gottfried-Semper-Denkmal (Brühlsche Terrasse): Bronzefigur im Gehrock, linker Fuß auf einem Kapitell, Bauplan in den Händen (Blick +Y), roter Granitsockel mit Bronzetafel auf zwei Stufen. Gesamthöhe 5,6 m (geschätzt).",
     "size_bytes": 79000
+  },
+  {
+    "file": "mon_sowjetisches_ehrenmal.glb",
+    "height": 9.1,
+    "bbox_min": [
+      -4.5,
+      0.0,
+      -4.2
+    ],
+    "bbox_max": [
+      4.5,
+      9.1,
+      3.2
+    ],
+    "tris": 4098,
+    "materials": [
+      "Bronze",
+      "GranitRot"
+    ],
+    "notes": "Sowjetisches Ehrenmal (Olbrichtplatz): Bronzegruppe zweier Rotarmisten (vorn Soldat mit Stahlhelm, Mantel, MPi und Handgranate; dahinter Fahnenträger mit herabhängender Fahne; Blick +Y) auf dreistufigem Sockel aus rotem Meißner Granit mit Bronzereliefs, Schrifttafeln und Stern im Kranz; Stufenbau mit Freitreppe und zwei Wangenblöcken nach +Y. Gesamthöhe ca. 9,1 m (geschätzt).",
+    "size_bytes": 186832
   },
   {
     "file": "mon_statue.glb",

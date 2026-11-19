@@ -376,7 +376,95 @@
    "mon_gaensediebbrunnen",
    1.0,
    null
+  ],
+  [
+   333,
+   3043,
+   12,
+   "mon_moreau",
+   1.0,
+   null
+  ],
+  [
+   582,
+   212,
+   12,
+   "mon_julius_otto",
+   1.0,
+   null
+  ],
+  [
+   -225,
+   163,
+   12,
+   "mon_mutter_anna",
+   1.0,
+   null
+  ],
+  [
+   1576,
+   -885,
+   12,
+   "mon_rosa_luxemburg",
+   1.0,
+   null
+  ],
+  [
+   1245,
+   -1468,
+   12,
+   "mon_kaestner",
+   1.0,
+   null
+  ],
+  [
+   206,
+   1305,
+   12,
+   "mon_marie_gey_brunnen",
+   1.0,
+   null
+  ],
+  [
+   660,
+   239,
+   12,
+   "mon_hietzigbrunnen",
+   1.0,
+   null
+  ],
+  [
+   889,
+   -1192,
+   12,
+   "mon_rebekkabrunnen",
+   1.0,
+   null
+  ],
+  [
+   -61,
+   -261,
+   12,
+   "mon_queckbrunnen",
+   1.0,
+   null
+  ],
+  [
+   993,
+   -277,
+   12,
+   "mon_delphinbrunnen",
+   1.0,
+   null
+  ],
+  [
+   362,
+   689,
+   8,
+   "mon_pusteblumen",
+   1.0,
+   null
   ]
  ],
- "monument_at_note": "Nachbauten nach Commons-Fotos (tools/blender/monuments_named_a.py, _b.py); Rietschel-Denkmal gebaut, aber ohne belegten Standort nicht aufgestellt; Delphinbrunnen gebaut, aber am Hang schwebt die Wasserfläche – vorerst nicht aufgestellt"
+ "monument_at_note": "Nachbauten nach Commons-Fotos (tools/blender/monuments_named_a.py … _d.py). Gebaut, aber ohne belegten Standort nicht aufgestellt: Rietschel, Ludwig Richter (Brühlsche Terrasse), Sowjetisches Ehrenmal (Olbrichtplatz), Schalenbrunnen (Dippoldiswalder Platz); Bismarcksäule steht als Gebäude. Pusteblumen: Zuordnung zum namenlosen Brunnen an der Prager Straße vermutet."
 }

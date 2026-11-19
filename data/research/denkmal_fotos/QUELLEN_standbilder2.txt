@@ -1,0 +1,37 @@
+Vorlagenfotos von Wikimedia Commons für monuments_named_c.py (nur Vorlage, nicht ins Spiel kopieren)
+Datei | Commons-Titel | Urheber | Lizenz
+sowjetisches_ehrenmal/1.jpg | File:Sachsen, Dresden, Sowjetisches Ehrenmal (Dresden) File-NIK 7244.jpg | Nightflyer | CC BY-SA 4.0
+sowjetisches_ehrenmal/2.jpg | File:20240508.Ehrenmal für die gefallenen Helden der Sowjetarmee (Dresden).-017.jpg | Bybbisch94 | CC BY 4.0
+sowjetisches_ehrenmal/3.jpg | File:2022601.Ehrenmal für die gefallenen Helden der Sowjetarmee (Dresden).-01.jpg | Bybbisch94, Christian Gebhardt | CC BY-SA 4.0
+sowjetisches_ehrenmal/4.jpg | File:20240508.Ehrenmal für die gefallenen Helden der Sowjetarmee (Dresden).-012.jpg | Bybbisch94 | CC BY 4.0
+moreau/1.jpg | File:20070407040DR Dresden-Räcknitz Moreau-Denkmal Franzenshöhe.jpg | Jörg Blobelt | CC BY-SA 4.0
+moreau/2.jpg | File:20070407030DR Dresden-Räcknitz Moreau-Denkmal Franzenshöhe.jpg | Jörg Blobelt | CC BY-SA 4.0
+moreau/3.jpg | File:Moreau Denkmal Räcknitz im Winter.jpg | Freital | CC BY-SA 4.0
+ludwig_richter/1.jpg | File:20140816210DR Dresden Brühlsche Terrasse Ludwig Richter Denkmal.jpg | Jörg Blobelt | CC BY-SA 4.0
+ludwig_richter/2.jpg | File:20140816200DR Dresden Brühlsche Terrasse Ludwig Richter Denkmal.jpg | Jörg Blobelt | CC BY-SA 4.0
+ludwig_richter/3.jpg | File:Dresden Brühlsche Terasse statue Richter 01.JPG | Ad Meskens | CC BY-SA 4.0
+julius_otto/1.jpg | File:20120418010DR Dresden Julius-Otto-Denkmal.jpg | Jörg Blobelt | CC BY-SA 4.0
+julius_otto/2.jpg | File:20120418025DR Dresden Julius-Otto-Denkmal.jpg | Jörg Blobelt | CC BY-SA 4.0
+julius_otto/3.jpg | File:Ernst Julius Otto Monument.jpg | Stefan Bellini | CC0
+julius_otto/4.jpg | File:20250314.Julius Otto Monument Dresden.-014.jpg | Bybbisch94 | CC BY-SA 4.0
+mutter_anna/1.jpg | File:20141108215DR Dresden Denkmal Kurfürstin Anna.jpg | Jörg Blobelt | CC BY-SA 4.0
+mutter_anna/2.jpg | File:20141108205DR Dresden Denkmal Kurfürstin Anna.jpg | Jörg Blobelt | CC BY-SA 4.0
+mutter_anna/3.jpg | File:Anna-Denkmal.jpg | SchiDD | CC BY-SA 3.0
+mutter_anna/4.jpg | File:20141108221DR Dresden Denkmal Kurfürstin Anna.jpg | Jörg Blobelt | CC BY-SA 4.0
+bismarcksaeule/1.jpg | File:Bismarckturm Räcknitz.JPG | X-Weinzar | CC BY-SA 3.0
+bismarcksaeule/2.jpg | File:20070406015DR Dresden-Räcknitz (Südhöhe) Bismarckturm.jpg | Jörg Blobelt | CC BY-SA 4.0
+bismarcksaeule/3.jpg | File:20080802010DR Dresden-Räcknitz Bismarckturm.jpg | Jörg Blobelt | CC BY-SA 4.0
+bismarcksaeule/4.jpg | File:Bismarcksaeule Dresden-Räcknitz 2006.jpg | Froebel at de.wikipedia | CC BY-SA 3.0
+rosa_luxemburg/1.jpg | File:Rosa Luxemburg Gedenkstätte in Dresden - Rosa Luxemburg Platz - Bild 003.jpg | Lupus in Saxonia | CC BY-SA 4.0
+rosa_luxemburg/2.jpg | File:Rosa Luxemburg Gedekstätte in Dresden - Rosa Luxemburg Platz - Bild 001.jpg | Lupus in Saxonia | CC BY-SA 4.0
+rosa_luxemburg/3.jpg | File:Rosa Luxemburg Gedenkstätte in Dresden - Rosa Luxemburg Platz - Bild 006.jpg | Lupus in Saxonia | CC BY-SA 4.0
+rosa_luxemburg/4.jpg | File:Stele-Luxemburg1.jpg | SchiDD | CC BY-SA 3.0
+kaestner/1.jpg | File:Dresden Erich-Kästner-Denkmal.JPG | Ad Meskens | CC BY-SA 4.0
+kaestner/2.jpg | File:Denkmal Erich Kästner Albertplatz Dresden Sachsen Germany.jpg | Lupus in Saxonia | CC BY-SA 4.0
+kaestner/3.jpg | File:Denkmal Erich Kästner Albertplatz Dresden Sachsen Germany 4.jpg | Lupus in Saxonia | CC BY-SA 4.0
+kaestner/4.jpg | File:Erich Kästner Gedenkstätte Albertplatz Dresden 5.jpg | Lupus in Saxonia | CC BY-SA 4.0
+
+Höhenangaben:
+mon_bismarcksaeule: 23 m – de.wikipedia.org, Artikel »Bismarcksäule (Dresden-Räcknitz)«
+alle übrigen Höhen aus den Fotos geschätzt (Vergleich mit Personen, Zäunen, Geländern)
+Beschreibung Sowjetisches Ehrenmal (roter Meißner Granit, zwei Soldaten mit Fahne, vier Bronzetafeln): de.wikipedia.org, Artikel »Sowjetisches Ehrenmal (Dresden)«
