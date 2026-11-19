@@ -263,6 +263,24 @@ func _report(final: bool) -> void:
 			waiting += 1
 		if (c as AICar).is_bus:
 			buses += 1
+	# Autobahn getrennt: Anzahl, Durchschnittstempo, Stehende (ein Stau ohne Anlass wäre ein Fehler der Fahr-KI)
+	var mw_n := 0
+	var mw_v := 0.0
+	var mw_stop := 0
+	var mw_min := INF
+	for c in traffic.cars:
+		var ac := c as AICar
+		if ac.cur_edge >= 0 and ac.cur_edge < traffic.edges.size() and String(traffic.edges[ac.cur_edge]["cls"]) in ["motorway", "trunk", "motorway_link"]:
+			mw_n += 1
+			mw_v += ac.speed * 3.6
+			mw_min = minf(mw_min, ac.speed * 3.6)
+			if ac.speed < 0.3:
+				mw_stop += 1
+				if OS.has_environment("DRESDEN_MWDBG"):
+					print("    steht: (%.0f, %.0f) Kante %d %s Grenze '%s' Versatz %.1f" % [ac.pos.x, ac.pos.z, ac.cur_edge,
+						String(traffic.edges[ac.cur_edge]["cls"]), ac._limit, ac.lane_shift])
+	if mw_n > 0:
+		print("  Autobahn: %d Fahrzeuge, Ø %.0f km/h, langsamstes %.0f km/h, stehend %d" % [mw_n, mw_v / float(mw_n), mw_min, mw_stop])
 	print("  FPS %d, Bild %.1f ms, Prozess %.1f ms" % [Engine.get_frames_per_second(), 1000.0 / maxf(Engine.get_frames_per_second(), 1.0), Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0])
 	print("  Physik-Rechenzeit Ø %.2f ms/Schritt, davon KI-Fahrzeuge %.2f ms (Denken %.2f ms), Prüfstand %.2f ms" % [phys_ms / maxf(float(phys_n), 1.0), AICar.prof_us / 1000.0 / maxf(float(phys_n), 1.0), AICar.prof_think_us / 1000.0 / maxf(float(phys_n), 1.0), own_us / 1000.0 / maxf(float(phys_n), 1.0)])
 	own_us = 0
