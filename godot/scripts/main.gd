@@ -737,6 +737,7 @@ func _process(delta: float) -> void:
 	if not ready_to_play:
 		return
 	world.set_night(env_mgr.night_value)
+	Landmarks.set_night(env_mgr.night_value)
 	var focus := Vector3.ZERO
 	if player:
 		focus = player.global_position

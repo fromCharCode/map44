@@ -299,6 +299,29 @@ func _make_materials() -> void:
 	_shared_lock.unlock()
 
 
+static var _night_last := -1.0
+
+
+static func set_night(v: float) -> void:
+	## Wahrzeichen werden nachts angestrahlt: Stein und Putz leuchten warm (wie von Strahlern am Boden), stufenlos
+	## mit der Dämmerung. Ab 1 Uhr nachts wird die Anstrahlung abgeschaltet (wie in echt).
+	var late := Timetable.hours >= 1.0 and Timetable.hours < 5.0
+	var k := clampf(v, 0.0, 1.0) * (0.0 if late else 1.0)
+	if absf(k - _night_last) < 0.02:
+		return
+	_night_last = k
+	_shared_lock.lock()
+	for nm in ["Sandstone", "SandstoneDark", "Plaster"]:
+		if _shared_mats.has(nm):
+			var m: StandardMaterial3D = _shared_mats[nm]
+			m.emission_enabled = k > 0.03
+			if k > 0.03:
+				m.emission = Color(1.0, 0.80, 0.52) * m.albedo_color
+				m.emission_texture = m.albedo_texture
+				m.emission_energy_multiplier = 0.035 * k      # Nachtbelichtung ist sehr empfindlich: wenig genügt
+	_shared_lock.unlock()
+
+
 func _build_materials() -> void:
 	var st_tex := TexLib.texture("sandstone", "albedo")
 	var st_n := TexLib.texture("sandstone", "normal")

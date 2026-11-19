@@ -728,6 +728,18 @@ static func edge(out: Dictionary, cell_of: Callable, levels_f: float, height: fl
 			for i in ns:
 				put.call("box", "d", (float(i) + 0.5) * ln / float(ns), ref + height - 0.16, 0.10, 0.14, 0.45)
 		10:
+			if h4 < 0.5 and rows >= 5 and ln >= 12.0 and fh > 3.0:
+				# Arkaden im Erdgeschoss (Altmarkt, Wilsdruffer Straße, Grunaer Straße): Sandsteinpfeiler mit Rundbögen
+				# vor der Ladenzone
+				var ah := fh - 0.35
+				for col in range(c0, c1 + 2):
+					var x := float(col) * pitch - acc
+					if x > 0.4 and x < ln - 0.4:
+						put.call("box", "s", x, ref - 0.2, 0.75, ah - (pitch - 0.75) * 0.5 + 0.2, 0.55)
+				for ci in ncol:
+					var ax: float = cols[ci][0]
+					put.call("arch", "s", ax, ref + ah - (pitch - 0.75) * 0.5, pitch - 0.75, pitch - 0.75, 7.5)
+				put.call("box", "s", ln * 0.5, ref + ah + 0.05, ln, 0.30, 0.58)
 			if h4 < 0.5:
 				put.call("box", "s", ln * 0.5, ref + fh - 0.12, ln, 0.22, 0.09)        # Gurtgesims über dem Erdgeschoss
 				put.call("box", "s", ln * 0.5, ref - 0.3, ln, 1.3, 0.05)
