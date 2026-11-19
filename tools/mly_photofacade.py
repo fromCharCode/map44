@@ -20,7 +20,35 @@ N = 1024
 TH, TU, TD = 1.6, 1.9, 0.35                                       # Bildfeld der Suchansicht in tan-Einheiten
 
 
-def view(pano, R, nrm, th=TH, tu=TU, td=TD, n=N):
+def project(im, cam, pw, ph):
+    """Kamerastrahlen (rechts, unten, vorn) -> Bildkoordinaten (fx, fy) und Gültigkeit. Rundumbild: Kugelabbildung;
+    normales Bild: Lochkamera mit radialer Verzeichnung (Mapillary camera_parameters = Brennweite/max(B,H), k1, k2)."""
+    if im is None or im.get("camera_type") == "spherical":
+        lon = np.arctan2(cam[..., 0], cam[..., 2])
+        lat = np.arctan2(-cam[..., 1], np.hypot(cam[..., 0], cam[..., 2]))
+        fx = (lon / (2 * math.pi) + 0.5) * pw - 0.5
+        fy = np.clip((0.5 - lat / math.pi) * ph - 0.5, 0, ph - 1.001)
+        return fx, fy, np.ones(fx.shape, bool)
+    f, k1, k2 = (list(im.get("camera_parameters") or [0.7, 0.0, 0.0]) + [0.0, 0.0])[:3]
+    z = cam[..., 2]
+    ok = z > 0.05
+    zs = np.where(ok, z, 1.0)
+    xn, yn = cam[..., 0] / zs, cam[..., 1] / zs
+    r2 = xn * xn + yn * yn
+    dist = 1.0 + k1 * r2 + k2 * r2 * r2
+    fpx = f * max(pw, ph)
+    fx = pw / 2.0 + fpx * xn * dist - 0.5
+    fy = ph / 2.0 + fpx * yn * dist - 0.5
+    ok &= (r2 < 4.0) & (fx >= 0) & (fx <= pw - 1.001) & (fy >= 0) & (fy <= ph - 1.001)
+    return np.clip(fx, 0, pw - 1.001), np.clip(fy, 0, ph - 1.001), ok
+
+
+def is_pano(im):
+    return im.get("camera_type") == "spherical"
+
+
+def view(pano, R, nrm, th=None, tu=TU, td=TD, n=N, im=None):
+    th = TH if th is None else th
     ph, pw = pano.shape[:2]
     fwd = np.array([-nrm[0], nrm[1], 0.0])
     fwd /= np.linalg.norm(fwd)
@@ -30,21 +58,21 @@ def view(pano, R, nrm, th=TH, tu=TU, td=TD, n=N):
     ys = tu - (np.arange(n) + 0.5) / n * (tu + td)
     xx, yy = np.meshgrid(xs, ys)
     cam = (fwd[None, None, :] + xx[..., None] * right + yy[..., None] * up) @ R.T
-    lon = np.arctan2(cam[..., 0], cam[..., 2])
-    lat = np.arctan2(-cam[..., 1], np.hypot(cam[..., 0], cam[..., 2]))
-    fx = (lon / (2 * math.pi) + 0.5) * pw - 0.5
-    fy = np.clip((0.5 - lat / math.pi) * ph - 0.5, 0, ph - 1.001)
+    fx, fy, ok = project(im, cam, pw, ph)
     x0 = np.floor(fx).astype(int)
     y0 = np.floor(fy).astype(int)
     wx = (fx - x0)[..., None]
     wy = (fy - y0)[..., None]
     p = pano.astype(float)
-    a = p[y0, x0 % pw] * (1 - wx) + p[y0, (x0 + 1) % pw] * wx
-    b = p[y0 + 1, x0 % pw] * (1 - wx) + p[y0 + 1, (x0 + 1) % pw] * wx
-    return (a * (1 - wy) + b * wy).astype(np.uint8)
+    x1 = (x0 + 1) % pw if (im is None or is_pano(im)) else np.minimum(x0 + 1, pw - 1)
+    a = p[y0, x0 % pw] * (1 - wx) + p[y0, x1] * wx
+    b = p[y0 + 1, x0 % pw] * (1 - wx) + p[y0 + 1, x1] * wx
+    out = (a * (1 - wy) + b * wy).astype(np.uint8)
+    out[~ok] = 128                                               # außerhalb des Bildes: neutrales Grau
+    return out
 
 
-def fit(img, L, H, d_pose, along, cam_h):
+def fit(img, L, H, d_pose, along, cam_h, TH=TH):
     """Abstand und seitliche Lage der Wand im entzerrten Bild: Suche über (d, Versatz). Bewertet werden die beiden
     Hauskanten (senkrechter Farbwechsel im oberen Wandbereich) und die Trauflinie (darüber Himmel, darunter Wand)."""
     n = img.shape[1]
@@ -120,12 +148,13 @@ def facade(im, c, p0, p1, H, cam_h=2.3, ppm=28.0, fixed=None):
         return None, "Kamera hinter/zu nah an der Wand"
     R = mf.rodrigues(im["computed_rotation"])
     pano = mw.pano_2048(im)
-    img = view(pano, R, nrm) if fixed is None else None
+    th = TH if is_pano(im) else 3.2                              # normale Bilder sehen die Wand meist schräg von vorn
+    img = view(pano, R, nrm, th=th, im=im) if fixed is None else None
     xl, xr = (-L / 2 - along) / d_pose, (L / 2 - along) / d_pose
-    if xl < -TH * 0.95 or xr > TH * 0.95:
+    if xl < -th * 0.95 or xr > th * 0.95:
         return None, "Wand nicht im Bildfeld"
     if fixed is None:
-        bf = fit(img, L, H, d_pose, along, cam_h)
+        bf = fit(img, L, H, d_pose, along, cam_h, TH=th)
         if bf is None:
             return None, "Traufe oberhalb des Bildfelds (zu nah)"
     else:
@@ -146,10 +175,11 @@ def facade(im, c, p0, p1, H, cam_h=2.3, ppm=28.0, fixed=None):
     ys = top - (np.arange(h) + 0.5) / h * (top - bot)
     xx, yy = np.meshgrid(xs, ys)
     cam = (fwd[None, None, :] + xx[..., None] * right + yy[..., None] * up) @ R.T
-    lon = np.arctan2(cam[..., 0], cam[..., 2])
-    lat = np.arctan2(-cam[..., 1], np.hypot(cam[..., 0], cam[..., 2]))
-    sx = ((lon / (2 * math.pi) + 0.5) * pw).astype(int) % pw
-    sy = np.clip(((0.5 - lat / math.pi) * ph).astype(int), 0, ph - 1)
+    fx, fy, ok = project(im, cam, pw, ph)
+    if ok.mean() < 0.985:
+        return None, "Wand nicht ganz im Bild"
+    sx = np.clip((fx + 0.5).astype(int), 0, pw - 1) % pw
+    sy = np.clip((fy + 0.5).astype(int), 0, ph - 1)
     tex = pano[sy, sx]
     return tex, {"d": float(d), "d_pose": round(d_pose, 1), "versatz": float(sh), "guete": round(float(score), 2),
                  "kanten": [round(sl, 2), round(sr, 2)], "traufe": round(skyq, 2)}
@@ -193,6 +223,10 @@ def tex_ok(tex, ppm=28.0):
     h = tex.shape[0]
     if green[: int(h * 0.8)].mean() > 0.16:
         return False, "Laub"
+    # Himmel in der Wandfläche = Ausschnitt verrutscht (Dach, Lücke, Nachbarhaus)
+    sky = (mx > 165) & ((sat < 0.12) | (f[..., 2] > f[..., 0] * 1.10)) & (f[..., 2] > 150)
+    if sky[: int(h * 0.5)].mean() > 0.07:
+        return False, "Himmel im Ausschnitt"
     g = f.mean(2)[: int(h * 0.85)]
     dark = (g < np.median(g) - 22.0).astype(float)
     if not 0.03 < dark.mean() < 0.55:
@@ -215,10 +249,17 @@ def brighten(tex):
 
 def good(info):
     """strenge Annahme: beide Hauskanten deutlich und Trauflinie gefunden"""
-    return min(info["kanten"]) >= 0.55 and info["traufe"] >= 0.15
+    if min(info["kanten"]) >= 0.55 and info["traufe"] >= 0.15:
+        return True
+    # zweite Annahme (Häuserzeilen ohne sichtbare Hauskante, z. B. Blockrand): Trauflinie deutlich gefunden und der
+    # daraus bestimmte Abstand passt zur Bildposition (±15 %) – dann stimmt auch die Lage entlang der Wand ungefähr
+    return info["traufe"] >= 0.5 and abs(math.log(max(info["d"], 0.1) / max(info["d_pose"], 0.1))) < 0.14 \
+        and abs(info.get("versatz", 0.0)) <= 1.6
 
 
-def tile_facades(name, max_cand=4):
+def tile_facades(name, max_cand=3, budget=None):
+    import os
+    budget = int(os.environ.get("PF_BUDGET", "500")) if budget is None else budget
     """Fotofassaden einer Kachel: data/processed/tiles/<kachel>/facades/*.jpg + facades.json
     [{"a": [x, z], "b": [x, z], "h": Wandhöhe, "tex": Datei, "gid": Gebäude, "bild": Mapillary-ID, "von": Urheber}]"""
     import json
@@ -239,42 +280,75 @@ def tile_facades(name, max_cand=4):
     if not feet:
         return
     tree = STRtree(feet)
-    images = [t for t in mc.tile_images(name) if t[0].get("camera_type") == "spherical"]
+    # Normale Kamerabilder (PF_KAMERA=1) sind technisch möglich, liefern aber fast nur verdeckte oder verrutschte
+    # Ausschnitte (Probe 11/2026: 2 von 3 angenommenen unbrauchbar) – Standard sind deshalb nur Rundumbilder.
+    kamera = os.environ.get("PF_KAMERA") == "1"
+    images = [t for t in mc.tile_images(name) if t[0].get("computed_rotation") and
+              (is_pano(t[0]) or (kamera and t[0].get("camera_type") == "perspective" and t[0].get("camera_parameters")
+                                 and t[0].get("width") and t[0].get("height")))]
     if not images:
-        print(f"  {name}: keine Rundumbilder", flush=True)
+        print(f"  {name}: keine Bilder", flush=True)
         return
     pts = STRtree([Point(c[0], c[1]) for _, c in images])
     out_dir = tdir / "facades"
     out_dir.mkdir(exist_ok=True)
-    for f in list(out_dir.glob("*.jpg")) + list(out_dir.glob("*.dds")):
-        f.unlink()
-    res, tried = [], 0
+    # 1. Schritt (ohne Bildabruf): je Wand die geometrisch passenden Bilder. Rundumbilder stehen vor der Wand; normale
+    # Kamerabilder sehen sie schräg von vorn – die vier Wandecken müssen dann im Bild liegen.
+    jobs = []
     for b in blds:
         H = float(b["eave"])
-        if H < 6.0 or b.get("elev"):
+        if H < 5.0 or b.get("elev"):
             continue
-        for q0, q1 in wall_runs(b["rings"][0], 7.0):
+        for q0, q1 in wall_runs(b["rings"][0], 6.5):
             L = float(np.linalg.norm(q1 - q0))
             if L > 60.0:
                 continue
             mid, dirv = (q0 + q1) / 2, (q1 - q0) / L
             nrm = np.array([-dirv[1], dirv[0]])
             cands = []
-            for k in pts.query(Point(mid[0], mid[1]).buffer(26.0)):
+            for k in pts.query(Point(mid[0], mid[1]).buffer(45.0)):
                 im, c = images[k]
                 off = c - mid
                 dist = float(off @ nrm)
-                if not 4.5 <= abs(dist) <= 24.0 or abs(float(off @ dirv)) > L * 0.45:
-                    continue
+                al = abs(float(off @ dirv))
+                pano = is_pano(im)
+                if pano:
+                    if not 4.5 <= abs(dist) <= 24.0 or al > L * 0.45:
+                        continue
+                else:
+                    if not 5.0 <= abs(dist) <= 26.0 or (al + L / 2) / abs(dist) > 2.9 or al / abs(dist) > 1.3:
+                        continue
+                    R = mf.rodrigues(im["computed_rotation"])
+                    cor = []
+                    for q in (q0, q1):
+                        for hh in (0.3 - 2.3, H - 2.3 + 0.4):
+                            cor.append([q[0] - c[0], -(q[1] - c[1]), hh])
+                    fx, fy, okc = project(im, np.array(cor) @ R.T, float(im["width"]), float(im["height"]))
+                    mx_, my_ = 0.02 * im["width"], 0.02 * im["height"]
+                    if not okc.all() or fx.min() < mx_ or fx.max() > im["width"] - mx_ or fy.min() < my_ or fy.max() > im["height"] - my_:
+                        continue
+                    if (fx.max() - fx.min()) < 0.12 * im["width"]:
+                        continue                                  # Wand zu klein im Bild
                 sight = LineString([tuple(c), tuple(mid + off / np.linalg.norm(off) * 0.6)])
                 if any(feet[j].intersects(sight) for j in tree.query(sight)):
                     continue
-                # zu nah: Traufe außerhalb des Bildfelds; ideal etwa Wandhöhe als Abstand
-                sc = abs(abs(dist) - max(H * 0.9, 8.0)) / 12.0 + abs(float(off @ dirv)) / L - 0.03 * (im["captured_at"] / 3.15e10 - 54.0)
+                # ideal: etwa Wandhöhe als Abstand, möglichst frontal, neuere Bilder; Rundumbilder bevorzugt
+                sc = abs(abs(dist) - max(H * 0.9, 8.0)) / 12.0 + (al / L if pano else 0.25 + 0.35 * al / abs(dist)) \
+                    - 0.03 * (im["captured_at"] / 3.15e10 - 54.0)
                 cands.append((sc, k, dist > 0))
-            cands.sort()
+            if cands:
+                cands.sort()
+                jobs.append((not any(is_pano(images[k][0]) for _, k, _ in cands[:max_cand]), -L * H, b, q0, q1, H, L, cands[:max_cand]))
+    jobs.sort(key=lambda j: (j[0], j[1]))
+    for f in list(out_dir.glob("*.jpg")) + list(out_dir.glob("*.dds")):
+        f.unlink()
+    res, tried = [], 0
+    for _, _, b, q0, q1, H, L, cands in jobs:
+        if tried >= budget:
+            break
+        if True:
             best = None
-            for _, k, front in cands[:max_cand]:
+            for _, k, front in cands:
                 im, c = images[k]
                 p0, p1 = (q0, q1) if front else (q1, q0)
                 try:
@@ -285,12 +359,14 @@ def tile_facades(name, max_cand=4):
                 tried += 1
                 if tex is not None and good(info) and tex_ok(tex)[0] and (best is None or info["guete"] > best[1]["guete"]):
                     best = (tex, info, im, p0, p1)
+                    if is_pano(im):
+                        break
             if best:
                 tex, info, im, p0, p1 = best
                 # endgültige Textur aus dem Originalbild (schärfer), mit der gefundenen Lage
                 c_im = next(c_ for i_, c_ in images if i_["id"] == im["id"])
                 try:
-                    hi, _ = facade(im, c_im, p0, p1, H, ppm=48.0, fixed=(info["d"], info["versatz"]))
+                    hi, _ = facade(im, c_im, p0, p1, H, ppm=48.0 if is_pano(im) else 40.0, fixed=(info["d"], info["versatz"]))
                     if hi is not None:
                         tex = hi
                 except Exception as ex:                              # noqa: BLE001
@@ -299,9 +375,10 @@ def tile_facades(name, max_cand=4):
                 dds_bc1.save_dds(Image.fromarray(brighten(tex)), out_dir / fn)
                 res.append({"a": [round(float(p0[0]), 2), round(float(p0[1]), 2)], "b": [round(float(p1[0]), 2), round(float(p1[1]), 2)],
                             "h": round(H, 2), "tex": fn, "gid": b.get("gid") or b["id"], "bild": im["id"],
-                            "von": (im.get("creator") or {}).get("username", "")})
+                            "von": (im.get("creator") or {}).get("username", ""), "art": "rundum" if is_pano(im) else "kamera"})
     (tdir / "facades.json").write_text(json.dumps(res, separators=(",", ":")), encoding="utf-8")
-    print(f"  {name}: {len(res)} Fotofassaden aus {tried} Auswertungen ({len(images)} Rundumbilder)", flush=True)
+    print(f"  {name}: {len(res)} Fotofassaden ({sum(1 for r in res if r['art'] == 'kamera')} aus normalen Bildern) aus {tried} "
+          f"Auswertungen, {len(jobs)} Wände mit passendem Bild ({len(images)} Bilder)", flush=True)
 
 
 if __name__ == "__main__" and len(sys.argv) >= 3 and sys.argv[1] == "tile":

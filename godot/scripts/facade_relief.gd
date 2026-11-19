@@ -82,9 +82,10 @@ static func _material(tone: String) -> Material:
 			m.roughness = 0.55
 			m.metallic = 0.3
 		"gl":
-			m.albedo_color = Color(0.10, 0.13, 0.16)         # Verglasung
-			m.roughness = 0.12
-			m.metallic = 0.4
+			# Verglasung (Erker, Treppenhausbänder): spiegelt den Himmel; vorher fast schwarz -> wirkte wie ein Loch
+			m.albedo_color = Color(0.20, 0.24, 0.29)
+			m.roughness = 0.06
+			m.metallic = 0.75
 		_:
 			m.albedo_color = Color(0.86, 0.84, 0.78)         # Stuck, gebrochenes Weiß
 	return TexLib.shared_material(key, m)
