@@ -598,6 +598,16 @@ void fragment() {
 	float grime = smoothstep(3.5, -0.2, p.y) * 0.22 + streak * (clean_platte ? 0.035 : 0.13);
 	float under_win = has_win ? smoothstep(0.0, 1.8, 1.8 - clamp(q.y - wy, 0.0, 1.8)) * step(wy, q.y) * step(q.y, wy + wh + 0.0) * 0.0 : 0.0;
 	base *= 1.0 - grime;
+	// Schmutzfahnen unter den Fensterbänken: an beiden Enden der Sohlbank läuft Regenwasser ab und zieht dunkle
+	// Streifen die Wand hinunter – an fast jeder verputzten Fassade zu sehen
+	if (has_win && !shop) {
+		float below = (wc.y - whs.y) - q.y;
+		float ex = abs(q.x - wc.x);
+		float ends = smoothstep(whs.x + 0.14, whs.x + 0.02, ex) * smoothstep(whs.x - 0.22, whs.x - 0.02, ex);
+		float run = smoothstep(0.02, 0.10, below) * exp(-max(below, 0.0) * 2.0);
+		float nstk = texture(noise_tex, vec2(p.x * 2.3 + seed * 7.0, p.y * 0.2)).r;
+		base *= 1.0 - 0.17 * ends * run * smoothstep(0.30, 0.70, nstk) * (clean_platte ? 0.35 : 1.0);
+	}
 	base *= mix(1.0, 0.93, texture(noise_tex, p * 0.8).r);
 
 	// ---- Graffiti (Erdgeschosszone, je 4,5-m-Abschnitt nach Baustil) ------------
