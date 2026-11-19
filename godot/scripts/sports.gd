@@ -335,7 +335,7 @@ func _track(c: Vector3, ang: float, L: float, W: float) -> void:
 	var ro := W * 0.5
 	var ri := ro - tw
 	var sl := maxf(L - W, 10.0) * 0.5                 # halbe Gerade
-	var red := Color(0.62, 0.25, 0.20)
+	var red := Color(0.46, 0.15, 0.11)
 	var pts_o: Array = []
 	var pts_i: Array = []
 	var nseg := 20
@@ -349,7 +349,7 @@ func _track(c: Vector3, ang: float, L: float, W: float) -> void:
 	var n := pts_o.size()
 	for i in n:
 		var j := (i + 1) % n
-		_quad(_st, pts_i[i], pts_o[i], pts_o[j], pts_i[j], red)
+		_quad_w(_st, pts_i[i], pts_o[i], pts_o[j], pts_i[j], red, Vector3.UP)
 		for k in lanes + 1:
 			var f := float(k) / float(lanes)
 			_line((pts_i[i] as Vector3).lerp(pts_o[i], f), (pts_i[j] as Vector3).lerp(pts_o[j], f), 0.05)
@@ -374,6 +374,21 @@ func _bleachers(bl: Array) -> void:
 		var cc := c + uz * (-D * 0.5 + (float(r) + 0.5) * run)
 		_box(cc, ux, uz, L * 0.5, run * 0.5, 0.38 * float(r + 1), Color(0.62, 0.62, 0.60), r == rows - 1)
 		_box(cc + Vector3(0, 0.38 * float(r + 1), 0) + uz * run * 0.15, ux, uz, L * 0.5 - 0.3, run * 0.2, 0.06, seat)
+	if D >= 12.0 and L >= 40.0:
+		# große Tribüne (Stadion): Pultdach über allen Reihen, hinten auf Stützen, vorn frei auskragend
+		var top := 0.38 * float(rows)
+		var back := c + uz * (D * 0.5)
+		var front := c - uz * (D * 0.5 + 1.5)
+		var r1 := back + Vector3(0, top + 3.6, 0)
+		var r0 := front + Vector3(0, top + 5.2, 0)
+		_quad_w(_st, r0 - ux * L * 0.5, r0 + ux * L * 0.5, r1 + ux * L * 0.5, r1 - ux * L * 0.5, Color(0.80, 0.81, 0.83), Vector3.UP)
+		_quad_w(_st, r0 - ux * L * 0.5 - Vector3(0, 0.3, 0), r0 + ux * L * 0.5 - Vector3(0, 0.3, 0), r1 + ux * L * 0.5 - Vector3(0, 0.3, 0),
+			r1 - ux * L * 0.5 - Vector3(0, 0.3, 0), Color(0.32, 0.33, 0.35), Vector3.DOWN)
+		var nc := maxi(2, int(L / 10.0))
+		for i in nc + 1:
+			var px := -L * 0.5 + L * float(i) / float(nc)
+			_box(back + ux * px - uz * 0.3, ux, uz, 0.22, 0.22, top + 3.6, Color(0.36, 0.37, 0.39), true)
+			_box(c + ux * px + Vector3(0, top * 0.5, 0), ux, uz, 0.18, 0.18, top * 0.5 + 4.3, Color(0.36, 0.37, 0.39), true)
 
 
 # --- Stadien ------------------------------------------------------------------------------------------------
