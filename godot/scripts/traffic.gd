@@ -283,6 +283,11 @@ func _process(delta: float) -> void:
 			emergency.append(c)
 	if accidents_enabled:
 		_accident_tick(delta, ppos)
+	if OS.has_environment("DRESDEN_SERVICE_SHOW") and int(stats.get("show", 0)) == 0 and cars.size() >= 2:
+		# Diagnose: je ein Taxi, Streifenwagen, Rettungswagen und Feuerwehrfahrzeug in der Nähe aufstellen
+		stats["show"] = 1
+		for k in [ServiceCar.Service.TAXI, ServiceCar.Service.POLICE, ServiceCar.Service.AMBULANCE, ServiceCar.Service.FIRE]:
+			_spawn_service_near(k, ppos, 40.0, 160.0, Vector2(ppos.x + 2500.0, ppos.z))
 	if cars.size() - n_bus < int(round(float(target_count) * day_factor(Timetable.hours))) and spawn_timer <= 0.0:
 		spawn_timer = 0.25
 		_try_spawn(ppos)

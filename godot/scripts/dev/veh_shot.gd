@@ -48,6 +48,13 @@ func _vehicles() -> Array:
 		for c in cand:
 			res.append(c[1])
 		return res
+	if kind == "service":
+		var seen := {}
+		for c in main.traffic.cars:
+			if c is ServiceCar and is_instance_valid(c) and not seen.has((c as ServiceCar).service):
+				seen[(c as ServiceCar).service] = true
+				res.append(c)
+		return res
 	if kind == "bus":
 		for c in main.traffic.cars:
 			if c is BusCar and is_instance_valid(c):
@@ -74,6 +81,8 @@ func _run(vehicles: Array) -> void:
 		if not is_instance_valid(v):
 			continue
 		var views := [["front", Vector3(1.5, 2.3, -11.0)], ["side", Vector3(9.0, 2.0, 0.0)], ["rear", Vector3(-1.5, 2.3, 11.0)]]
+		if kind == "service":
+			views = [["front34", Vector3(3.6, 1.7, -5.5)], ["side", Vector3(6.5, 1.5, 0.0)]]
 		if kind == "tram":
 			views = [["front", Vector3(2.0, 2.6, -13.0)], ["front34", Vector3(7.5, 2.4, -9.0)], ["side", Vector3(13.0, 2.4, 12.0)], ["rear", Vector3(-2.0, 2.6, 13.0)]]
 		for vw in views:
