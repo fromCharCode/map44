@@ -37,7 +37,8 @@ var _offer_t := 0.0
 var _broken0 := 0
 var _prev_speed := 0.0
 var _beam: MeshInstance3D
-var _figure: MeshInstance3D
+var _figure: Node3D
+var _fig_type := -1
 var rng := RandomNumberGenerator.new()
 var enabled := true
 var mode_taxi := true         # false = freier Modus (keine Aufträge, kein Taxameter)
@@ -94,14 +95,8 @@ func setup(p: PlayerCar, t: Traffic, h: Hud) -> void:
 	_beam.visible = false
 	add_child(_beam)
 	# wartender Fahrgast: einfache Figur (Kapsel + Kopf), bis ein Fußgängermodell angebunden ist
-	_figure = MeshInstance3D.new()
-	var cap := CapsuleMesh.new()
-	cap.radius = 0.24
-	cap.height = 1.75
-	_figure.mesh = cap
-	var fm := StandardMaterial3D.new()
-	fm.albedo_color = Color(0.75, 0.2, 0.18)
-	_figure.material_override = fm
+	# wartender Fahrgast: Figur passend zum Fahrgasttyp (Fußgängermodelle), winkt nicht, steht am Fahrbahnrand
+	_figure = Node3D.new()
 	_figure.visible = false
 	add_child(_figure)
 
@@ -177,6 +172,11 @@ func _process(delta: float) -> void:
 		toggle_mode()
 	_fuel(delta, pp, v)
 	shift_t += delta
+	if OS.has_environment("DRESDEN_TAXI_FIG") and shift_t > 2.0 and not _beam.visible:
+		# Diagnose: Fahrgastfigur neben dem Wagen zeigen
+		ptype = int(OS.get_environment("DRESDEN_TAXI_FIG"))
+		var bx := player.global_transform.basis
+		_show(pp - bx.z * 6.0 + bx.x * 3.2, Color(1.0, 0.85, 0.1, 0.28), true)
 	match state:
 		FREI:
 			if not mode_taxi:
@@ -512,7 +512,11 @@ func _show(p: Vector3, col: Color, with_figure: bool) -> void:
 	_beam.visible = true
 	_figure.visible = with_figure
 	if with_figure:
-		_figure.global_position = p + Vector3(0, 0.9, 0)
+		_set_figure(ptype)
+		_figure.global_position = p
+		if player:
+			var to := player.global_position - p
+			_figure.rotation.y = atan2(to.x, to.z)          # schaut dem Taxi entgegen
 
 
 func _reset(wait: float) -> void:
@@ -549,3 +553,47 @@ func status_line() -> String:
 		AUSSTEIGEN:
 			return "Fahrgast steigt aus"
 	return "Frei – Auftrag wählen" if mode_taxi else "Freier Modus (K = Taxi)"
+
+
+const FIG_MODELS := ["ped_frau3", "ped_frau1", "ped_seniorin", "ped_mann2", "ped_mann4", "ped_senior", "ped_frau5", "ped_mann5"]
+
+
+func _set_figure(t: int) -> void:
+	## Figur des wartenden Fahrgasts aus den Fußgängermodellen (Kleidung passend zum Typ); ohne Modell eine Kapsel
+	if t == _fig_type and _figure.get_child_count() > 0:
+		return
+	_fig_type = t
+	for c in _figure.get_children():
+		c.queue_free()
+	var path := Peds.DIR + String(FIG_MODELS[clampi(t, 0, FIG_MODELS.size() - 1)]) + ".glb"
+	if not ResourceLoader.exists(path):
+		var mi := MeshInstance3D.new()
+		var cap := CapsuleMesh.new()
+		cap.radius = 0.24
+		cap.height = 1.75
+		mi.mesh = cap
+		mi.position.y = 0.9
+		_figure.add_child(mi)
+		return
+	var node := (load(path) as PackedScene).instantiate() as Node3D
+	_figure.add_child(node)
+	var stack: Array = [node]
+	while not stack.is_empty():
+		var x: Node = stack.pop_back()
+		if x is MeshInstance3D:
+			var m := x as MeshInstance3D
+			m.set_surface_override_material(0, Peds.material())
+			var tops := [Color(0.10, 0.11, 0.15), Color(0.62, 0.20, 0.22), Color(0.52, 0.46, 0.40), Color(0.20, 0.30, 0.46),
+				Color(0.14, 0.17, 0.25), Color(0.36, 0.37, 0.38), Color(0.25, 0.42, 0.34), Color(0.09, 0.10, 0.13)]
+			m.set_instance_shader_parameter("c_skin", Color(0.90, 0.72, 0.60).srgb_to_linear())
+			m.set_instance_shader_parameter("c_hair", (Color(0.80, 0.79, 0.77) if t in [2, 5] else Color(0.16, 0.11, 0.08)).srgb_to_linear())
+			m.set_instance_shader_parameter("c_top", (tops[t % tops.size()] as Color).srgb_to_linear())
+			m.set_instance_shader_parameter("c_bottom", Color(0.11, 0.12, 0.16).srgb_to_linear())
+			m.set_instance_shader_parameter("c_shoes", Color(0.05, 0.05, 0.05).srgb_to_linear())
+			m.set_instance_shader_parameter("c_acc", Color(0.25, 0.16, 0.10).srgb_to_linear())
+			m.set_instance_shader_parameter("c_top2", Color(0.90, 0.90, 0.88).srgb_to_linear())
+		for c in x.get_children():
+			stack.append(c)
+	var ap := node.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	if ap and ap.has_animation("Idle"):
+		ap.play("Idle")
