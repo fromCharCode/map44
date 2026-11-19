@@ -136,6 +136,14 @@ void fragment() {
 	Layer base = Layer(vec3(0.4), vec3(0.0, 0.0, 1.0), 0.8);
 	if (e_base > EPS) {
 		base = L2;   // Gehwegplatten als neutraler Stadtboden
+		// unbebauter, nicht begrünter Boden (Höfe, Gewerbeflächen, Brachen): dunkler und fleckig wie abgefahrener
+		// Asphalt/Schotter statt heller Platten – große helle Flächen wirkten wie Sand
+		{
+			float bg = dot(base.a, vec3(0.3, 0.59, 0.11));
+			float bn = texture(noise_tex, wuv * 0.05 + 0.21).r;
+			float bn2 = texture(noise_tex, wuv * 0.33 + 0.57).r;
+			base.a = mix(vec3(bg), base.a, 0.45) * vec3(0.66, 0.66, 0.67) * mix(0.84, 1.10, bn) * mix(0.93, 1.06, bn2);
+		}
 		if (veg > 0.01) {
 			float gmix = smoothstep(0.4, 0.6, nlow) * 0.6;
 			base.a = mix(L2.a, mix(L6.a, L7.a, gmix), veg);
@@ -203,6 +211,17 @@ void fragment() {
 			Layer Lb = layer(psel > 0.5 ? 4 : 3, wuv, k);
 			float f = psel > 0.5 ? 1.0 - psel : psel;
 			L.a = mix(L.a, Lb.a, f); L.n = mix(L.n, Lb.n, f); L.r = mix(L.r, Lb.r, f);
+		}
+		// Dresdner Plätze: grauer Granit statt Sandfarbe, mit Fleckigkeit im Meter- und Zehn-Meter-Maß und dunkleren
+		// Läuferbändern alle 12 m – aus der Entfernung war der Belag eine gleichmäßig helle Fläche
+		{
+			float pg = dot(L.a, vec3(0.3, 0.59, 0.11));
+			float pn = texture(noise_tex, wuv * 0.06 + 0.11).r;
+			float pn2 = texture(noise_tex, wuv * 0.37 + 0.43).r;
+			L.a = mix(vec3(pg), L.a, 0.38) * vec3(0.78, 0.79, 0.82) * mix(0.84, 1.10, pn) * mix(0.93, 1.06, pn2);
+			vec2 bq = abs(fract(wuv / 12.0) - 0.5) * 12.0;
+			float pband = 1.0 - smoothstep(0.22, 0.42, min(bq.x, bq.y));
+			L.a *= 1.0 - 0.13 * pband;
 		}
 		alb = mix(alb, L.a, m0.b); nrm = mix(nrm, L.n, m0.b); rgh = mix(rgh, L.r, m0.b);
 	}
