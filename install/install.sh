@@ -5,7 +5,7 @@
 #
 # Lädt die neueste Spielversion und die Kartendaten (~5 GB, einmalig) von GitHub-Releases, installiert nach
 # ~/.local/share/map44 und legt den Befehl "map44" sowie einen Startmenü-Eintrag an. Erneut ausführen = Update
-# (Kartendaten werden nur neu geladen, wenn sich ihre Version ändert; abgebrochene Downloads werden fortgesetzt).
+# (von den Kartendaten werden nur geänderte Pakete geladen; abgebrochene Downloads werden fortgesetzt).
 #
 # Umgebungsvariablen: MAP44_HOME=<ordner> (Ziel), MAP44_KEEP_ZIPS=1 (Downloads behalten)
 # Deinstallieren:     curl -fsSL …/install.sh | bash -s -- --uninstall
@@ -62,6 +62,109 @@ sum_of() {  # $1 sha256-datei, $2 dateiname
   [ -f "$1" ] && grep " $2\$" "$1" | cut -d' ' -f1 || true
 }
 
+# >>> Kartendaten (in install.sh und install-macos.sh wortgleich; tools/test_installer.sh prüft das)
+# Kartendaten alter Datenversionen (ohne Manifest): alle Teile laden, dann data/ komplett ersetzen
+legacy_data() {  # $1 datenversion, $2 zielordner (enthält data/)
+  local need="$1" root="$2" urls dsum parts n i=0 u
+  say "Lade die Kartendaten $need (rund 5 GB, einmalig – das dauert je nach Leitung eine Weile) …"
+  urls=$(assets "$API/tags/$need")
+  dsum=$(echo "$urls" | grep -E "/map44-$need\.sha256\$" | head -1 || true)
+  [ -n "$dsum" ] && curl -fsSL -o "$DL/data.sha256" "$dsum"
+  parts=$(echo "$urls" | grep -E "/map44-$need-[0-9]+\.zip\$" | sort || true)
+  [ -n "$parts" ] || die "Kartendaten $need nicht gefunden (weder Manifest noch Datenteile im Release – Veröffentlichung unvollständig?)."
+  n=$(echo "$parts" | wc -l | tr -d ' ')
+  for u in $parts; do
+    i=$((i + 1))
+    say "Kartendaten Teil $i/$n"
+    fetch "$u" "$DL/$(basename "$u")" "$(sum_of "$DL/data.sha256" "$(basename "$u")")"
+  done
+  say "Entpacke Kartendaten …"
+  rm -rf "$root/data"
+  for u in $parts; do unzip -oq "$DL/$(basename "$u")" -d "$root"; done      # Pakete enthalten data/…
+  echo "$need" > "$root/data/VERSION"
+  [ "${MAP44_KEEP_ZIPS:-0}" = 1 ] || rm -f "$DL"/map44-"$need"-*.zip
+}
+
+# Kartendaten inkrementell (Datenversionen mit Manifest): nur geänderte Pakete laden.
+# Zustand in data/MANIFEST (installierte Pakete) und data/.packs/<paket>.files (deren Dateien, vor dem Entpacken
+# geschrieben). Wird pro Schritt fortgeschrieben, ein abgebrochenes Update setzt beim nächsten Lauf sauber fort.
+# Gelöscht wird erst, wenn das Manifest geprüft und alle neuen Pakete geladen und geprüft sind.
+install_data() {  # $1 datenversion, $2 zielordner (enthält data/)
+  local need="$1" root="$2" data="$2/data" mf="$DL/data.manifest"
+  local st="$2/data/.packs" inst="$2/data/MANIFEST" fresh=0 code todo gone n mb i=0 sha size name tag rest f z
+  code=$(curl -sSL --retry 5 --retry-delay 3 -o "$mf" -w '%{http_code}' \
+    "https://github.com/$REPO/releases/download/$need/map44-$need.manifest") || code="000"
+  case "$code" in
+    200) ;;
+    404) legacy_data "$need" "$root"; return ;;
+    *)   die "Manifest der Kartendaten $need nicht abrufbar (HTTP $code) – bitte später erneut versuchen." ;;
+  esac
+  # Manifest prüfen, bevor irgendetwas gelöscht wird
+  if [ ! -s "$mf" ] || grep -Evq '^[0-9a-f]{64} [0-9]+ map44-[^ /]+\.zip [^ /]+( [0-9a-f]{64})?$' "$mf"; then
+    die "Manifest der Kartendaten $need ist leer oder beschädigt – nichts verändert."
+  fi
+  if [ ! -f "$inst" ]; then fresh=1; inst=/dev/null; fi   # Installation ohne Manifest: einmal alles neu
+  todo=$(awk 'FILENAME==ARGV[1]{h[$1" "$3]=1;next} !(($1" "$3) in h)' "$inst" "$mf")
+  # veraltet: installierte Pakete und Dateilisten (auch abgebrochener Entpackvorgänge), die das Manifest nicht nennt
+  gone=""
+  if [ "$fresh" = 0 ]; then
+    gone=$( { awk '{print $3}' "$inst"; { ls "$st" 2>/dev/null || true; } | sed -n 's/\.files$//p'; } | sort -u \
+            | awk 'FILENAME==ARGV[1]{w[$3]=1;next} !($1 in w)' "$mf" - )
+  fi
+  if [ -n "$todo" ]; then
+    n=$(echo "$todo" | wc -l | tr -d ' ')
+    mb=$(echo "$todo" | awk '{s+=$2} END{printf "%d", s/1e6}')
+    say "Lade die Kartendaten $need: $n Paket(e), rund $mb MB …"
+    while read -r sha size name tag rest; do
+      i=$((i + 1)); say "Kartendaten Teil $i/$n ($name)"
+      fetch "https://github.com/$REPO/releases/download/$tag/$name" "$DL/$name" "$sha"
+    done <<< "$todo"
+  fi
+  # alles geladen – ab hier wird der Bestand verändert
+  inst="$data/MANIFEST"
+  rm -f "$data/VERSION"
+  if [ "$fresh" = 1 ]; then
+    rm -rf "$data"
+    mkdir -p "$st"; : > "$inst"
+  fi
+  # veraltete Pakete entfernen (bricht ein Löschen ab, bleiben Liste und Manifestzeile für den nächsten Lauf) …
+  if [ -n "$gone" ]; then
+    while read -r name; do
+      if [ -f "$st/$name.files" ]; then
+        while read -r f; do case "$f" in */|"") ;; *) rm -f "$root/$f";; esac; done < "$st/$name.files"
+        rm -f "$st/$name.files"
+      fi
+      grep -v " $name " "$inst" > "$inst.tmp" || true; mv "$inst.tmp" "$inst"
+    done <<< "$gone"
+    find "$data" -mindepth 1 -type d -empty ! -path "$st" -delete 2>/dev/null || true
+  fi
+  # … dann neue entpacken (Dateiliste zuerst, damit auch ein abgebrochenes Entpacken später aufgeräumt wird)
+  mkdir -p "$st"
+  if [ -n "$todo" ]; then
+    say "Entpacke Kartendaten …"
+    while read -r sha size name tag rest; do
+      # Paket gleichen Namens mit neuem Inhalt (neu veröffentlichte Datenversion): alte Dateien und Manifestzeile weg
+      if [ -f "$st/$name.files" ]; then
+        while read -r f; do case "$f" in */|"") ;; *) rm -f "$root/$f";; esac; done < "$st/$name.files"
+      fi
+      grep -v " $name " "$inst" > "$inst.tmp" || true; mv "$inst.tmp" "$inst"
+      unzip -Z1 "$DL/$name" > "$st/$name.files"
+      unzip -oq "$DL/$name" -d "$root"
+      echo "$sha $size $name $tag" >> "$inst"
+      [ "${MAP44_KEEP_ZIPS:-0}" = 1 ] || rm -f "$DL/$name"
+    done <<< "$todo"
+  fi
+  # Reste abgebrochener Updates: Pakete, die das Manifest nicht nennt
+  if [ "${MAP44_KEEP_ZIPS:-0}" != 1 ]; then
+    for z in "$DL"/map44-data-*.zip; do
+      [ -e "$z" ] || continue
+      awk -v n="$(basename "$z")" '$3 == n {f=1} END {exit !f}' "$mf" || rm -f "$z"
+    done
+  fi
+  echo "$need" > "$data/VERSION"
+}
+# <<< Kartendaten
+
 say "Suche die neueste Version …"
 GAME_URLS=$(assets "$API/latest")
 GAME_URL=$(echo "$GAME_URLS" | grep -E '/map44-linux-x86_64\.zip$' | head -1)
@@ -78,23 +181,7 @@ chmod +x "$DEST/map44.x86_64"
 NEED=$(tr -d '[:space:]' < "$DEST/DATA_VERSION")
 HAVE=""; [ -f "$DEST/data/VERSION" ] && HAVE=$(tr -d '[:space:]' < "$DEST/data/VERSION")
 if [ "$NEED" != "$HAVE" ]; then
-  say "Lade die Kartendaten $NEED (rund 5 GB, einmalig – das dauert je nach Leitung eine Weile) …"
-  DATA_URLS=$(assets "$API/tags/$NEED")
-  DSUM_URL=$(echo "$DATA_URLS" | grep -E "/map44-$NEED\.sha256\$" | head -1)
-  [ -n "$DSUM_URL" ] && curl -fsSL -o "$DL/data.sha256" "$DSUM_URL"
-  PARTS=$(echo "$DATA_URLS" | grep -E "/map44-$NEED-[0-9]+\.zip\$" | sort)
-  [ -n "$PARTS" ] || die "Kartendaten $NEED nicht gefunden."
-  n=$(echo "$PARTS" | wc -l); i=0
-  for u in $PARTS; do
-    i=$((i + 1)); f="$DL/$(basename "$u")"
-    say "Kartendaten Teil $i/$n"
-    fetch "$u" "$f" "$(sum_of "$DL/data.sha256" "$(basename "$u")")"
-  done
-  say "Entpacke Kartendaten …"
-  rm -rf "$DEST/data"
-  for u in $PARTS; do unzip -oq "$DL/$(basename "$u")" -d "$DEST"; done
-  echo "$NEED" > "$DEST/data/VERSION"
-  [ "${MAP44_KEEP_ZIPS:-0}" = 1 ] || rm -f "$DL"/map44-"$NEED"-*.zip
+  install_data "$NEED" "$DEST"
 else
   say "Kartendaten $HAVE sind aktuell."
 fi

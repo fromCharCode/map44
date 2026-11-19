@@ -5,7 +5,7 @@ Ein Open-World-Spiel in **ganz Dresden**: 117 Kacheln à 2 × 2 km, gebaut aus o
 mit Verkehr, Fußgängern, Straßenbahnen und Bussen nach Fahrplan, Tag/Nacht und Wetter. Gebaut mit Godot 4.7.
 
 *An open-world driving game set in all of Dresden, generated from open geodata (terrain, aerial imagery, 3D buildings,
-streets, street trees, transit stops). Installers below download the game and the map data (~5 GB).*
+streets, street trees, transit stops). Installers below download the game and the map data (~5 GB once; updates only fetch changed map packs).*
 
 ## Schnell installieren
 
@@ -115,7 +115,10 @@ Deckaufbau neu: `bash tools/post_bridges.sh` (bridge_arches + bridge_decks für 
 Brückenprüfung ohne Fahren (lädt je Kachel das 3×3-Umfeld, prüft auf und unter jeder Brücke ein Fahrzeug mittig in
 jeder Spur): `godot --headless --path godot -- --cam=0,0,0,-30,80 --bridgeaudit [--auditout=<json>]`;
 Durchfahrt mit Fahrphysik: `--drive=x,z --routetest=<kachel>:<weg-id>` bzw. `--routelist=<json>`. Release-Pakete:
-`tools/package_release.sh <version> <datenversion>`.
+`tools/package_release.sh <version> <datenversion> [vorherige]` – Kartendaten in 2×2-km-Paketen; Pakete mit
+unverändertem Inhalt verweist das Manifest auf das ältere Release, hochzuladen ist nur `dist/UPLOAD_DATA`. Erster
+Vollbau (Vorversion ohne Manifest) mit `MAP44_FULL_DATA=1`. **Alte `data-v*`-Releases nie löschen** – neuere Manifeste
+verweisen auf ihre Pakete. Installer-Test: `tools/test_installer.sh`.
 
 ## Daten und Lizenzen
 
