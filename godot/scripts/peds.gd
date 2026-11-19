@@ -57,6 +57,7 @@ const SCELL := 60.0          # Raster der Ampelknoten
 const FAR := 170.0           # ab hier wird entfernt
 const PAIR_GAP := 0.72       # Abstand zweier nebeneinander Gehender
 const MAX_PEDS := 110
+var skipped_steep := 0       # Diagnose: wegen Böschung/Mauer ausgelassene Gehwege
 
 enum { WALK, STAND, DODGE }
 
@@ -439,6 +440,28 @@ func _add_path(tkey: String, pts: Array, r: Dictionary, side: int):
 		cum[i + 1] = L
 	if L < 18.0:
 		return null
+	# Gehweg neben einer Straße, der auf einer Böschung oder Stützmauer landet (Unterführungen, Terrassen): Liegt das
+	# Gelände an mehr als einem Viertel der Punkte über 1,2 m neben der Fahrbahnhöhe, entfällt der Weg – sonst liefen
+	# Fußgänger schräg an Mauern entlang
+	if side != 0 and not bool(r.get("bridge", false)) and world != null:
+		var rp: Array = r["pts"]
+		if not rp.is_empty() and (rp[0] as Array).size() >= 3:
+			var off := 0
+			var nsmp := mini(pts.size(), 5)
+			for si in nsmp:
+				var q: Vector2 = pts[int(float(si) * float(pts.size() - 1) / float(maxi(nsmp - 1, 1)))]
+				var best := INF
+				var ry := 0.0
+				for v in rp:
+					var dd := Vector2(v[0], v[1]).distance_squared_to(q)
+					if dd < best:
+						best = dd
+						ry = float(v[2])
+				if absf(world.height_at(q.x, q.y) - ry) > 1.2:
+					off += 1
+			if off * 4 > nsmp:
+				skipped_steep += 1
+				return null
 	var mid: Vector2 = pts[pts.size() / 2]
 	var key := Vector2i(floori(mid.x / CELL), floori(mid.y / CELL))
 	if not cells.has(key):
