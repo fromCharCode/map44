@@ -57,6 +57,12 @@ const PTYPES := [
 	["Familie mit Kind", 0.12, 0.02, 0.12, 0.0, 1.8],
 	["Nachtschwärmer", 0.0, 0.58, 0.15, 0.0, 0.4],
 ]
+# Rangstufen: [Titel, ab Fahrten, Mindestbewertung, Zuschlag aufs Trinkgeld]
+const RANKS := [["Aushilfsfahrer", 0, 0.0, 0.0], ["Taxifahrer", 10, 0.0, 0.05], ["Stammfahrer", 30, 3.8, 0.10],
+	["Profi", 75, 4.2, 0.15], ["Dresdner Original", 150, 4.5, 0.20]]
+const DAY_GOAL := 150.0       # Tagesziel (Einnahmen seit Spielstart), Prämie beim Erreichen
+var goal_done := false
+var special := ""             # Sonderauftrag der laufenden Fahrt ("fern", "dringend" oder "")
 var ptype := 0                # Typ des aktuellen Fahrgasts
 var t_goal := 0.0             # Soll-Fahrzeit (s) bei eiligen Fahrgästen, 0 = keine Eile
 var t_trip := 0.0             # bisherige Fahrzeit (s)
@@ -201,6 +207,7 @@ func _process(delta: float) -> void:
 						dest = b2[0]
 						dest_name = b2[1]
 						ptype = _pick_ptype()
+						special = ""
 						_set_goal(pp.distance_to(dest) * 1.3 / 1000.0)
 						offers.clear()
 						state = EINSTEIGEN
@@ -232,7 +239,10 @@ func _process(delta: float) -> void:
 				dest = of["dest"]
 				dest_name = of["dname"]
 				ptype = int(of.get("ptype", 0))
+				special = String(of.get("special", ""))
 				_set_goal(float(of["trip_km"]))
+				if special == "dringend":
+					t_goal = float(of["trip_km"]) / 31.0 * 3600.0 + 40.0
 				offers.clear()
 				state = ANFAHRT
 				_offer_t = 300.0
@@ -312,18 +322,34 @@ func _process(delta: float) -> void:
 				var tip_f := float(PTYPES[ptype][3]) * clampf((stars - 2.5) / 2.5, 0.0, 1.0)
 				if ptype == 7 and rng.randf() < 0.3:
 					tip_f = 0.0                          # Nachtschwärmer vergisst das Trinkgeld manchmal
+				tip_f *= 1.0 + float(RANKS[rank()][3])
+				if special == "dringend":
+					tip_f = 0.30 if late <= 0.0 else 0.0     # dringende Fahrt: großes Trinkgeld nur bei Pünktlichkeit
 				var tip := snappedf(fare * tip_f, 0.1)
+				if special == "fern":
+					tip += 12.0                              # Fernfahrt: Pauschale für die leere Rückfahrt
 				damage_cost = minf(damage_cost, fare * 0.5)
 				var total := fare + tip - damage_cost
 				money += total
 				shift_money += total
+				var rank0 := rank()
 				trips += 1
+				if not goal_done and shift_money >= DAY_GOAL:
+					goal_done = true
+					money += 25.0
+					shift_money += 25.0
+					_after_msg = "Tagesziel %s erreicht – Prämie 25,00 €" % eur(DAY_GOAL)
+				if rank() > rank0:
+					_after_msg = "Aufgestiegen: %s (Trinkgeld +%d %%)" % [String(RANKS[rank()][0]), int(float(RANKS[rank()][3]) * 100.0)]
 				save()
 				hud.message("%s – %s  Trinkgeld %s%s   %s%s" % [dest_name, eur(fare), eur(tip),
 					("  Schaden −" + eur(damage_cost)) if damage_cost > 0.0 else "", stars_text(stars),
 					("  " + note) if note != "" else ""], 7.0)
 		AUSSTEIGEN:
 			_timer -= delta
+			if _timer <= 0.0 and _after_msg != "":
+				hud.message(_after_msg, 6.0)
+				_after_msg = ""
 			if _timer <= 0.0:
 				_reset(rng.randf_range(4.0, 10.0))
 
@@ -378,7 +404,17 @@ func _make_offer(pp: Vector3) -> Dictionary:
 	var a := _edge_point(pp, 150.0, 1500.0, 12)
 	if a.is_empty():
 		return {}
-	var b := _edge_point(a[0], 800.0, 6000.0, 30)
+	# Sonderaufträge: jede zehnte Anfrage ist eine Fernfahrt (6–11 km), jede zwölfte eine dringende Fahrt
+	var sp := ""
+	var u := rng.randf()
+	if u < 0.10:
+		sp = "fern"
+	elif u < 0.18:
+		sp = "dringend"
+	var b := _edge_point(a[0], 6000.0 if sp == "fern" else 800.0, 11000.0 if sp == "fern" else 6000.0, 40 if sp == "fern" else 30)
+	if b.is_empty() and sp == "fern":
+		sp = ""
+		b = _edge_point(a[0], 800.0, 6000.0, 30)
 	if b.is_empty() or String(b[1]) == String(a[1]):
 		return {}
 	for o in offers:
@@ -386,7 +422,7 @@ func _make_offer(pp: Vector3) -> Dictionary:
 			return {}
 	var trip := (a[0] as Vector3).distance_to(b[0]) * 1.3 / 1000.0
 	return {"pickup": a[0], "pname": a[1], "dest": b[0], "dname": b[1], "trip_km": trip,
-		"fare": price(trip, 45.0, night_tariff(Timetable.hours)), "ptype": _pick_ptype()}
+		"fare": price(trip, 45.0, night_tariff(Timetable.hours)), "ptype": _pick_ptype(), "special": sp}
 
 
 func _pick_ptype() -> int:
@@ -411,6 +447,17 @@ func _set_goal(trip_km: float) -> void:
 static func stars_text(v: float) -> String:
 	var full := int(floor(v))
 	return "★".repeat(full) + ("½" if v - float(full) >= 0.5 else "") + "☆".repeat(5 - full - (1 if v - float(full) >= 0.5 else 0))
+
+
+var _after_msg := ""
+
+
+func rank() -> int:
+	var r := 0
+	for i in RANKS.size():
+		if trips >= int(RANKS[i][1]) and (rated == 0 or rating() >= float(RANKS[i][2]) or float(RANKS[i][2]) == 0.0):
+			r = i
+	return r
 
 
 func rating() -> float:
@@ -552,7 +599,7 @@ func status_line() -> String:
 			return "%s – Ziel: %s" % [String(PTYPES[ptype][0]), dest_name]
 		AUSSTEIGEN:
 			return "Fahrgast steigt aus"
-	return "Frei – Auftrag wählen" if mode_taxi else "Freier Modus (K = Taxi)"
+	return ("%s – frei, Auftrag wählen" % String(RANKS[rank()][0])) if mode_taxi else "Freier Modus (K = Taxi)"
 
 
 const FIG_MODELS := ["ped_frau3", "ped_frau1", "ped_seniorin", "ped_mann2", "ped_mann4", "ped_senior", "ped_frau5", "ped_mann5"]

@@ -128,6 +128,10 @@ func _draw_taxi(vp: Vector2) -> void:
 	_text("TAXI  " + TaxiGame.eur(taxi.money), Vector2(x0, y0 + 16.0), 20, Color(1.0, 0.85, 0.2))
 	if taxi.rated > 0:
 		_text("★ %.1f" % taxi.rating(), Vector2(x0 + 150.0, y0 + 16.0), 15, Color(1.0, 0.9, 0.5))
+	# Tagesziel als schmaler Balken unter der Kasse
+	var gf := clampf(taxi.shift_money / TaxiGame.DAY_GOAL, 0.0, 1.0)
+	draw_rect(Rect2(Vector2(x0, y0 + 22.0), Vector2(180.0, 3.0)), Color(1, 1, 1, 0.15))
+	draw_rect(Rect2(Vector2(x0, y0 + 22.0), Vector2(180.0 * gf, 3.0)), Color(0.3, 1.0, 0.45) if gf >= 1.0 else Color(1.0, 0.85, 0.2))
 	_text("%s   (%d Fahrten)" % [taxi.status_line(), taxi.trips], Vector2(x0, y0 + 42.0), 15, Color(1, 1, 1, 0.85))
 	if taxi.state == TaxiGame.BESETZT or taxi.state == TaxiGame.AUSSTEIGEN:
 		draw_rect(Rect2(Vector2(x0 - 10.0, y0 + 62.0), Vector2(330.0, 44.0)), Color(0.05, 0.05, 0.05, 0.7))
@@ -144,7 +148,13 @@ func _draw_taxi(vp: Vector2) -> void:
 			var yy := oy + 30.0 + 44.0 * float(i)
 			var pt: Array = TaxiGame.PTYPES[int(of.get("ptype", 0))]
 			_text("%d  %s  →  %s" % [i + 1, String(of["pname"]), String(of["dname"])], Vector2(x0, yy), 16, Color(1.0, 0.9, 0.4))
-			_text(String(pt[0]) + ("  ⏱" if float(pt[4]) > 0.0 else ""), Vector2(x0 + 330.0, yy + 18.0), 12, Color(0.7, 0.9, 1.0, 0.9))
+			var sp := String(of.get("special", ""))
+			var tag := String(pt[0]) + ("  ⏱" if float(pt[4]) > 0.0 or sp == "dringend" else "")
+			if sp == "fern":
+				tag = "FERNFAHRT · " + tag
+			elif sp == "dringend":
+				tag = "DRINGEND · " + tag
+			_text(tag, Vector2(x0 + 330.0, yy + 18.0), 12, Color(1.0, 0.75, 0.4, 0.95) if sp != "" else Color(0.7, 0.9, 1.0, 0.9))
 			_text("Anfahrt %s  ·  Fahrt ca. %.1f km  ·  ca. %s" % [("%d m" % dp) if dp < 1000 else ("%.1f km" % (dp / 1000.0)),
 				float(of["trip_km"]), TaxiGame.eur(float(of["fare"]))], Vector2(x0 + 18.0, yy + 18.0), 13, Color(1, 1, 1, 0.8))
 	# Tankanzeige

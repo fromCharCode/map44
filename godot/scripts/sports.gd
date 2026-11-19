@@ -389,6 +389,39 @@ func _mast(p: Vector3, toward: Vector3) -> void:
 		p + Vector3(0, 28.1, 0) + t * 0.67 + s * 2.3, p + Vector3(0, 28.1, 0) + t * 0.67 - s * 2.3, Color(0.98, 0.97, 0.9))
 
 
+func _stand(c: Vector3, ux: Vector3, up_dir: Vector3, length: float, rows: int, roof: bool) -> void:
+	## Tribüne: Stufenreihen, die von c aus in Richtung up_dir ansteigen; wahlweise mit Pultdach auf Stützen
+	c.y = _ground(c, ux, up_dir, length * 0.5, 4.0)
+	var run := 0.85
+	var rise := 0.42
+	var seat: Color = [Color(0.12, 0.25, 0.50), Color(0.70, 0.55, 0.05), Color(0.50, 0.12, 0.10), Color(0.15, 0.36, 0.20)][int(absf(c.x * 0.13 + c.z * 0.07)) % 4]
+	var conc := Color(0.45, 0.45, 0.44)
+	for r in rows:
+		var a := c + up_dir * (float(r) * run) + Vector3(0, float(r + 1) * rise, 0)
+		_quad_w(_st, a - ux * length * 0.5, a + ux * length * 0.5, a + ux * length * 0.5 + up_dir * run, a - ux * length * 0.5 + up_dir * run,
+			seat if roof else conc.lightened(0.1), Vector3.UP)
+		_quad_w(_st, a - ux * length * 0.5 - Vector3(0, rise, 0), a + ux * length * 0.5 - Vector3(0, rise, 0), a + ux * length * 0.5, a - ux * length * 0.5,
+			conc, -up_dir, r == 0)
+	var back := c + up_dir * (float(rows) * run)
+	var top := float(rows) * rise
+	_quad_w(_st, back - ux * length * 0.5, back + ux * length * 0.5, back + ux * length * 0.5 + Vector3(0, top + 1.1, 0), back - ux * length * 0.5 + Vector3(0, top + 1.1, 0),
+		conc, up_dir, true)
+	for sgn: float in [-1.0, 1.0]:
+		var e := c + ux * length * 0.5 * sgn
+		_quad_w(_st, e, e + up_dir * (float(rows) * run), e + up_dir * (float(rows) * run) + Vector3(0, top, 0), e + up_dir * (float(rows) * run) + Vector3(0, top, 0), conc, ux * sgn)
+	if roof:
+		var ry := top + 4.2
+		var r0 := c - up_dir * 1.5 + Vector3(0, ry + 1.2, 0)
+		var r1 := back + up_dir * 0.6 + Vector3(0, ry, 0)
+		_quad_w(_st, r0 - ux * length * 0.5, r0 + ux * length * 0.5, r1 + ux * length * 0.5, r1 - ux * length * 0.5, Color(0.72, 0.73, 0.75), Vector3.UP)
+		_quad_w(_st, r0 - ux * length * 0.5 - Vector3(0, 0.25, 0), r0 + ux * length * 0.5 - Vector3(0, 0.25, 0), r1 + ux * length * 0.5 - Vector3(0, 0.25, 0),
+			r1 - ux * length * 0.5 - Vector3(0, 0.25, 0), Color(0.30, 0.31, 0.33), Vector3.DOWN)
+		var n := maxi(2, int(length / 9.0))
+		for i in n + 1:
+			var px := -length * 0.5 + length * float(i) / float(n)
+			_box(back + ux * px + up_dir * 0.3, ux, up_dir, 0.18, 0.18, ry, Color(0.35, 0.36, 0.38), true)
+
+
 func _stadium(sd: Dictionary) -> void:
 	var c := Vector3(float(sd["x"]), 0, float(sd["z"]))
 	var ang := float(sd["ang"])
@@ -403,6 +436,11 @@ func _stadium(sd: Dictionary) -> void:
 				for sz in [-1.0, 1.0]:
 					var mp: Vector3 = c + ux * (L * 0.5 + 9.0) * sx + uz * (W * 0.5 + 9.0) * sz
 					_mast(mp, c - mp)
+			if not bool(sd.get("lod2", false)):
+				# Stadion ohne Tribünengebäude im Geländemodell: überdachte Haupttribüne an einer Längsseite,
+				# Stehstufen gegenüber
+				_stand(c + uz * (W * 0.5 + 9.0), ux, uz, L * 0.62, 10, true)
+				_stand(c - uz * (W * 0.5 + 9.0), ux, -uz, L * 0.8, 5, false)
 		return
 	c.y = _ground(c, ux, uz, L * 0.5, W * 0.5) - 0.04
 	# Tribünenschüssel: innen 5 m neben dem Spielfeld, 31 m tief, 19 Doppelreihen bis 21 m Höhe; Ecken geschlossen
