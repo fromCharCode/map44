@@ -811,11 +811,13 @@ func _bridge(b: Dictionary) -> void:
 			pts.append([qq.x, qq.y, qq.z])
 	pts.append(pts0[pts0.size() - 1])
 	var drive: bool = b["kind"] == "drive"
+	var is_rail: bool = b["kind"] == "rail"       # Bahnbrücke ohne LoD2-Deck (tools/rail_slabs.py): Schotterbett
 	var wc: float = max(b["width"], 2.5)
 	var w := wc + (2.0 if drive else 0.0)
 	var raise := 0.15 if drive else 0.0
 	var tops := {"road": [PackedVector3Array(), PackedVector3Array(), PackedVector2Array(), PackedInt32Array()],
-		"walk": [PackedVector3Array(), PackedVector3Array(), PackedVector2Array(), PackedInt32Array()]}
+		"walk": [PackedVector3Array(), PackedVector3Array(), PackedVector2Array(), PackedInt32Array()],
+		"ballast": [PackedVector3Array(), PackedVector3Array(), PackedVector2Array(), PackedInt32Array()]}
 	var sv := PackedVector3Array()
 	var sn := PackedVector3Array()
 	var si := PackedInt32Array()
@@ -856,7 +858,7 @@ func _bridge(b: Dictionary) -> void:
 				_side_quad(sv, sn, si, faces, prev[1], cur[1], cur[1] + up, prev[1] + up, (prev[2] - prev[1]).normalized())
 				_side_quad(sv, sn, si, faces, prev[2], cur[2], cur[2] + up, prev[2] + up, (prev[1] - prev[2]).normalized())
 			else:
-				var tw2: Array = tops["walk"]
+				var tw2: Array = tops["ballast" if is_rail else "walk"]
 				_strip_quad(tw2[0], tw2[1], tw2[2], tw2[3], faces, prev[0], prev[3], cur[3], cur[0], Vector3.UP)
 			# Unterseite
 			_side_quad(sv, sn, si, faces, prev[3] + d, prev[0] + d, cur[0] + d, cur[3] + d, Vector3.DOWN)
@@ -877,7 +879,7 @@ func _bridge(b: Dictionary) -> void:
 					(prev[3].y + cur[3].y) * 0.5 + raise, "steel", "#8c9294" if drive else "#7a7f84", 1.1])
 		prev = cur
 	var mesh := ArrayMesh.new()
-	for key in ["road", "walk"]:
+	for key in ["road", "walk", "ballast"]:
 		var arrs: Array = tops[key]
 		if (arrs[0] as PackedVector3Array).is_empty():
 			continue
@@ -888,7 +890,8 @@ func _bridge(b: Dictionary) -> void:
 		arr[Mesh.ARRAY_TEX_UV] = arrs[2]
 		arr[Mesh.ARRAY_INDEX] = arrs[3]
 		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
-		mesh.surface_set_material(mesh.get_surface_count() - 1, deck_mat if key == "road" else _walk_mat())
+		mesh.surface_set_material(mesh.get_surface_count() - 1,
+			deck_mat if key == "road" else (_ballast_mat() if key == "ballast" else _walk_mat()))
 	if not sv.is_empty():
 		var arr2 := []
 		arr2.resize(Mesh.ARRAY_MAX)

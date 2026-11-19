@@ -25,3 +25,4 @@ python taxi_stands.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo
 python landmark_looks.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "LOOKFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python water_fill.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "WATERFILLFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python terrace_edges.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "TERRACEFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
+python rail_slabs.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "RAILSLABFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
