@@ -1031,11 +1031,20 @@ func _curbs(curbs: Array) -> void:
 			st.begin(Mesh.PRIMITIVE_TRIANGLES)
 			cells[key] = st
 		var st: SurfaceTool = cells[key]
-		for i in c.size() - 1:
-			var a: Array = c[i]
-			var b: Array = c[i + 1]
-			var pa := Vector3(float(a[0]), float(a[2]), float(a[1]))
-			var pb := Vector3(float(b[0]), float(b[2]), float(b[1]))
+		# Die Linien stammen aus einem Raster und schlängeln sich im Dezimeterbereich: glätten (Endpunkte bleiben),
+		# sonst wirkt der Bordstein wie eine gewellte Schlange
+		var sm: Array = []
+		for q in c:
+			sm.append(Vector3(float(q[0]), float(q[2]), float(q[1])))
+		for _it in 12:
+			var prev: Vector3 = sm[0]
+			for i in range(1, sm.size() - 1):
+				var cur: Vector3 = sm[i]
+				sm[i] = cur.lerp((prev + (sm[i + 1] as Vector3)) * 0.5, 0.5)
+				prev = cur
+		for i in sm.size() - 1:
+			var pa: Vector3 = sm[i]
+			var pb: Vector3 = sm[i + 1]
 			var d := Vector3(pb.x - pa.x, 0, pb.z - pa.z)
 			var L := d.length()
 			if L < 0.02 or L > 8.0 or absf(pb.y - pa.y) > 1.5:
