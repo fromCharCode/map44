@@ -577,6 +577,7 @@ func _setup_game() -> void:
 	speed_cams.name = "SpeedCams"
 	add_child(speed_cams)
 	speed_cams.setup(player, hud, taxi, world)
+	speed_cams.traffic = traffic
 	if args.has("routeguide"):
 		var rg := String(args["routeguide"]).split(",")
 		route_guide.fixed_target = Vector3(float(rg[0]), 0.0, float(rg[1]))

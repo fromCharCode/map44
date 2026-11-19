@@ -15,6 +15,13 @@ var _cams: Array = []          # {key, pos, limit, dir, cool, light, red}
 var _flash: Array = []         # [light, t]
 var _test_t := 0.0
 var count := 0                 # ausgelöste Blitze (Diagnose)
+var traffic: Traffic           # für die Rotlichtüberwachung (Ampelphase der befahrenen Zufahrt)
+var red_count := 0
+var _rl_edge := -1
+var _rl_dir := 0
+var _rl_d := INF
+var _rl_cool := 0.0
+var _rl_skip := 0
 
 static var _mats := {}
 
@@ -57,7 +64,7 @@ func add_tile(tile: Tile) -> void:
 		add_child(root)
 		var light := _model(root, int(c[5]) == 0)
 		_cams.append({"key": tile.key, "pos": pos, "limit": float(c[2]), "dir": dir, "cool": 0.0, "light": light,
-			"red": int(c[6]) == 1, "root": root})   # 1 = nur Rotlicht
+			"red": int(c[6]) == 1, "rl": int(c[6]) >= 1, "root": root})   # 1 = nur Rotlicht, 2 = Rotlicht und Tempo
 
 
 func remove_tile(tile: Tile) -> void:
@@ -188,9 +195,16 @@ func _physics_process(delta: float) -> void:
 	var v := player.linear_velocity
 	v.y = 0.0
 	var kmh := v.length() * 3.6
+	if OS.has_environment("DRESDEN_ROT_TEST") and traffic != null:
+		_rot_test(delta)
+		pp = player.global_position
+		v = player.linear_velocity
+		v.y = 0.0
+		kmh = v.length() * 3.6
+	_red_light(delta, pp, v, kmh)
 	for c in _cams:
 		if c["red"]:
-			continue                                      # reiner Rotlichtblitzer: steht nur da (noch ohne Auswertung)
+			continue                                      # reiner Rotlichtblitzer: Auswertung in _red_light
 		if c["cool"] > 0.0:
 			c["cool"] -= delta
 			continue
@@ -220,3 +234,125 @@ func _physics_process(delta: float) -> void:
 				"Verwarngeld" if eur < 60 else "Bußgeld"], 6.0)
 		if OS.has_environment("DRESDEN_BLITZER"):
 			print("BLITZER %d km/h bei %d -> %d EUR an (%.0f, %.0f)" % [int(measured), int(lim), eur, c["pos"].x, c["pos"].z])
+
+
+func _red_light(delta: float, pp: Vector3, v: Vector3, kmh: float) -> void:
+	## Rotlichtüberwachung: Fährt der Spieler bei Rot über die Haltlinie einer Zufahrt, an der ein Rotlichtblitzer
+	## steht (höchstens 45 m vom Knoten), blitzt die Anlage. Bußgeldkatalog: 90 € (Rot bis 1 s), 200 € (länger als 1 s).
+	_rl_cool = maxf(_rl_cool - delta, 0.0)
+	_rl_skip += 1
+	if traffic == null or _rl_skip % 2 == 1:
+		return
+	if kmh < 6.0:
+		return
+	var ea: Array = traffic._edge_at(pp, v.normalized())
+	if ea.is_empty():
+		_rl_edge = -1
+		return
+	var ei := int(ea[0])
+	var dir := int(ea[1])
+	var e: Dictionary = traffic.edges[ei]
+	var node := int(e["b"]) if dir == 1 else int(e["a"])
+	var app: Array = traffic.approach(node, ei, dir)
+	if app.is_empty() or int(app[5]) < 0:
+		_rl_edge = -1
+		return
+	var pts: Array = traffic.edge_points(ei, dir)
+	var length := 0.0
+	for i in pts.size() - 1:
+		length += (pts[i] as Vector3).distance_to(pts[i + 1])
+	var d_stop := length - float(ea[2]) - float(app[6])
+	if ei == _rl_edge and dir == _rl_dir and _rl_d > 0.0 and d_stop <= 0.0 and d_stop > -5.0 and _rl_cool <= 0.0:
+		var ph := int(app[5])
+		if SignalCtl.state(app[7], ph) == SignalCtl.RED and SignalCtl.state(app[7], ph, maxf(SignalCtl.clock - 0.5, 0.0)) == SignalCtl.RED:
+			var np: Array = traffic.nodes[node]["pos"]
+			var npos := Vector2(float(np[0]), float(np[2]))
+			for c in _cams:
+				if not c["rl"]:
+					continue
+				var cp: Vector3 = c["pos"]
+				if Vector2(cp.x, cp.z).distance_to(npos) > 45.0:
+					continue
+				var cd: Vector3 = c["dir"]
+				if cd.length() > 0.5 and v.normalized().dot(cd) < 0.3:
+					continue
+				var long_red := SignalCtl.state(app[7], ph, maxf(SignalCtl.clock - 1.0, 0.0)) == SignalCtl.RED
+				var eur := 200 if long_red else 90
+				_rl_cool = COOLDOWN
+				red_count += 1
+				var l: OmniLight3D = c["light"]
+				l.visible = true
+				_flash.append([l, 0.0])
+				if taxi:
+					taxi.money -= eur
+				if hud:
+					hud.message("Rotlichtblitzer! Bei Rot über die Haltlinie – %d € Bußgeld%s" % [eur, " (Rot länger als 1 s)" if long_red else ""], 6.0)
+				if OS.has_environment("DRESDEN_BLITZER"):
+					print("ROTLICHT %d EUR an (%.0f, %.0f)" % [eur, cp.x, cp.z])
+				break
+	_rl_edge = ei
+	_rl_dir = dir
+	_rl_d = d_stop
+
+
+var _rt_t := 0.0
+var _rt_run := -1.0
+var _rt_app: Array = []
+var _rt_pts: Array = []
+
+
+func _rot_test(delta: float) -> void:
+	## Selbsttest: an der ersten Rotlichtanlage bei Rot mit 40 km/h über die Haltlinie
+	_rt_t += delta
+	if _rt_t < 4.0:
+		return
+	if _rt_app.is_empty():
+		for c in _cams:
+			if not c["rl"]:
+				continue
+			var cp: Vector3 = c["pos"]
+			var cd: Vector3 = c["dir"]
+			var ea: Array = []
+			var app: Array = []
+			var side := Vector3(-cd.z, 0.0, cd.x)
+			for back: float in [12.0, 25.0, 40.0, 60.0, 0.0, -15.0]:
+				for lat: float in [0.0, 5.0, -5.0, 10.0, -10.0]:
+					ea = traffic._edge_at(cp - cd * back + side * lat, cd)
+					if ea.is_empty():
+						continue
+					var e: Dictionary = traffic.edges[int(ea[0])]
+					var node := int(e["b"]) if int(ea[1]) == 1 else int(e["a"])
+					app = traffic.approach(node, int(ea[0]), int(ea[1]))
+					if not app.is_empty() and int(app[5]) >= 0 and Vector2(cp.x, cp.z).distance_to(Vector2(float(traffic.nodes[node]["pos"][0]), float(traffic.nodes[node]["pos"][2]))) < 45.0:
+						break
+					app = []
+				if not app.is_empty():
+					break
+			if app.is_empty():
+				continue
+			_rt_app = app
+			_rt_pts = traffic.edge_points(int(ea[0]), int(ea[1]))
+			print("ROT TEST: Anlage (%.0f, %.0f), Kante %d" % [cp.x, cp.z, int(ea[0])])
+			break
+		if _rt_app.is_empty():
+			if _rt_t > 12.0:
+				print("ROT TEST: keine Anlage mit Zufahrt gefunden (%d Anlagen)" % _cams.size())
+				get_tree().quit()
+			return
+	if _rt_run < 0.0:
+		if SignalCtl.state(_rt_app[7], int(_rt_app[5])) == SignalCtl.RED and SignalCtl.state(_rt_app[7], int(_rt_app[5]), maxf(SignalCtl.clock - 2.0, 0.0)) == SignalCtl.RED:
+			_rt_run = 0.0
+		elif _rt_t > 150.0:
+			print("ROT TEST: keine Rotphase")
+			get_tree().quit()
+		return
+	_rt_run += delta
+	var n := _rt_pts.size()
+	var a: Vector3 = _rt_pts[n - 2]
+	var b: Vector3 = _rt_pts[n - 1]
+	var d := (b - a).normalized()
+	player.global_position = b - d * (30.0 - _rt_run * 11.0) + Vector3(0, 0.8, 0)
+	player.linear_velocity = d * 11.0
+	if _rt_run > 4.0:
+		print("ROT TEST: %d ausgelöst" % red_count)
+		get_tree().quit()
