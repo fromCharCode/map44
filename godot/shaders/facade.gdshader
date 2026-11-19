@@ -645,6 +645,12 @@ void fragment() {
 		interior = vacant ? room_col * 0.03 : room_col * (0.15 * (1.0 - night) + 1.5 * night * lamp);
 	}
 	EMISSION = emis * 2.6 * night * curt + interior * show + emis * 0.6 * night * (1.0 - curt);
+	if (era > 15.5) {
+		// Zwinger und historische Kirchen werden nachts angestrahlt (warmes Licht von unten, oben schwächer);
+		// spät in der Nacht, wenn kaum noch Fenster leuchten, geht die Anstrahlung aus
+		float flood = night * smoothstep(0.02, 0.12, lit_frac) * mix(1.0, 0.55, clamp(UV.y / max(height, 1.0), 0.0, 1.0));
+		EMISSION += ALBEDO * vec3(1.0, 0.80, 0.52) * 0.05 * flood;
+	}
 
 	// ---- Ausgabe --------------------------------------------------------
 	ALBEDO = clamp(base, 0.0, 1.0);
