@@ -25,6 +25,28 @@
     "size_bytes": 337020
   },
   {
+    "file": "mon_ballwerfer.glb",
+    "height": 6.4,
+    "bbox_min": [
+      -1.45,
+      0.0,
+      -1.45
+    ],
+    "bbox_max": [
+      1.777,
+      6.4,
+      1.45
+    ],
+    "tris": 2248,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "GranitDunkel"
+    ],
+    "notes": "»Ballwerfer« von Richard Daniel Fabricius (vor dem Deutschen Hygiene-Museum): kolossaler Bronzeakt, rechter Arm mit dem Ball gesenkt ausholend, linker Arm angewinkelt vor der Brust, Kopf nach links, linkes Bein weit ausgestellt (Brust nach +Y). Zweistufiger grauer Granitsockel 2,3 m im Quadrat mit Bronzeplinthe. Gesamthöhe ca. 6,4 m (geschätzt, Figur ca. 4,2 m).",
+    "size_bytes": 98368
+  },
+  {
     "file": "mon_bismarcksaeule.glb",
     "height": 23.0,
     "bbox_min": [
@@ -45,6 +67,28 @@
     ],
     "notes": "Bismarcksäule Räcknitz (Wilhelm Kreis, Entwurf »Götterdämmerung«): dunkler Sandsteinturm auf quadratischem Grundriss mit vier Dreiviertelsäulen an den Ecken, wulstigem Architrav und dreifach gestuftem Aufsatz, zweistufige Terrasse 16 m mit Freitreppe und Eingang nach +Y. Gesamthöhe 23 m (belegt).",
     "size_bytes": 77168
+  },
+  {
+    "file": "mon_bogenschuetze.glb",
+    "height": 9.8,
+    "bbox_min": [
+      -0.853,
+      0.0,
+      -1.9
+    ],
+    "bbox_max": [
+      0.853,
+      9.8,
+      3.103
+    ],
+    "tris": 2654,
+    "materials": [
+      "Bronze",
+      "Sandstein",
+      "Sandstein_dunkel"
+    ],
+    "notes": "»Bogenschütze« von Ernst Moritz Geyger (Königsufer, Neustädter Elbufer): Bronzeakt mit Helm im weiten Ausfallschritt, Bogen voll gespannt; SCHUSSRICHTUNG = +Y (über die Elbe), Brust nach +X. Hoher Sandsteinpfeiler 1,7 × 2,2 m als Kopf der Ufermauer mit konkav abschwingender Mauerzunge nach -Y. Ursprung auf Höhe des Elbuferwegs; Oberkante der Ufermauer/Terrasse bei 3,8 m, Pfeilerkopf 5,8 m. Figur mit Bogen ca. 3,9 m (Original laut Wikipedia »fast vier Meter«), Pfeilermaße geschätzt.",
+    "size_bytes": 117088
   },
   {
     "file": "mon_bust.glb",
@@ -115,6 +159,51 @@
     "size_bytes": 171492
   },
   {
+    "file": "mon_fahnentraeger.glb",
+    "height": 16.0,
+    "bbox_min": [
+      -5.5,
+      0.0,
+      -5.5
+    ],
+    "bbox_max": [
+      5.5,
+      16.0,
+      5.5
+    ],
+    "tris": 1176,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "Sandstein",
+      "Sandstein_dunkel"
+    ],
+    "notes": "Obelisk des Sowjetischen Garnisonfriedhofs (Marienallee, Albertstadt): 16 m hoher, sich verjüngender Pfeiler aus hellem Sandsteinquadern, bekrönt vom bronzenen Sowjetstern; Vorderseite (+Y) mit Relief eines Soldaten mit Fahne (Fahnenträger) über einem Panzer, übrige Seiten mit Soldatenrelief und Wappen im Kranz (vereinfacht); gepflasterter Platz 11 m. Höhe 16 m (belegt, Wikipedia), Grundmaß 3,6 m geschätzt.",
+    "size_bytes": 62620
+  },
+  {
+    "file": "mon_fluegelradbrunnen.glb",
+    "height": 3.33,
+    "bbox_min": [
+      -1.65,
+      -0.6,
+      -1.65
+    ],
+    "bbox_max": [
+      1.65,
+      3.33,
+      1.65
+    ],
+    "tris": 1610,
+    "materials": [
+      "Granit",
+      "Holz",
+      "Sandstein"
+    ],
+    "notes": "Flügelradbrunnen (Hettnerstraße, vor dem Gerhart-Potthoff-Bau): helle Steinkugel Ø 0,95 m mit Äquatorfuge auf geböschtem Quadersockel, darauf drei fliegende Vögel (Flugrichtung +Y), ringsum quadratische Holzbank 3,3 m auf Betonsockel; ca. 3,2 m hoch. Maße geschätzt, kein Wasserbecken (Anlage läuft trocken). Sockelkranz 0,6 m unter dem Ursprung.",
+    "size_bytes": 64796
+  },
+  {
     "file": "mon_fountain.glb",
     "height": 2.52,
     "bbox_min": [
@@ -156,6 +245,28 @@
     ],
     "notes": "Trinkbrunnen: achteckiger Sandsteinpfeiler mit Schale und Bronzeauslauf, Knopf vorn (+Y).",
     "size_bytes": 17088
+  },
+  {
+    "file": "mon_friedensbrunnen.glb",
+    "height": 5.347,
+    "bbox_min": [
+      -3.05,
+      -0.6,
+      -3.05
+    ],
+    "bbox_max": [
+      3.05,
+      5.347,
+      3.05
+    ],
+    "tris": 6178,
+    "materials": [
+      "Granit",
+      "Sandstein",
+      "Wasser"
+    ],
+    "notes": "Friedensbrunnen/Türkenbrunnen (Jüdenhof, Neumarkt): achteckiges Sandsteinbecken (4,5 m über die Flächen, belegt; Brüstung 1 m) mit Eckvorlagen und je drei Rosettenfeldern auf achteckiger Granitstufe; Mittelpfeiler mit bauchigem, kartuschen- und girlandengeschmücktem Körper und achteckiger Deckplatte, darauf Victoria mit Helm, Kranz und Fahne (blickt nach +Y). Höhen geschätzt. Sockelkranz 0,6 m unter dem Ursprung.",
+    "size_bytes": 292488
   },
   {
     "file": "mon_friedrich_august_gerechte.glb",
@@ -202,6 +313,29 @@
     "size_bytes": 330100
   },
   {
+    "file": "mon_friedrich_list.glb",
+    "height": 3.1,
+    "bbox_min": [
+      -0.925,
+      0.0,
+      -2.5
+    ],
+    "bbox_max": [
+      0.925,
+      3.1,
+      2.5
+    ],
+    "tris": 1820,
+    "materials": [
+      "Granit",
+      "GranitDunkel",
+      "Sandstein",
+      "Sandstein_dunkel"
+    ],
+    "notes": "Friedrich-List-Denkmal (Friedrich-List-Platz, Südvorstadt): frei stehender Block aus dunkel verwittertem Sandstein, 1,35 × 4,5 m, drei Quaderschichten. Stirnseite (+Y) mit Namen, Lebensdaten und Schriftfeld; Längsseiten mit Flachreliefs zur Verkehrsgeschichte (Lokomotive, Raddampfer, Menschenmenge – die Seite -X ist mangels Foto gespiegelt angenommen). Höhe ca. 3,1 m (geschätzt).",
+    "size_bytes": 115588
+  },
+  {
     "file": "mon_gaensediebbrunnen.glb",
     "height": 5.054,
     "bbox_min": [
@@ -222,6 +356,30 @@
     ],
     "notes": "Gänsediebbrunnen (Diez, Weiße Gasse): Bronzefigur mit zwei Gänsen auf Granitpostament mit Bronzevoluten und zwei Gänsen, Auffangschale auf Pfeiler mit vier Säulchen, rundes Granitbecken Ø 6 m auf zwei Stufen. Maße geschätzt. Figur schreitet nach +Y.",
     "size_bytes": 222264
+  },
+  {
+    "file": "mon_glasbrunnen.glb",
+    "height": 3.908,
+    "bbox_min": [
+      -4.64,
+      -0.6,
+      -4.64
+    ],
+    "bbox_max": [
+      4.64,
+      3.908,
+      4.64
+    ],
+    "tris": 3438,
+    "materials": [
+      "Glas",
+      "Granit",
+      "Messing",
+      "Sandstein",
+      "Wasser"
+    ],
+    "notes": "Glasbrunnen (Leoni Wirth 1975, Glasbrunnenplatz an der Grunaer Straße): rundes Terrazzobecken Ø 9,3 m (belegt) mit niedrigem, breitem Rand; in der Mitte drei »Glasbäume« aus gebündelten Messingstäben mit waagerechten Armen und grünlichen Glasbrocken, 2,7 / 3,3 / 3,8 m hoch (geschätzt, Brocken frei verteilt). Sockelkranz 0,6 m unter dem Ursprung.",
+    "size_bytes": 222404
   },
   {
     "file": "mon_hietzigbrunnen.glb",
@@ -289,6 +447,28 @@
     "size_bytes": 81228
   },
   {
+    "file": "mon_koenig_albert_obelisk.glb",
+    "height": 9.0,
+    "bbox_min": [
+      -1.7,
+      0.0,
+      -1.7
+    ],
+    "bbox_max": [
+      1.7,
+      9.0,
+      1.7
+    ],
+    "tris": 486,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "GranitDunkel"
+    ],
+    "notes": "König-Albert-Denkmal (Obelisk im Albertpark, Dresdner Heide): schlanker Obelisk aus dunklem Granit auf gestuftem Unterbau (Sockelblock, Würfel mit Bronzemedaillon des Königs nach +Y, Deckplatte, Zwischenstück), graue Bodenplatte 3,4 m. Gesamthöhe ca. 9,0 m (geschätzt).",
+    "size_bytes": 25072
+  },
+  {
     "file": "mon_koerner.glb",
     "height": 5.83,
     "bbox_min": [
@@ -308,6 +488,27 @@
     ],
     "notes": "Theodor-Körner-Denkmal (Georgplatz): Bronzefigur mit Mantel, Schwert an der Brust und Schriftrolle (Blick +Y), Granitpostament mit Leier und Schwert im Kranz. Statue 2,83 m, Postament 2,5 m, gesamt ca. 5,8 m.",
     "size_bytes": 100360
+  },
+  {
+    "file": "mon_lipsius.glb",
+    "height": 5.0,
+    "bbox_min": [
+      -0.7,
+      0.0,
+      -0.7
+    ],
+    "bbox_max": [
+      0.7,
+      5.0,
+      0.7
+    ],
+    "tris": 3632,
+    "materials": [
+      "Sandstein",
+      "Sandstein_dunkel"
+    ],
+    "notes": "Lipsius-Denkmal (Stele für den Architekten Constantin Lipsius, Stübelallee/Lipsiusstraße): achtkantiger Pfeiler aus schwarz verwittertem Sandstein auf Sockelblock, vorn (+Y) Inschrifttafel mit Kapitell, oben Schriftband, gerippte Trommel, Mäanderband und Kuppe; darauf aus hellem Sandstein ein sitzender, schreibender Putto, den Kopf in die linke Hand gestützt (Blick +Y). Gesamthöhe ca. 5,0 m (geschätzt).",
+    "size_bytes": 172980
   },
   {
     "file": "mon_ludwig_richter.glb",
@@ -355,6 +556,28 @@
     ],
     "notes": "Martin-Luther-Denkmal Neumarkt: Bronzefigur im Talar mit Bibel vor der Brust (Blick +Y), dunkler Syenitsockel mit Goldinschrift und Kranz auf grauem Granitstufenbau. Gesamthöhe 6,85 m (geschätzt).",
     "size_bytes": 101204
+  },
+  {
+    "file": "mon_maerchenbrunnen.glb",
+    "height": 2.1,
+    "bbox_min": [
+      -2.55,
+      -0.6,
+      -1.8
+    ],
+    "bbox_max": [
+      2.55,
+      2.1,
+      1.8
+    ],
+    "tris": 1118,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "Wasser"
+    ],
+    "notes": "Märchenbrunnen (Hermann-Seidel-Park, Striesen): Granit-Mittelteil 2,10 m (belegt) mit Rahmenöffnung und Metallrelief, davor (+Y) gerundeter Trog, beidseits im Bogen Bänke mit Froschwangen, gepflasterte Vorfläche 5,1 × 3,6 m mit Bord; Rückseite -Y. Grundriss geschätzt. Sockelkranz 0,6 m unter dem Ursprung.",
+    "size_bytes": 54404
   },
   {
     "file": "mon_marie_gey_brunnen.glb",
@@ -425,6 +648,29 @@
     "size_bytes": 234360
   },
   {
+    "file": "mon_muellerbrunnen.glb",
+    "height": 6.2,
+    "bbox_min": [
+      -4.337,
+      -0.6,
+      -4.337
+    ],
+    "bbox_max": [
+      4.337,
+      6.2,
+      4.337
+    ],
+    "tris": 5808,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "Sandstein_dunkel",
+      "Wasser"
+    ],
+    "notes": "Müllerbrunnen (F.-C.-Weiskopf-Platz, Plauen): rundes dunkles Sandsteinbecken Ø 6,8 m mit dickem Wulstrand und vier Fischungeheuern, quadratischer Mittelsockel mit vier Halbschalen, darüber Mühlradgeschoss mit vier Eckpfeilern (Mühlrad nach ±Y), schwerer Schmuckblock mit Felskuppe und bronzenem Müllerburschen (Hut in der Rechten, Sack über der Schulter, blickt nach +Y); 6,2 m hoch. Maße geschätzt, Wasserspeier und Ornamentik stark vereinfacht. Sockelkranz 0,6 m unter dem Ursprung.",
+    "size_bytes": 255120
+  },
+  {
     "file": "mon_mutter_anna.glb",
     "height": 5.5,
     "bbox_min": [
@@ -467,6 +713,29 @@
     ],
     "notes": "Sandstein-Obelisk auf dreistufigem Unterbau mit Postament, Tafel vorn (+Y).",
     "size_bytes": 11052
+  },
+  {
+    "file": "mon_palitzsch.glb",
+    "height": 3.022,
+    "bbox_min": [
+      -0.95,
+      0.0,
+      -0.76
+    ],
+    "bbox_max": [
+      0.95,
+      3.022,
+      0.76
+    ],
+    "tris": 1496,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "GranitDunkel",
+      "Sandstein"
+    ],
+    "notes": "Palitzsch-Denkmal (Dresden-Prohlis, am Palitzschhof): Sandsteinpfeiler auf Sockel mit Gesims und Attika, vorn (+Y) Bronzemedaillon mit Profilbildnis, Namensfries und Lebensdaten, Lorbeerzweig; Bekrönung aus Himmelsglobus mit Horizontring, zwei Kränzen und Fernrohr. Gesamthöhe ca. 3,0 m (geschätzt).",
+    "size_bytes": 71132
   },
   {
     "file": "mon_pusteblumen.glb",
@@ -770,6 +1039,29 @@
     ],
     "notes": "Gedenkstele aus Sandstein mit Giebel, Bronzetafeln vorn (+Y).",
     "size_bytes": 7292
+  },
+  {
+    "file": "mon_stierbrunnen.glb",
+    "height": 2.95,
+    "bbox_min": [
+      -2.886,
+      -0.6,
+      -2.886
+    ],
+    "bbox_max": [
+      2.886,
+      2.95,
+      2.886
+    ],
+    "tris": 2664,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "Sandstein_dunkel",
+      "Wasser"
+    ],
+    "notes": "Stierbrunnen (Georg Wrba 1910, Schlachthof Ostragehege, Messering): geböschter Granitpfeiler 0,8 × 1,1 m mit Gesims, an beiden Langseiten (±X) halbrunde Tröge unter Löwenmasken, obenauf stehender Stier aus dunklem Serpentin (53 cm, Kopf nach +Y, über der Inschriftseite); Gesamthöhe 2,95 m (belegt). Runde Pflasterinsel Ø 5,8 m mit Granitbord (geschätzt). Sockelkranz 0,6 m unter dem Ursprung.",
+    "size_bytes": 110084
   },
   {
     "file": "mon_stille_wasser.glb",

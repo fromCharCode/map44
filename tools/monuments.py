@@ -181,7 +181,7 @@ def tile_monuments(name, denkmale):
                     m_[0], m_[4] = val_[0], float(val_[1])
                     break
         # Nachgebaute Einzeldenkmäler (tools/overrides.json "monument_at": [[x, z, radius, modell, maßstab, gier|null]]):
-        # der Eintrag im Umkreis bekommt das eigene Modell – Namen allein sind mehrdeutig (mehrere Schiller-, Körner-
+        # der Eintrag im Umkreis bekommt das eigene Modell (leerer Modellname = Eintrag entfernen) – Namen allein sind mehrdeutig (mehrere Schiller-, Körner-
         # und Lutherdenkmäler in der Stadt)
         ov_all = json.loads((ROOT / "tools" / "overrides.json").read_text(encoding="utf-8"))
         for ax, az, ar, amodel, ascale, ayaw in ov_all.get("monument_at", []):
@@ -190,10 +190,33 @@ def tile_monuments(name, denkmale):
                 d_ = math.hypot(m_[1] - ax, m_[2] - az)
                 if d_ <= ar and (best is None or d_ < best[0]):
                     best = (d_, m_)
+            if best and amodel == "":
+                out.remove(best[1])                       # Doppeleintrag neben einem nachgebauten Denkmal entfernen
+                continue
             if best:
                 best[1][0], best[1][4] = amodel, float(ascale)
                 if ayaw is not None:
                     best[1][3] = float(ayaw)
+        # Bäume, die im Grundriss eines nachgebauten Denkmals stehen (große Becken, Stufenanlagen), entfallen –
+        # die Baumdaten kennen die Anlage nicht und setzten Stämme mitten ins Becken
+        try:
+            man = {m_["file"][:-4]: m_ for m_ in json.loads((ROOT / "godot" / "assets" / "models" / "monuments" / "MANIFEST.json").read_text(encoding="utf-8"))}
+        except (OSError, ValueError):
+            man = {}
+        big = []
+        for m_ in out:
+            e_ = man.get(m_[0])
+            if e_ and len(m_[0]) > 12:
+                bb0, bb1 = e_["bbox_min"], e_["bbox_max"]
+                r_ = 0.5 * max(bb1[0] - bb0[0], bb1[2] - bb0[2]) * float(m_[4])
+                if r_ >= 1.5:
+                    big.append((m_[1], m_[2], r_ + 0.8))
+        trees = city.get("trees") or []
+        if big and trees:
+            keep_t = [t_ for t_ in trees if not any(math.hypot(t_[0] - bx, t_[1] - bz) < br for bx, bz, br in big)]
+            if len(keep_t) != len(trees):
+                print(f"  {name}: {len(trees) - len(keep_t)} Bäume im Grundriss von Denkmälern entfernt")
+                city["trees"] = keep_t
         life["monuments"] = out
         cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
     if out:

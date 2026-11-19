@@ -1,0 +1,43 @@
+Vorlagenfotos von Wikimedia Commons für monuments_named_e.py (nur Vorlage, nicht ins Spiel kopieren; auf max. 1024 px verkleinert)
+Datei | Commons-Titel | Urheber | Lizenz
+ballwerfer/1.jpg | File:Der Ballwerfer by Richard Daniel Fabricius - Deutsches Hygiene-Museum - Dresden, Germany - DSC09017.JPG | Daderot | CC0
+ballwerfer/2.jpg | File:20070812165DR Dresden-Pirnaische VS Ballwerfer Hygienemuseum.jpg | Jörg Blobelt | CC BY-SA 4.0
+ballwerfer/3.jpg | File:Ballwerfer Richard Daniel Fabricius 1907 Dresden-2.jpg | Rufus46 | CC BY-SA 3.0
+ballwerfer/4.jpg | File:20250218.Hygienemuseum.Dresden mit Plasik Ballwerfer.-012.jpg | Bybbisch94 | CC BY-SA 4.0
+bogenschuetze/1.jpg | File:DD-Bogenschütze-1.jpg | SchiDD | CC BY-SA 4.0
+bogenschuetze/2.jpg | File:20251106.Dresden.Bogenschütze.-012.jpg | Bybbisch94 | CC BY-SA 4.0
+bogenschuetze/3.jpg | File:20251106.Dresden.Bogenschütze.-011.jpg | Bybbisch94 | CC BY-SA 4.0
+bogenschuetze/4.jpg | File:20251106.Dresden.Bogenschütze.-014.jpg | Bybbisch94 | CC BY-SA 4.0
+bogenschuetze/5.jpg | File:Ernst Moritz Geyger Bogenschuetze 1902 Elbufer Dresden-3.jpg | Rufus46 | CC BY-SA 3.0
+bogenschuetze/6.jpg | File:20080426300DR Dresden-Neustadt Bogenschütze (E. M. Geyger).jpg | Jörg Blobelt | CC BY-SA 4.0
+fahnentraeger/1.jpg | File:20120927150DR Dresden-Albertstadt Sowjetischer Garnisonfriedhof.jpg | Jörg Blobelt | CC BY-SA 4.0
+fahnentraeger/2.jpg | File:20120927160DR Dresden-Albertstadt Sowjetischer Garnisonfriedhof.jpg | Jörg Blobelt | CC BY-SA 4.0
+friedrich_list/1.jpg | File:20080314020DR Dresden-Süd Friedrich-List-Denkmal.jpg | Jörg Blobelt | CC BY-SA 4.0
+friedrich_list/2.jpg | File:20070214020DR Dresden-Südvorstadt Friedrich-List-Denkmal.jpg | Jörg Blobelt | CC BY-SA 4.0
+friedrich_list/3.jpg | File:20260210.Friedrich-List-Denkmal (Dresden).-013.jpg | Bybbisch94 | CC BY-SA 4.0
+friedrich_list/4.jpg | File:List-Denkmal.jpg | SchiDD | CC BY-SA 3.0
+friedrich_list/5.jpg | File:20050206400DR Dresden-Südvorstadt Friedrich List Denkmal.jpg | Jörg Blobelt | CC BY-SA 4.0
+garnisonfriedhof/1.jpg | File:20060615010DR Dresden Sowjetischer Garnisonfriedhof.jpg | Jörg Blobelt | CC BY-SA 4.0
+garnisonfriedhof/2.jpg | File:20060615025DR Dresden Sowjetischer Garnisonfriedhof.jpg | Jörg Blobelt | CC BY-SA 4.0
+garnisonfriedhof/3.jpg | File:DD sowj. Garnisonfriedhof 3328.jpg | ErichanderElbe | CC BY-SA 4.0
+koenig_albert_obelisk/1.jpg | File:Dresden Albertpark König-Albert-Obelisk.JPG | X-Weinzar | CC BY-SA 3.0
+koenig_albert_obelisk/2.jpg | File:DD-König-Albert-Denkmal-2.jpg | SchiDD | CC BY-SA 4.0
+koenig_albert_obelisk/3.jpg | File:DD-König-Albert-Denkmal-1.jpg | SchiDD | CC BY-SA 4.0
+koenig_albert_obelisk/4.jpg | File:20220509.Dresdner Heide.König-Albert-Denkmal.-015.jpg | Bybbisch94, Christian Gebhardt | CC BY-SA 4.0
+lipsius/1.jpg | File:Lipsius-Denkmalfigur.jpg | SchiDD | CC BY-SA 3.0
+lipsius/2.jpg | File:Stele Constantin Lipsius 2.JPG | Brücke-Osteuropa | CC0
+lipsius/3.jpg | File:Stele Constantin Lipsius 1.JPG | Brücke-Osteuropa | CC0
+palitzsch/1.jpg | File:20071125010DR Dresden-Prohlis Palitzsch-Denkmal Pahlitzschhof.jpg | Jörg Blobelt | CC BY-SA 4.0
+palitzsch/2.jpg | File:20071125020DR Dresden-Prohlis Palitzsch-Denkmal Palitzschof.jpg | Jörg Blobelt | CC BY-SA 4.0
+palitzsch/3.jpg | File:Johann Georg Palitzsch Denkmal Dresden Prohlis.JPG | Ubahnverleih | CC BY 3.0
+palitzsch/4.jpg | File:20071125015DR Dresden-Prohlis Palitzsch-Denkmal Pahlitzschhof.jpg | Jörg Blobelt | CC BY-SA 4.0
+schweinetreiber/1.jpg | File:Schweinetreiber.JPG | Lysippos | CC BY-SA 3.0
+schweinetreiber/2.jpg | File:Bundesarchiv Bild 183-42031-0001, Dresden, Plastiken.jpg | Höhne, Erich; Pohl, Erich | CC BY-SA 3.0 de
+schweinetreiber/3.jpg | File:Bundesarchiv Bild 183-42031-0002, Dresden, Plastiken.jpg | Höhne, Erich; Pohl, Erich | CC BY-SA 3.0 de
+
+Höhenangaben:
+mon_fahnentraeger (Obelisk Sowjetischer Garnisonfriedhof): 16 m – de.wikipedia.org, Artikel »Sowjetischer Garnisonfriedhof Dresden«
+mon_bogenschuetze: Figur »fast vier Meter« (Original von 1895) – de.wikipedia.org, Artikel »Der Bogenschütze (Kopenhagen)« / »Ernst Moritz Geyger«; für den Dresdner Guss übernommen, Pfeilermaße aus den Fotos geschätzt (Geländer ca. 1 m als Maßstab)
+alle übrigen Höhen aus den Fotos geschätzt (Vergleich mit Personen, Bänken, Geländern)
+Standorte: Commons-Koordinaten der Fotos (Lipsius-Stele 51.0401 N, 13.7710 O; Schweinetreiber 51.0685 N, 13.7203 O) und de.wikipedia.org (»Friedrich-List-Denkmal (Dresden)«, »Rudolf-Harbig-Stadion«: Ballwerfer seit 1983 vor dem Hygiene-Museum)
+Nicht gebaut: schweinetreiber/ (Fotos liegen vor, Modell aus Zeitgründen nicht umgesetzt); garnisonfriedhof/ und fahnentraeger/ zeigen beide den Obelisken.
