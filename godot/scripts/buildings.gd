@@ -276,6 +276,25 @@ func _build_cell(key: Vector2i, items: Array) -> void:
 					if _edge_is(rings[0], p0, p1, door_edge):
 						_door(b, style, seed01, p0, p1, ln, acc, nrm, ref, shop_iv)
 				acc += ln
+			# Ecktürmchen an freien, etwa rechtwinkligen Hausecken (zwei Straßenfassaden)
+			if ri_idx == 0 and not _plain_cur and not b.get("stacked", false) and not b.get("elev", false):
+				var npt := pts.size()
+				for i in npt:
+					var pa: Vector2 = pts[(i + npt - 1) % npt]
+					var pb: Vector2 = pts[i]
+					var pc2: Vector2 = pts[(i + 1) % npt]
+					var la := pa.distance_to(pb)
+					var lb := pb.distance_to(pc2)
+					if la < 7.0 or lb < 7.0:
+						continue
+					var da := (pb - pa) / la
+					var db := (pc2 - pb) / lb
+					if absf(da.dot(db)) > 0.35 or da.x * db.y - da.y * db.x <= 0.0:
+						continue
+					if _is_party(b, pa, pb) or _is_party(b, pb, pc2) or PhotoFacades.covers(tile_key, pb):
+						continue
+					var bis := (Vector2(da.y, -da.x) + Vector2(db.y, -db.x)).normalized()
+					FacadeRelief.corner(_deco, _cell_of, pb, bis, float(b["levels"]), eave_h, style, int(era), seed01, ref)
 
 		# Durchfahrt: Seitenwände und Decke (Putz, mit Kollision)
 		for ps in _tun_by_b.get(str(b["id"]), []):

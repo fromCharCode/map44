@@ -28,6 +28,7 @@ ERAS = ["", "barock", "klassizismus", "dresdner_schule", "gruenderzeit", "wuerfe
         "industrie_kommunal"]
 E_ = {n: i for i, n in enumerate(ERAS)}
 ERA_FIX = json.loads((ROOT / "tools" / "overrides.json").read_text(encoding="utf-8")).get("era_by_gid", {})
+BLOCK = {"C11", "C21", "C31", "C12"}
 VILLAGE = {"A11", "A21"}
 CUBE = {"A13"}
 SINGLE = {"A12", "B11"}
@@ -96,6 +97,14 @@ def tile_eras(name):
                 c = np.cumsum(sh) / sh.sum()
                 k = int(np.searchsorted(c, _u(bid, "k"), side="right"))
                 k = min(k, len(bounds) - 1)
+                # Blockrand mit überwiegend Altbau: angebaute Häuser mit Steildach sind dort Altbau – Lückenschlüsse
+                # nach 1945 haben meist ein Flachdach. (Zufallsziehung allein machte jedes dritte Gründerzeithaus
+                # der Neustadt zum Siedlungsbau.)
+                pitched = bool(b.get("roof")) and len(b.get("roof") or []) >= 9
+                if sst in BLOCK and sh[0] / sh.sum() >= 0.40 and not detached and pitched and lv >= 3:
+                    k = 0
+                elif sst in BLOCK and sh[0] / sh.sum() >= 0.40 and not pitched and k == 0 and _u(bid, "f") < 0.6:
+                    k = 6 if _u(bid, "g") < 0.6 else 4      # Flachdach im Altbaublock: eher Lückenschluss (Nachwende/DDR)
                 lo, hi = bounds[k]
                 if k == 0:
                     lo = 1872                               # „vor 1919“: in Dresden überwiegend 1872–1914

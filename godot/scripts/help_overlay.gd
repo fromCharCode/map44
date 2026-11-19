@@ -114,6 +114,8 @@ func _ready() -> void:
 	foot.add_theme_font_size_override("font_size", 13)
 	foot.add_theme_color_override("font_color", Color(0.6, 0.65, 0.7))
 	vb.add_child(foot)
+	if OS.has_environment("DRESDEN_HELP"):
+		_root.visible = true                       # Diagnose: Übersicht von Anfang an zeigen
 
 
 func toggle() -> void:

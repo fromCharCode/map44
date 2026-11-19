@@ -74,6 +74,13 @@ static func _material(tone: String) -> Material:
 			m.roughness = 0.6
 		"c":
 			m.albedo_color = Color(0.83, 0.81, 0.76)         # Beton/Glattputz hell
+		"sl":
+			m.albedo_color = Color(0.17, 0.18, 0.21)         # Schiefer (Turmhauben)
+			m.roughness = 0.6
+		"cu":
+			m.albedo_color = Color(0.33, 0.53, 0.46)         # patiniertes Kupfer
+			m.roughness = 0.55
+			m.metallic = 0.3
 		"gl":
 			m.albedo_color = Color(0.10, 0.13, 0.16)         # Verglasung
 			m.roughness = 0.12
@@ -271,6 +278,54 @@ static func _build(model: String) -> ArrayMesh:
 				var c1: Vector2 = Vector2(sgn * 0.79, -0.64)
 				var nn := Vector3(sgn * 0.87, 0, -0.49)
 				_q(st, Vector3(c0.x, 0.0, c0.y) + nn * 0.02, Vector3(c1.x, 0.0, c1.y) + nn * 0.02, Vector3(c1.x, 1.5, c1.y) + nn * 0.02, Vector3(c0.x, 1.5, c0.y) + nn * 0.02, nn)
+		"turret":
+			# Ecktürmchen/Eckerker, Höhe 1 (skaliert): achteckiger Schaft, Halbmesser 1,45 m
+			for i in 8:
+				var a0 := TAU * (float(i) + 0.5) / 8.0
+				var a1 := TAU * (float(i) + 1.5) / 8.0
+				var v0 := Vector3(cos(a0) * 1.45, 0, sin(a0) * 1.45)
+				var v1 := Vector3(cos(a1) * 1.45, 0, sin(a1) * 1.45)
+				_q(st, v0, v1, v1 + Vector3(0, 1, 0), v0 + Vector3(0, 1, 0), Vector3(cos((a0 + a1) * 0.5), 0, sin((a0 + a1) * 0.5)))
+		"spire":
+			# Turmhaube: achteckiger Helm, Höhe 1 (skaliert), mit Traufring
+			for i in 8:
+				var a0 := TAU * (float(i) + 0.5) / 8.0
+				var a1 := TAU * (float(i) + 1.5) / 8.0
+				var v0 := Vector3(cos(a0) * 1.75, 0, sin(a0) * 1.75)
+				var v1 := Vector3(cos(a1) * 1.75, 0, sin(a1) * 1.75)
+				var am := (a0 + a1) * 0.5
+				_q(st, v0, v1, Vector3(0, 1, 0), Vector3(0, 1, 0), Vector3(cos(am), 0.6, sin(am)).normalized())
+				_q(st, v0, v1, v1 * 0.83 + Vector3(0, -0.04, 0), v0 * 0.83 + Vector3(0, -0.04, 0), Vector3.DOWN)
+		"onion":
+			# Welsche Haube (geschweift), Höhe 1 (skaliert)
+			var prof := [[1.75, 0.0], [1.85, 0.12], [1.55, 0.3], [0.95, 0.45], [0.55, 0.62], [0.42, 0.78], [0.0, 1.0]]
+			for i in 8:
+				var a0 := TAU * (float(i) + 0.5) / 8.0
+				var a1 := TAU * (float(i) + 1.5) / 8.0
+				var am := (a0 + a1) * 0.5
+				for k in prof.size() - 1:
+					var r0: float = prof[k][0]
+					var r1: float = prof[k + 1][0]
+					var y0: float = prof[k][1]
+					var y1: float = prof[k + 1][1]
+					_q(st, Vector3(cos(a0) * r0, y0, sin(a0) * r0), Vector3(cos(a1) * r0, y0, sin(a1) * r0),
+						Vector3(cos(a1) * r1, y1, sin(a1) * r1), Vector3(cos(a0) * r1, y1, sin(a0) * r1), Vector3(cos(am), 0.5, sin(am)).normalized())
+		"schweif":
+			# geschweifter Zwerchgiebel (Jugendstil/Neobarock), Breite 1 gleichmäßig skaliert
+			var half := [[0.5, 0.0], [0.5, 0.22], [0.40, 0.30], [0.34, 0.46], [0.22, 0.56], [0.13, 0.76], [0.0, 0.88]]
+			for sgn: float in [-1.0, 1.0]:
+				for k in half.size() - 1:
+					var x0: float = half[k][0] * sgn
+					var x1: float = half[k + 1][0] * sgn
+					var y0: float = half[k][1]
+					var y1: float = half[k + 1][1]
+					_q(st, Vector3(0, 0, -0.06), Vector3(x0, y0, -0.06), Vector3(x1, y1, -0.06), Vector3(x1, y1, -0.06), Vector3(0, 0, -1))
+					# Abdeckung entlang der Kontur (0,3 m tief nach hinten)
+					var e := Vector2(x1 - x0, y1 - y0).normalized()
+					var nn := Vector3(-e.y * sgn, e.x * sgn, 0)
+					if nn.y < 0.0 and absf(nn.x) < 0.5:
+						nn = -nn
+					_q(st, Vector3(x0, y0, -0.10), Vector3(x1, y1, -0.10), Vector3(x1, y1, 0.25), Vector3(x0, y0, 0.25), nn)
 		"erker_box":
 			# Kastenerker (Reform/1950er), Höhe 1 (skaliert): 2,2 m breit, 0,6 m tief
 			_box(st, -1.1, 1.1, 0.0, 1.0, 0.6)
@@ -685,6 +740,10 @@ static func edge(out: Dictionary, cell_of: Callable, levels_f: float, height: fl
 						put.call("pil", "w", x, y_p0 + 0.24, 1.0, y_p1 - y_p0 - 0.24)
 						put.call("cap", "w", x, y_p1, 1.0, 1.0)
 					put.call("gable", "w", ma, ref + height + 0.04, pitch + 0.5, pitch + 0.5)
+			7:
+				# Jugendstil: geschweifter Zwerchgiebel über der Mittelachse
+				if h4 < 0.5 and ncol >= 3 and erker_col < 0 and ln >= 10.0:
+					put.call("schweif", "k", cols[mid][0], ref + height - 0.05, pitch * 1.7, pitch * 1.7)
 			6:
 				# Klinker: Lisenen im Verblender an den Hausecken
 				if ln >= 7.0:
@@ -776,3 +835,46 @@ static func edge(out: Dictionary, cell_of: Callable, levels_f: float, height: fl
 				put.call("box", "d", ln * 0.5, zy0 - 0.1, ln, 0.16, 0.05)
 				for i in nz + 1:
 					put.call("box", "d", clampf(float(i) * ln / float(nz), 0.08, ln - 0.08), zy0, 0.14, zy1 - zy0, 0.045)
+
+
+static func corner(out: Dictionary, cell_of: Callable, pc: Vector2, bis: Vector2, levels_f: float, height: float, style: int,
+		era: int, seed: float, ref: float) -> void:
+	## Ecktürmchen an freien Hausecken (Gründerzeit, Jugendstil, Villen): achteckiger Eckerker ab dem 1. Obergeschoss
+	## bis über die Traufe, mit Helm oder Welscher Haube. bis = Winkelhalbierende nach außen.
+	if not enabled or not (style in [0, 1, 6]) or not (era in [4, 5, 7, 13]) or height < 10.0:
+		return
+	if _h11(seed * 41.3) < 0.55:
+		return
+	var levels := maxf(levels_f, 1.0)
+	var fh := clampf(height / levels, 2.7, 4.6)
+	var rows := int(floor(height / fh))
+	var tone := "k" if era == 7 else ("s" if style == 1 else "w")
+	var c := pc + bis * 0.25
+	var cell: Vector2i = cell_of.call(c)
+	var add := func(model: String, tn: String, xf: Transform3D) -> void:
+		var key := ["fr_%s_%s" % [model, tn], cell]
+		if not out.has(key):
+			out[key] = []
+		(out[key] as Array).append(xf)
+	var y0 := ref + fh - 0.35
+	var y1 := ref + height + 1.5
+	var yaw := atan2(bis.x, bis.y)                       # Modell +Z -> Winkelhalbierende
+	var b0 := Basis(Vector3.UP, yaw)
+	var org := Vector3(c.x, 0, c.y)
+	add.call("turret", tone, Transform3D(b0.scaled_local(Vector3(1, y1 - y0, 1)), org + Vector3(0, y0, 0)))
+	add.call("turret", tone, Transform3D(b0.scaled_local(Vector3(0.6, 0.5, 0.6)), org + Vector3(0, y0 - 0.5, 0)))     # Konsolfuß
+	add.call("turret", tone, Transform3D(b0.scaled_local(Vector3(1.08, 0.2, 1.08)), org + Vector3(0, y1 - 0.2, 0)))   # Traufgesims
+	var onion := _h11(seed * 67.9) > 0.6 or era == 7
+	var cap_h := 3.2 if onion else 4.2
+	add.call("onion" if onion else "spire", "cu" if (onion and _h11(seed * 3.1) > 0.4) else "sl",
+		Transform3D(b0.scaled_local(Vector3(1, cap_h, 1)), org + Vector3(0, y1, 0)))
+	# Fenster auf den drei Außenflächen je Geschoss
+	for r in range(1, rows + 1):
+		var wy := ref + float(r) * fh + fh * 0.22
+		if wy + fh * 0.55 > y1 - 0.3:
+			continue
+		for da in [-PI * 0.25, 0.0, PI * 0.25]:
+			var bb := Basis(Vector3.UP, yaw + da)
+			var outw := bb * Vector3(0, 0, 1)
+			add.call("box", "gl", Transform3D(Basis(Vector3.UP, yaw + da + PI).scaled_local(Vector3(0.62, fh * 0.52, 0.03)),
+				org + outw * 1.345 + Vector3(0, wy, 0)))
