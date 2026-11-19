@@ -237,7 +237,10 @@ func sun_vector(h: float) -> Vector3:
 	## Richtung ZUR Sonne (Spielkoordinaten: +x Ost, -z Nord).
 	var dec := deg_to_rad(23.44) * sin(TAU * (day_of_year - 81.0) / 365.0)
 	var lat := deg_to_rad(LATITUDE)
-	var ha := deg_to_rad((h - 12.0) * 15.0)
+	# Die Spieluhr zeigt Sommerzeit (MESZ): In Dresden (13,74° Ost) steht die Sonne dann um 13:05 Uhr am höchsten.
+	# Vorher galt die Uhr als wahre Ortszeit – Sonnenauf- und -untergang lagen eine gute Stunde zu früh
+	# (um 3 Uhr nachts dämmerte es schon rosa).
+	var ha := deg_to_rad((h - 13.08) * 15.0)
 	var sin_el := sin(lat) * sin(dec) + cos(lat) * cos(dec) * cos(ha)
 	var el := asin(clampf(sin_el, -1.0, 1.0))
 	var cos_az := (sin(dec) - sin(el) * sin(lat)) / maxf(cos(el) * cos(lat), 1e-4)
