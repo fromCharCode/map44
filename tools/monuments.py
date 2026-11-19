@@ -180,6 +180,20 @@ def tile_monuments(name, denkmale):
                 if key_ in str(m_[5]):
                     m_[0], m_[4] = val_[0], float(val_[1])
                     break
+        # Nachgebaute Einzeldenkmäler (tools/overrides.json "monument_at": [[x, z, radius, modell, maßstab, gier|null]]):
+        # der Eintrag im Umkreis bekommt das eigene Modell – Namen allein sind mehrdeutig (mehrere Schiller-, Körner-
+        # und Lutherdenkmäler in der Stadt)
+        ov_all = json.loads((ROOT / "tools" / "overrides.json").read_text(encoding="utf-8"))
+        for ax, az, ar, amodel, ascale, ayaw in ov_all.get("monument_at", []):
+            best = None
+            for m_ in out:
+                d_ = math.hypot(m_[1] - ax, m_[2] - az)
+                if d_ <= ar and (best is None or d_ < best[0]):
+                    best = (d_, m_)
+            if best:
+                best[1][0], best[1][4] = amodel, float(ascale)
+                if ayaw is not None:
+                    best[1][3] = float(ayaw)
         life["monuments"] = out
         cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
     if out:

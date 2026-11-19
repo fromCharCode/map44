@@ -30,3 +30,6 @@ __pycache__/
 /.playwright-mcp/
 *.blend1
 /data/research/bruecken_src/
+
+# Vorlagenfotos der Denkmäler (Commons, nur Vorlage – nicht ins Repo)
+data/research/denkmal_fotos/*/

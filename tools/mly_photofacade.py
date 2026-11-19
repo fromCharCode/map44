@@ -224,8 +224,9 @@ def tex_ok(tex, ppm=28.0):
     if green[: int(h * 0.8)].mean() > 0.16:
         return False, "Laub"
     # Himmel in der Wandfläche = Ausschnitt verrutscht (Dach, Lücke, Nachbarhaus)
-    sky = (mx > 165) & ((sat < 0.12) | (f[..., 2] > f[..., 0] * 1.10)) & (f[..., 2] > 150)
-    if sky[: int(h * 0.5)].mean() > 0.07:
+    # (nur blauer Himmel – bedeckter Himmel ist von hellem Putz nicht zu unterscheiden)
+    sky = (mx > 150) & (f[..., 2] > f[..., 0] * 1.18) & (f[..., 2] > f[..., 1] * 1.04) & (sat > 0.18)
+    if sky[: int(h * 0.5)].mean() > 0.06:
         return False, "Himmel im Ausschnitt"
     g = f.mean(2)[: int(h * 0.85)]
     dark = (g < np.median(g) - 22.0).astype(float)

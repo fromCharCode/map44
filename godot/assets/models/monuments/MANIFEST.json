@@ -1,5 +1,30 @@
 [
   {
+    "file": "mon_artesischer_brunnen.glb",
+    "height": 7.793,
+    "bbox_min": [
+      -5.424,
+      0.0,
+      -5.438
+    ],
+    "bbox_max": [
+      5.424,
+      7.793,
+      5.438
+    ],
+    "tris": 7398,
+    "materials": [
+      "Eisen",
+      "Gold",
+      "Granit",
+      "Sandstein",
+      "Wasser",
+      "Zinkblech"
+    ],
+    "notes": "Artesischer Brunnen (Albertplatz): Rundtempel mit acht ionischen Säulen, Goldkapitellen und Girlanden, Zinkkuppel mit goldener Krone, rundes Becken Ø 9,4 m mit Pollerkranz. Maße geschätzt.",
+    "size_bytes": 337020
+  },
+  {
     "file": "mon_bust.glb",
     "height": 2.287,
     "bbox_min": [
@@ -19,6 +44,53 @@
     ],
     "notes": "Büste (Kopf und Schultern in Bronze) auf schlanker Sandsteinstele, Tafel vorn (+Y).",
     "size_bytes": 40508
+  },
+  {
+    "file": "mon_cholerabrunnen.glb",
+    "height": 18.0,
+    "bbox_min": [
+      -4.527,
+      0.0,
+      -4.527
+    ],
+    "bbox_max": [
+      4.527,
+      18.0,
+      4.527
+    ],
+    "tris": 8324,
+    "materials": [
+      "Bronze",
+      "Eisen",
+      "Granit",
+      "Sandstein_dunkel",
+      "Wasser"
+    ],
+    "notes": "Cholerabrunnen (Semper 1846): neugotische Fiale 18 m in achteckigem Granitbecken Ø 6,76 m, vier Eckbrunnen mit Schalen, vier Nischenfiguren, achteckiges Eisengitter. Inschriftseiten ±X/±Y.",
+    "size_bytes": 463616
+  },
+  {
+    "file": "mon_delphinbrunnen.glb",
+    "height": 3.31,
+    "bbox_min": [
+      -6.85,
+      0.0,
+      -3.25
+    ],
+    "bbox_max": [
+      6.85,
+      3.31,
+      2.67
+    ],
+    "tris": 3590,
+    "materials": [
+      "Eisen",
+      "Granit",
+      "Sandstein",
+      "Wasser"
+    ],
+    "notes": "Delphinbrunnen (Brühlscher Garten): Putto auf Delphin über Muschelschale auf Felsen, vor dreiteiliger Sandstein-Stützmauer mit Eisengeländer (Rückseite -Y), flaches Becken 13 × 5,6 m davor. Maße geschätzt.",
+    "size_bytes": 171488
   },
   {
     "file": "mon_fountain.glb",
@@ -62,6 +134,139 @@
     ],
     "notes": "Trinkbrunnen: achteckiger Sandsteinpfeiler mit Schale und Bronzeauslauf, Knopf vorn (+Y).",
     "size_bytes": 17088
+  },
+  {
+    "file": "mon_friedrich_august_gerechte.glb",
+    "height": 8.5,
+    "bbox_min": [
+      -2.85,
+      0.0,
+      -3.05
+    ],
+    "bbox_max": [
+      2.85,
+      8.5,
+      3.05
+    ],
+    "tris": 7442,
+    "materials": [
+      "Bronze",
+      "Gold",
+      "GranitRot"
+    ],
+    "notes": "Friedrich August I. der Gerechte (Schloßplatz): thronender König im Krönungsmantel mit Zepter (Blick +Y) auf Bronzepostament mit vier Tugenden an den Ecken, Goldinschrift, roter Granitunterbau mit drei Stufen. Gesamthöhe 8,5 m (geschätzt).",
+    "size_bytes": 325496
+  },
+  {
+    "file": "mon_friedrich_august_ii.glb",
+    "height": 8.0,
+    "bbox_min": [
+      -2.8,
+      0.0,
+      -2.8
+    ],
+    "bbox_max": [
+      2.8,
+      8.0,
+      2.8
+    ],
+    "tris": 7280,
+    "materials": [
+      "Bronze",
+      "Gold",
+      "GranitRot"
+    ],
+    "notes": "Friedrich August II. (Neumarkt): Standfigur in Uniform mit Mantel und Urkunde (Blick +Y) auf Bronzepfeiler mit vier sitzenden Tugenden, roter Granitsockel mit Stufen. Gesamthöhe 8,0 m (geschätzt).",
+    "size_bytes": 330100
+  },
+  {
+    "file": "mon_gaensediebbrunnen.glb",
+    "height": 5.054,
+    "bbox_min": [
+      -4.636,
+      0.0,
+      -4.636
+    ],
+    "bbox_max": [
+      4.636,
+      5.054,
+      4.636
+    ],
+    "tris": 5298,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "Wasser"
+    ],
+    "notes": "Gänsediebbrunnen (Diez, Weiße Gasse): Bronzefigur mit zwei Gänsen auf Granitpostament mit Bronzevoluten und zwei Gänsen, Auffangschale auf Pfeiler mit vier Säulchen, rundes Granitbecken Ø 6 m auf zwei Stufen. Maße geschätzt. Figur schreitet nach +Y.",
+    "size_bytes": 222264
+  },
+  {
+    "file": "mon_koerner.glb",
+    "height": 5.83,
+    "bbox_min": [
+      -1.75,
+      0.0,
+      -1.75
+    ],
+    "bbox_max": [
+      1.75,
+      5.83,
+      1.75
+    ],
+    "tris": 2336,
+    "materials": [
+      "Bronze",
+      "Granit"
+    ],
+    "notes": "Theodor-Körner-Denkmal (Georgplatz): Bronzefigur mit Mantel, Schwert an der Brust und Schriftrolle (Blick +Y), Granitpostament mit Leier und Schwert im Kranz. Statue 2,83 m, Postament 2,5 m, gesamt ca. 5,8 m.",
+    "size_bytes": 100360
+  },
+  {
+    "file": "mon_luther.glb",
+    "height": 6.85,
+    "bbox_min": [
+      -1.625,
+      0.0,
+      -1.625
+    ],
+    "bbox_max": [
+      1.625,
+      6.85,
+      1.625
+    ],
+    "tris": 2304,
+    "materials": [
+      "Bronze",
+      "Gold",
+      "Granit",
+      "GranitDunkel"
+    ],
+    "notes": "Martin-Luther-Denkmal Neumarkt: Bronzefigur im Talar mit Bibel vor der Brust (Blick +Y), dunkler Syenitsockel mit Goldinschrift und Kranz auf grauem Granitstufenbau. Gesamthöhe 6,85 m (geschätzt).",
+    "size_bytes": 101204
+  },
+  {
+    "file": "mon_mozartbrunnen.glb",
+    "height": 4.202,
+    "bbox_min": [
+      -5.7,
+      0.0,
+      -1.55
+    ],
+    "bbox_max": [
+      5.7,
+      4.202,
+      5.45
+    ],
+    "tris": 5775,
+    "materials": [
+      "Gold",
+      "Granit",
+      "Sandstein",
+      "Wasser"
+    ],
+    "notes": "Mozartbrunnen (Bürgerwiese): drei vergoldete tanzende Frauenfiguren um eine runde Steinstele auf Stufensockel; gerade Sandsteinbrüstung 11 m (Schauseite +Y), dahinter (-Y) Stufen und flaches Halbrundbecken. Maße geschätzt.",
+    "size_bytes": 234360
   },
   {
     "file": "mon_obelisk.glb",
@@ -127,6 +332,48 @@
     "size_bytes": 197156
   },
   {
+    "file": "mon_rietschel.glb",
+    "height": 4.3,
+    "bbox_min": [
+      -1.62,
+      0.0,
+      -1.403
+    ],
+    "bbox_max": [
+      1.62,
+      4.3,
+      1.403
+    ],
+    "tris": 3891,
+    "materials": [
+      "Bronze",
+      "Granit"
+    ],
+    "notes": "Ernst-Rietschel-Denkmal (Brühlsche Terrasse): Bronzebüste (Blick +Y) auf Säule mit Reliefband, drei sitzende Jünglinge auf sechseckigem Bronzesockel mit Kranz, Granitstufe. Gesamthöhe 4,3 m (geschätzt).",
+    "size_bytes": 179188
+  },
+  {
+    "file": "mon_schillerdenkmal.glb",
+    "height": 5.021,
+    "bbox_min": [
+      -3.85,
+      0.0,
+      -3.911
+    ],
+    "bbox_max": [
+      3.85,
+      5.021,
+      3.85
+    ],
+    "tris": 2868,
+    "materials": [
+      "Eisen",
+      "Marmor"
+    ],
+    "notes": "Schillerdenkmal (Werner/Hempel 1914): Marmorstandbild 3,4 m in Toga mit Buch auf Sockel in schulterhoher Marmorrotunde Ø 7,5 m mit Reliefplatten, Eingang mit zwei Maskenpfeilern und Eisentor vorn (+Y).",
+    "size_bytes": 129596
+  },
+  {
     "file": "mon_sculpture.glb",
     "height": 2.4,
     "bbox_min": [
@@ -147,6 +394,27 @@
     ],
     "notes": "Moderne Plastik: zwei verdrehte Bronzekörper mit Stahlring auf flachem Granitsockel.",
     "size_bytes": 60616
+  },
+  {
+    "file": "mon_semper.glb",
+    "height": 5.6,
+    "bbox_min": [
+      -1.85,
+      0.0,
+      -1.85
+    ],
+    "bbox_max": [
+      1.85,
+      5.6,
+      1.85
+    ],
+    "tris": 1848,
+    "materials": [
+      "Bronze",
+      "GranitRot"
+    ],
+    "notes": "Gottfried-Semper-Denkmal (Brühlsche Terrasse): Bronzefigur im Gehrock, linker Fuß auf einem Kapitell, Bauplan in den Händen (Blick +Y), roter Granitsockel mit Bronzetafel auf zwei Stufen. Gesamthöhe 5,6 m (geschätzt).",
+    "size_bytes": 79000
   },
   {
     "file": "mon_statue.glb",
@@ -191,6 +459,28 @@
     "size_bytes": 7292
   },
   {
+    "file": "mon_stille_wasser.glb",
+    "height": 5.3,
+    "bbox_min": [
+      -9.72,
+      0.0,
+      -9.72
+    ],
+    "bbox_max": [
+      9.72,
+      5.3,
+      9.72
+    ],
+    "tris": 6845,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "Wasser"
+    ],
+    "notes": "Brunnen Stille Wasser (Diez, Albertplatz Ost): Granitbecken Ø 18 m, innere Steinschale Ø 7,2 m, lagernde und sitzende Nymphen mit Kindern um den Schaft, Bronzeschale Ø 5 m in 5 m Höhe. Figuren stark vereinfacht.",
+    "size_bytes": 306688
+  },
+  {
     "file": "mon_stone.glb",
     "height": 1.1,
     "bbox_min": [
@@ -212,6 +502,50 @@
     "size_bytes": 17536
   },
   {
+    "file": "mon_stuermische_wogen.glb",
+    "height": 5.3,
+    "bbox_min": [
+      -9.72,
+      0.0,
+      -9.72
+    ],
+    "bbox_max": [
+      9.72,
+      5.3,
+      9.72
+    ],
+    "tris": 8385,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "Wasser"
+    ],
+    "notes": "Brunnen Stürmische Wogen (Diez, Albertplatz West): Granitbecken Ø 18 m, innere Steinschale Ø 7,2 m, Bronzegruppe (Sturm auf Ross, Kämpfende, Seeschlangen) um den Schaft, Bronzeschale Ø 5 m in 5 m Höhe. Figuren stark vereinfacht.",
+    "size_bytes": 349060
+  },
+  {
+    "file": "mon_truemmerfrau.glb",
+    "height": 4.0,
+    "bbox_min": [
+      -0.95,
+      0.0,
+      -0.85
+    ],
+    "bbox_max": [
+      0.95,
+      4.0,
+      0.85
+    ],
+    "tris": 1888,
+    "materials": [
+      "Bronze",
+      "Granit",
+      "Ziegel"
+    ],
+    "notes": "Trümmerfrau (Neues Rathaus): Bronzefigur mit Kopftuch und Schürze, Hammer in der rechten Hand, Arme abgespreizt (Blick +Y), auf Sockel aus Trümmerziegeln. Gesamthöhe 4,0 m (geschätzt).",
+    "size_bytes": 79148
+  },
+  {
     "file": "mon_war.glb",
     "height": 3.5,
     "bbox_min": [
@@ -231,5 +565,26 @@
     ],
     "notes": "Kriegerdenkmal: Stufenunterbau, Sandsteinpfeiler mit Bronzekranz und Tafeln, Kreuz obenauf.",
     "size_bytes": 22904
+  },
+  {
+    "file": "mon_weber.glb",
+    "height": 5.75,
+    "bbox_min": [
+      -1.85,
+      0.0,
+      -1.85
+    ],
+    "bbox_max": [
+      1.85,
+      5.75,
+      1.85
+    ],
+    "tris": 2390,
+    "materials": [
+      "Bronze",
+      "GranitRot"
+    ],
+    "notes": "Carl-Maria-von-Weber-Denkmal: Bronzefigur im Mantel, linker Arm auf dem Notenpult erhoben, Blumengebinde in der Rechten (Blick +Y), roter Granitsockel mit Bronzetafel auf zwei Stufen. Gesamthöhe 5,75 m (geschätzt).",
+    "size_bytes": 99976
   }
 ]

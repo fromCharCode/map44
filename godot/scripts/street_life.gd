@@ -89,6 +89,9 @@ func build(t: Terrain, life: Dictionary) -> void:
 		_add(String(m[0]), float(m[1]), float(m[2]), float(m[3]), 0, 0.0, 0.0, Transform3D(Basis().scaled(Vector3(sc, sc, sc)), Vector3.ZERO))
 		if String(m[0]) == "mon_fountain":
 			_fountain_jet(Vector3(float(m[1]), terrain.height_at(float(m[1]), float(m[2])), float(m[2])), sc)
+		elif String(m[0]) in ["mon_stuermische_wogen", "mon_stille_wasser"]:
+			# Wasserspiel über der Bronzeschale (Schale in 5 m Höhe; _fountain_jet setzt 2,45 m × Maßstab an)
+			_fountain_jet(Vector3(float(m[1]), terrain.height_at(float(m[1]), float(m[2])), float(m[2])), 2.1)
 	for s in life.get("signs", []):
 		_traffic_sign(s)
 	if OS.has_environment("DRESDEN_TRACE"): print("  T _street_names")
