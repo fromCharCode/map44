@@ -20,6 +20,12 @@ func build(t: Terrain, city: Dictionary) -> void:
 	mat_brick = _tri_mat("brick", 1.0)
 	mat_fence = _fence_material()
 	var mats := {"stone": mat_stone, "wall": mat_wall, "brick": mat_brick}
+	_step_pts.clear()
+	for st0 in city["steps"]:
+		if float(st0.get("width", 0.0)) < 8.0:
+			continue                              # nur Freitreppen
+		for q in st0["pts"]:
+			_step_pts.append(Vector2(q[0], q[1]))
 	for b in city["barriers"]:
 		_barrier(b)
 	for st in city["steps"]:
@@ -88,6 +94,19 @@ func _quad(b: Dictionary, p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, n:
 	_tri(b, p0, p2, p3, n, collide, cell)
 
 
+var _step_pts: Array = []
+
+
+func _near_steps(pts: Array) -> bool:
+	## Treppenwangen bleiben schlanke Mauern (sonst verdecken breite Mauerblöcke Treppe und Figuren)
+	for q in pts:
+		var v := Vector2(q[0], q[1])
+		for sp: Vector2 in _step_pts:
+			if v.distance_to(sp) < 16.0:
+				return true
+	return false
+
+
 func _barrier(bar: Dictionary) -> void:
 	var kind: String = bar["kind"]
 	var pts: Array = bar["pts"]
@@ -116,6 +135,19 @@ func _barrier(bar: Dictionary) -> void:
 				key = "stone"
 	var h: float = bar["h"] if bar["h"] != null else default_h
 	h = clampf(h, 0.3, 12.0)
+	# Hohe Stützmauern (Terrassen, Bastionen): Ober- und Unterkante aus einem breiten Geländeschnitt, entlang der
+	# Mauer geglättet – vorher je Abschnitt nur 1,6 m beidseits abgetastet, was an steilen Kanten eine gezackte
+	# Mauerkrone und Lücken ergab
+	var tops: Array = []
+	var bots: Array = []
+	if kind == "retaining_wall" or kind == "city_wall":
+		var prof := {} if _near_steps(pts) else _wall_profile(pts)
+		if not prof.is_empty():
+			pts = prof["pts"]
+			tops = prof["top"]
+			bots = prof["bot"]
+			if float(prof["big"]) >= 5.0:
+				thick = 3.2      # Terrassenmauer: deckt die Rasterstufen der Geländekante (bis 1,5 m vor der Linie) mit ab
 	for i in pts.size() - 1:
 		var a := Vector2(pts[i][0], pts[i][1])
 		var b := Vector2(pts[i + 1][0], pts[i + 1][1])
@@ -131,7 +163,12 @@ func _barrier(bar: Dictionary) -> void:
 		var yb_bot := gb - 0.35
 		var ya_top := ga + h
 		var yb_top := gb + h
-		if kind == "retaining_wall" or kind == "city_wall":
+		if not tops.is_empty():
+			ya_top = float(tops[i]) + 1.0
+			yb_top = float(tops[i + 1]) + 1.0
+			ya_bot = float(bots[i]) - 0.6
+			yb_bot = float(bots[i + 1]) - 0.6
+		elif kind == "retaining_wall" or kind == "city_wall":
 			# Stützmauer: Oberkante an der höheren Seite (+ Brüstung), Unterkante an der tieferen.
 			# Stadtmauern sind meist Terrassen-/Bastionsmauern; freistehend nur bei ebenem Gelände.
 			var la := terrain.height_at(a.x + nrm.x * 1.6, a.y + nrm.y * 1.6)
@@ -179,6 +216,71 @@ func _barrier(bar: Dictionary) -> void:
 			_quad(bk, a_l + Vector3(0, ya_bot, 0), a_r + Vector3(0, ya_bot, 0), a_r + Vector3(0, ya_top, 0), a_l + Vector3(0, ya_top, 0), -Vector3(t.x, 0, t.y), true, cell)
 		if i == pts.size() - 2:
 			_quad(bk, b_l + Vector3(0, yb_bot, 0), b_r + Vector3(0, yb_bot, 0), b_r + Vector3(0, yb_top, 0), b_l + Vector3(0, yb_top, 0), Vector3(t.x, 0, t.y), true, cell)
+
+
+func _wall_profile(pts: Array) -> Dictionary:
+	## Geländeschnitt entlang einer Stützmauer: alle 3 m höchster und tiefster Punkt bis 7 m beidseits, geglättet.
+	## Leer, wenn die Mauer nirgends mehr als 1,2 m Höhenunterschied hält (dann gilt die einfache Regel).
+	var rp: Array = []
+	var nr: Array = []
+	for i in pts.size() - 1:
+		var a := Vector2(pts[i][0], pts[i][1])
+		var b := Vector2(pts[i + 1][0], pts[i + 1][1])
+		var L := a.distance_to(b)
+		if L < 0.2:
+			continue
+		var t := (b - a) / L
+		var n := maxi(1, int(ceil(L / 3.0)))
+		for k in n:
+			rp.append(a.lerp(b, float(k) / float(n)))
+			nr.append(Vector2(-t.y, t.x))
+		if i == pts.size() - 2:
+			rp.append(b)
+			nr.append(Vector2(-t.y, t.x))
+	if rp.size() < 2:
+		return {}
+	var hi: Array = []
+	var lo: Array = []
+	var big := 0.0
+	for i in rp.size():
+		var p: Vector2 = rp[i]
+		var n2: Vector2 = nr[i]
+		var mx := -INF
+		var mn := INF
+		for d: float in [1.5, 3.0, 5.0, 7.0]:
+			for sgn: float in [1.0, -1.0]:
+				var y := terrain.height_at(p.x + n2.x * d * sgn, p.y + n2.y * d * sgn)
+				mx = maxf(mx, y)
+				mn = minf(mn, y)
+		hi.append(mx)
+		lo.append(mn)
+		big = maxf(big, mx - mn)
+	if big < 1.2:
+		return {}
+	var top: Array = []
+	var bot: Array = []
+	var m := rp.size()
+	for i in m:
+		var mx2 := -INF
+		var mn2 := INF
+		for k in range(maxi(i - 2, 0), mini(i + 3, m)):
+			mx2 = maxf(mx2, float(hi[k]))
+		for k in range(maxi(i - 3, 0), mini(i + 4, m)):
+			mn2 = minf(mn2, float(lo[k]))
+		top.append(mx2)
+		bot.append(mn2)
+	var top2: Array = []
+	for i in m:
+		var acc := 0.0
+		var cnt := 0
+		for k in range(maxi(i - 2, 0), mini(i + 3, m)):
+			acc += float(top[k])
+			cnt += 1
+		top2.append(maxf(acc / float(cnt), float(hi[i])))
+	var out_pts: Array = []
+	for q: Vector2 in rp:
+		out_pts.append([q.x, q.y])
+	return {"pts": out_pts, "top": top2, "bot": bot, "big": big}
 
 
 func _steps(st: Dictionary) -> void:
