@@ -48,11 +48,32 @@ python3 "$T/pack.py" "$T/stage" "$T/rel/data-v2" data-v2 "$T/rel/data-v2b/map44-
 echo x > "$T/stage/data/tiles/420_5670/extra.json"
 python3 "$T/pack.py" "$T/stage" "$T/rel/data-v2b" data-v2 "$T/rel/data-v2/map44-data-v2.manifest" 1 >/dev/null 2>&1 \
   && fail "geänderte Daten unter veröffentlichter Datenversion nicht abgelehnt"
-rm -r "$T/rel/data-v2b" "$T/stage/data/tiles/420_5670/extra.json"
-ok "Packer: gleiche Datenversion – unverändert nichts hochzuladen, geändert Abbruch"
+rm "$T/stage/data/tiles/420_5670/extra.json"
+mv "$T/stage/data/tiles/420_5670" "$T/weg"
+python3 "$T/pack.py" "$T/stage" "$T/rel/data-v2b" data-v2 "$T/rel/data-v2/map44-data-v2.manifest" 1 >/dev/null 2>&1 \
+  && fail "entfernte Kachel unter veröffentlichter Datenversion nicht abgelehnt"
+mv "$T/weg" "$T/stage/data/tiles/420_5670"
+rm -r "$T/rel/data-v2b"
+ok "Packer: gleiche Datenversion – unverändert nichts hochzuladen, geändert oder entfernt Abbruch"
 echo r3 > "$T/stage/data/streets.json"; echo c3 > "$T/stage/data/tiles/414_5660/city.json"
 echo d3 > "$T/stage/data/tiles/420_5670/city.json"
 pack data-v3 data-v2                                     # alle Pakete geändert
+# data-v3r: Paket der Kachel 414_5660 unter GLEICHEM Namen mit anderem Inhalt (city.json entfällt, neu.json kommt)
+mkdir -p "$T/rel/data-v3r"
+python3 - "$T/rel" <<'PYR'
+import hashlib, os, sys, zipfile
+rel = sys.argv[1]
+name = "map44-data-v3-t414_5660.zip"
+out = os.path.join(rel, "data-v3r", name)
+with zipfile.ZipFile(out, "w") as zf:
+    zf.writestr("data/tiles/414_5660/neu.json", "n\n")
+sha = hashlib.sha256(open(out, "rb").read()).hexdigest()
+lines = []
+for l in open(os.path.join(rel, "data-v3", "map44-data-v3.manifest")):
+    c = l.split()
+    lines.append(f"{sha} {os.path.getsize(out)} {name} data-v3r" if c[2] == name else " ".join(c[:4]))
+open(os.path.join(rel, "data-v3r", "map44-data-v3r.manifest"), "w").write("\n".join(lines) + "\n")
+PYR
 
 # Installer-Block mit Schein-curl
 cat > "$T/run.sh" <<EOF
@@ -96,6 +117,16 @@ data-v3" ] || fail "Austausch aller Pakete"
 ok "Austausch aller Pakete (.packs bleibt erhalten)"
 run data-v3; ok "erneuter Lauf ohne Änderungen"
 
+# Paket gleichen Namens neu veröffentlicht: alte Dateien weg, genau eine Manifestzeile
+run data-v3r
+[ "$(files)" = "data/MANIFEST data/VERSION data/streets.json data/tiles/414_5660/neu.json data/tiles/420_5670/city.json " ] \
+  || fail "neu veröffentlichtes Paket: $(files)"
+[ "$(grep -c ' map44-data-v3-t414_5660.zip ' "$T/dest/data/MANIFEST")" = 1 ] || fail "neu veröffentlichtes Paket: doppelte Manifestzeile"
+run data-v3
+[ "$(files)" = "data/MANIFEST data/VERSION data/streets.json data/tiles/414_5660/city.json data/tiles/420_5670/city.json " ] \
+  || fail "zurück auf data-v3: $(files)"
+ok "Paket gleichen Namens mit neuem Inhalt ersetzt das alte vollständig"
+
 # beschädigtes Manifest: nichts löschen
 cp "$T/rel/data-v3/map44-data-v3.manifest" "$T/mf.bak"
 for bad in "" "kaputt" "$(head -c 300 "$T/mf.bak")"; do
@@ -119,6 +150,12 @@ run data-v3
 [ ! -e "$T/dest/data/.packs/map44-data-v9-t499_5699.zip.files" ] || fail "verwaiste Dateiliste nicht entfernt"
 [ -z "$(ls "$T/dl" | grep '\.zip$' || true)" ] || fail "liegengebliebene Zips: $(ls "$T/dl")"
 ok "Reste abgebrochenen Entpackens und alte Zips werden entfernt"
+
+# data/.packs fehlt (von Hand gelöscht, unvollständig kopiert): kein stiller Abbruch
+rm -rf "$T/dest/data/.packs"; echo data-v2 > "$T/dest/data/VERSION"
+run data-v3 || fail "fehlendes .packs bricht ab"
+[ "$(cat "$T/dest/data/VERSION")" = data-v3 ] && [ -d "$T/dest/data/.packs" ] || fail "fehlendes .packs: Zustand"
+ok "fehlendes data/.packs wird neu angelegt"
 
 # Umstieg von alter Installation: Download bricht ab -> alte Daten unangetastet
 rm -rf "$T/dest/data" "$T/dl"; mkdir -p "$T/dest/data"; echo alt > "$T/dest/data/alt.txt"; echo data-v0 > "$T/dest/data/VERSION"

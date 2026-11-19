@@ -78,7 +78,7 @@ legacy_data() {  # $1 datenversion, $2 zielordner (enthält data/)
   dsum=$(echo "$urls" | grep -E "/map44-$need\.sha256\$" | head -1 || true)
   [ -n "$dsum" ] && curl -fsSL -o "$DL/data.sha256" "$dsum"
   parts=$(echo "$urls" | grep -E "/map44-$need-[0-9]+\.zip\$" | sort || true)
-  [ -n "$parts" ] || die "Kartendaten $need nicht gefunden."
+  [ -n "$parts" ] || die "Kartendaten $need nicht gefunden (weder Manifest noch Datenteile im Release – Veröffentlichung unvollständig?)."
   n=$(echo "$parts" | wc -l | tr -d ' ')
   for u in $parts; do
     i=$((i + 1))
@@ -115,7 +115,7 @@ install_data() {  # $1 datenversion, $2 zielordner (enthält data/)
   # veraltet: installierte Pakete und Dateilisten (auch abgebrochener Entpackvorgänge), die das Manifest nicht nennt
   gone=""
   if [ "$fresh" = 0 ]; then
-    gone=$( { awk '{print $3}' "$inst"; ls "$st" 2>/dev/null | sed -n 's/\.files$//p'; } | sort -u \
+    gone=$( { awk '{print $3}' "$inst"; { ls "$st" 2>/dev/null || true; } | sed -n 's/\.files$//p'; } | sort -u \
             | awk 'FILENAME==ARGV[1]{w[$3]=1;next} !($1 in w)' "$mf" - )
   fi
   if [ -n "$todo" ]; then
@@ -150,6 +150,11 @@ install_data() {  # $1 datenversion, $2 zielordner (enthält data/)
   if [ -n "$todo" ]; then
     say "Entpacke Kartendaten …"
     while read -r sha size name tag rest; do
+      # Paket gleichen Namens mit neuem Inhalt (neu veröffentlichte Datenversion): alte Dateien und Manifestzeile weg
+      if [ -f "$st/$name.files" ]; then
+        while read -r f; do case "$f" in */|"") ;; *) rm -f "$root/$f";; esac; done < "$st/$name.files"
+      fi
+      grep -v " $name " "$inst" > "$inst.tmp" || true; mv "$inst.tmp" "$inst"
       unzip -Z1 "$DL/$name" > "$st/$name.files"
       unzip -oq "$DL/$name" -d "$root"
       echo "$sha $size $name $tag" >> "$inst"

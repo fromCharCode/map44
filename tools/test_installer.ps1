@@ -61,6 +61,14 @@ if (@(Get-ChildItem (Join-Path $Dest 'data/.packs')).Count -ne 3) { Fail 'Austau
 Ok 'Austausch aller Pakete (.packs bleibt erhalten)'
 Run 'data-v3'; Ok 'erneuter Lauf ohne Änderungen'
 
+# Paket gleichen Namens neu veröffentlicht (Schein-Release data-v3r aus test_installer.sh)
+Run 'data-v3r'
+if ((Files) -ne 'data/MANIFEST data/VERSION data/streets.json data/tiles/414_5660/neu.json data/tiles/420_5670/city.json') { Fail "neu veröffentlichtes Paket: $(Files)" }
+if (@(Get-Content (Join-Path $Dest 'data/MANIFEST') | Where-Object { ($_ -split '\s+')[2] -eq 'map44-data-v3-t414_5660.zip' }).Count -ne 1) { Fail 'neu veröffentlichtes Paket: doppelte Manifestzeile' }
+Run 'data-v3'
+if ((Files) -ne $base) { Fail "zurück auf data-v3: $(Files)" }
+Ok 'Paket gleichen Namens mit neuem Inhalt ersetzt das alte vollständig'
+
 # beschädigtes Manifest
 $mfPath = Join-Path $Rel 'data-v3/map44-data-v3.manifest'
 $orig = Get-Content -Raw $mfPath
@@ -85,6 +93,13 @@ Run 'data-v3'
 if (Test-Path (Join-Path $Dest 'data/tiles/499_5699')) { Fail 'Reste abgebrochenen Entpackens nicht entfernt' }
 if (@(Get-ChildItem $Dl -Filter '*.zip').Count) { Fail 'liegengebliebene Zips' }
 Ok 'Reste abgebrochenen Entpackens und alte Zips werden entfernt'
+
+# data/.packs fehlt: kein Abbruch
+Remove-Item -Recurse -Force (Join-Path $Dest 'data/.packs')
+Set-Content (Join-Path $Dest 'data/VERSION') 'data-v2'
+Run 'data-v3'
+if (-not (Test-Path (Join-Path $Dest 'data/.packs'))) { Fail 'fehlendes .packs nicht neu angelegt' }
+Ok 'fehlendes data/.packs wird neu angelegt'
 
 # Umstieg von alter Installation mit abgebrochenem Download
 Remove-Item -Recurse -Force (Join-Path $Dest 'data'), $Dl

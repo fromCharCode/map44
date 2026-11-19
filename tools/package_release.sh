@@ -49,7 +49,13 @@ else
     || { echo "Fehler: Releases nicht abrufbar (gh offline/nicht angemeldet?)." >&2; exit 1; }
   if echo "$TAGS" | grep -qx "$DATA_VER"; then
     SAME_DATA=1
-    if gh release download "$DATA_VER" -p "map44-$DATA_VER.manifest" -O "$PREV_MF" 2>/dev/null; then
+    # altes Format nur, wenn das Release wirklich kein Manifest enthält – ein Netz-/Anmeldefehler beim Abruf darf
+    # die Prüfung "Daten unverändert" nicht still überspringen
+    ASSETS=$(gh release view "$DATA_VER" --json assets -q '.assets[].name') \
+      || { echo "Fehler: Dateien des Release $DATA_VER nicht abrufbar." >&2; exit 1; }
+    if echo "$ASSETS" | grep -qx "map44-$DATA_VER.manifest"; then
+      gh release download "$DATA_VER" -p "map44-$DATA_VER.manifest" -O "$PREV_MF" \
+        || { echo "Fehler: Manifest von $DATA_VER nicht ladbar – bitte erneut versuchen." >&2; exit 1; }
       PREV_DATA="$DATA_VER"
     else
       SKIP_DATA=1
@@ -147,6 +153,9 @@ for root, _dirs, names in os.walk(os.path.join(stage, "data")):
         groups.setdefault(g, []).append((rel, p))
 if len(groups) > 900:
     sys.exit(f"Fehler: {len(groups)} Pakete – GitHub erlaubt höchstens 1000 Dateien je Release")
+if same == "1" and set(prev) - set(groups):
+    sys.exit(f"Fehler: Kartendaten weichen vom veröffentlichten {ver} ab (Paket {sorted(set(prev) - set(groups))[0]} "
+             "fehlt) – neue Datenversion angeben")
 manifest, upload, reused = [], [], 0
 for g in sorted(groups):
     files = sorted(groups[g])
@@ -170,6 +179,8 @@ for g in sorted(groups):
             zi.external_attr = 0o644 << 16
             with open(p, "rb") as f:
                 zf.writestr(zi, f.read(), compresslevel=6)
+    if os.path.getsize(out) > 1_900_000_000:
+        sys.exit(f"Fehler: {name} ist größer als 1,9 GB – GitHub nimmt je Datei höchstens 2 GB")
     manifest.append(f"{sha_file(out)} {os.path.getsize(out)} {name} {ver} {chash}")
     upload.append(name)
 mf = f"map44-{ver}.manifest"

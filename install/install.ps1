@@ -162,7 +162,9 @@
             Set-Content -Path $inst -Value $keep
         }
         if ($gone.Count) {
-            Get-ChildItem -Path $dataDir -Directory -Recurse | Where-Object { $_.FullName -ne (Get-Item $st).FullName } |
+            # reine Pfadberechnung statt Get-Item: .packs gilt unter Unix-PowerShell als versteckt und darf fehlen
+            $stFull = [IO.Path]::GetFullPath($st)
+            Get-ChildItem -Path $dataDir -Directory -Recurse -Force | Where-Object { $_.FullName -ne $stFull } |
                 Sort-Object { $_.FullName.Length } -Descending |
                 Where-Object { -not (Get-ChildItem -LiteralPath $_.FullName -Force) } | Remove-Item -Force
         }
@@ -173,6 +175,18 @@
             Add-Type -AssemblyName System.IO.Compression.FileSystem
             foreach ($p in $todo) {
                 $zip = Join-Path $Dl $p.Name
+                # Paket gleichen Namens mit neuem Inhalt (neu veröffentlichte Datenversion): alte Dateien zuerst weg
+                $old = Join-Path $st "$($p.Name).files"
+                if (Test-Path $old) {
+                    foreach ($f in Get-Content $old) {
+                        if (-not $f -or $f.EndsWith('/')) { continue }
+                        $path = Join-Path $Dest $f
+                        if (Test-Path -LiteralPath $path) {
+                            try { Remove-Item -Force -LiteralPath $path -ErrorAction Stop }
+                            catch { throw "Kann $path nicht löschen - läuft Map44 noch? Bitte beenden und den Installer erneut starten." }
+                        }
+                    }
+                }
                 $z = [IO.Compression.ZipFile]::OpenRead($zip)
                 try { Set-Content -Path (Join-Path $st "$($p.Name).files") -Value @($z.Entries | ForEach-Object { $_.FullName }) } finally { $z.Dispose() }
                 Expand $zip $Dest
