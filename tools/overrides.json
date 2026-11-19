@@ -201,5 +201,13 @@
    "wall": "#9a927f"
   }
  },
- "look_by_name_note": "Dach-/Wandfarben historischer Bauten nach ihrem heutigen Aussehen (Kupferdächer Zwinger/Japanisches Palais usw.); wendet tools/landmark_looks.py an"
+ "look_by_name_note": "Dach-/Wandfarben historischer Bauten nach ihrem heutigen Aussehen (Kupferdächer Zwinger/Japanisches Palais usw.); wendet tools/landmark_looks.py an",
+ "water_fill": [
+  [
+   1177.0,
+   -471.0,
+   40.0,
+   "Strompfeiler der Carolabrücke (Abriss 2025)"
+  ]
+ ]
 }
