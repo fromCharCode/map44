@@ -648,9 +648,37 @@ func _door(b: Dictionary, style: int, seed: float, p0: Vector2, p1: Vector2, ln:
 		var side := -basis.x          # vom Betrachter aus rechts
 		var pos := Vector3(wp.x, ref + 2.55, wp.y) + side * 1.05 + nrm * 0.035
 		_hn_plates.append([pos, basis, hn])
+	# Klingeltableau links neben der Tür; bei Siedlungs- und Neubauten dazu die Briefkastenanlage
+	var lside := basis.x
+	if style != 6:      # Reformstil: Fenster schließt direkt an den Türrahmen an, das Tableau säße auf dem Glas
+		_door_bits.append(Transform3D(basis * Basis.from_scale(Vector3(0.14, 0.32, 0.02)), Vector3(wp.x, ref + 1.38, wp.y) + lside * (1.15 if model == "door_portal" else 1.02) + nrm * 0.03))
+	if style == 3 or (style == 4 and pitch >= 2.2):
+		_door_bits.append(Transform3D(basis * Basis.from_scale(Vector3(0.62, 0.34, 0.07)), Vector3(wp.x, ref + 1.2, wp.y) + lside * 1.55 + nrm * 0.05))
 
 
 var _hn_plates: Array = []
+var _door_bits: Array = []
+
+
+func _flush_door_bits() -> void:
+	if _door_bits.is_empty():
+		return
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3.ONE
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.62, 0.63, 0.64)
+	mat.metallic = 0.8
+	mat.roughness = 0.38
+	mesh.material = mat
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = mesh
+	RenderUtil.fill_multimesh(mm, _door_bits)
+	var inst := MultiMeshInstance3D.new()
+	inst.multimesh = mm
+	inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(inst)
+	_door_bits = []
 
 
 func _flush_numbers() -> void:
@@ -687,7 +715,6 @@ func _flush_numbers() -> void:
 		_label_specs.append(lb)
 	var inst := MultiMeshInstance3D.new()
 	inst.multimesh = mm
-	inst.visibility_range_end = 60.0
 	inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(inst)
 	_hn_plates.clear()
@@ -699,6 +726,7 @@ func _cell_of(wp: Vector2) -> Vector2i:
 
 func _flush_deco() -> void:
 	_flush_numbers()
+	_flush_door_bits()
 	for key in _deco:
 		var model: String = key[0]
 		var list: Array = _deco[key]
