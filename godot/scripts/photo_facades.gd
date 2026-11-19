@@ -105,7 +105,7 @@ func _make(p: Array) -> void:
 	var m := StandardMaterial3D.new()
 	m.albedo_texture = ImageTexture.create_from_image(img)
 	m.roughness = 0.88
-	m.specular = 0.25
+	m.metallic_specular = 0.25
 	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh

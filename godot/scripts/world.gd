@@ -79,7 +79,10 @@ func _attach(t: Tile) -> void:
 		t.free()
 		return
 	_attaching[t.key] = true
+	var t_root := Time.get_ticks_usec()
 	add_child(t)
+	if OS.get_cmdline_user_args().has("--attachtrace"):
+		print("Anhängen %s Wurzel: %d ms" % [t.key, (Time.get_ticks_usec() - t_root) / 1000])
 	# Module über mehrere Frames einhängen (vermeidet einen großen Ruckler)
 	var t0 := Time.get_ticks_usec()
 	var n_frame := 0
@@ -95,13 +98,20 @@ func _attach(t: Tile) -> void:
 			m.add_child(c)
 			if trace:
 				attach_log.append("%s/%s(%s)" % [m.name, c.name, c.get_class()])
+				_last_att[String(m.name)] = int(_last_att.get(String(m.name), 0)) + 1
 			if trace and Time.get_ticks_usec() - tc > 15000:
 				print("Anhängen %s/%s/%s (%s, %d Kinder): %d ms" % [t.key, m.name, c.name, c.get_class(), c.get_child_count(), (Time.get_ticks_usec() - tc) / 1000])
-			n_frame += 1
+			# Geländestücke und geparkte Autos kosten den Renderer im Folgebild ein Vielfaches (gemessen: 120 Geländestücke
+			# = 200–400 ms, 120 Parkgruppen = 100 ms) – sie zählen deshalb mehrfach
+			n_frame += int(ATTACH_COST.get(String(m.name), 1))
 			# Zeit- UND Mengenbudget: die Renderer-Arbeit für neue Instanzen fällt erst im nächsten Bild an
 			# (1000+ Geländestücke in einem Bild = 150–200 ms Ruckler)
 			if Time.get_ticks_usec() - t0 > 2500 or n_frame >= ATTACH_PER_FRAME:
+				var ty := Time.get_ticks_usec()
 				await get_tree().process_frame
+				if trace and Time.get_ticks_usec() - ty > 80000:
+					print("Bild nach Anhängen %d ms (%d Stück): %s" % [(Time.get_ticks_usec() - ty) / 1000, n_frame, str(_last_att)])
+				_last_att.clear()
 				t0 = Time.get_ticks_usec()
 				n_frame = 0
 	t._mods.clear()
@@ -109,7 +119,20 @@ func _attach(t: Tile) -> void:
 	_attaching.erase(t.key)
 	if t.dressing:
 		t.dressing.set_night(night)
-	tile_added.emit(t)
+	if trace:
+		var te := Time.get_ticks_usec()
+		for cn in tile_added.get_connections():
+			var tc2 := Time.get_ticks_usec()
+			(cn["callable"] as Callable).call(t)
+			if Time.get_ticks_usec() - tc2 > 8000:
+				print("tile_added %s -> %s: %d ms" % [t.key, str(cn["callable"]), (Time.get_ticks_usec() - tc2) / 1000])
+		print("tile_added %s gesamt %d ms" % [t.key, (Time.get_ticks_usec() - te) / 1000])
+	else:
+		tile_added.emit(t)
+
+
+var _last_att := {}
+const ATTACH_COST := {}          # Gewichtung je Modul (Messung 11/2026: die Ruckler hängen nicht an der Stückzahl)
 
 
 func _dist_to_tile(key: String, p: Vector3) -> float:
