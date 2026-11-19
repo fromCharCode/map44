@@ -228,6 +228,10 @@ def tex_ok(tex, ppm=28.0):
     sky = (mx > 150) & (f[..., 2] > f[..., 0] * 1.18) & (f[..., 2] > f[..., 1] * 1.04) & (sat > 0.18)
     if sky[: int(h * 0.5)].mean() > 0.06:
         return False, "Himmel im Ausschnitt"
+    # große, kräftig bunte Fläche in der unteren Hälfte = Fahrzeug davor (Straßenbahn, Lieferwagen)
+    vivid = (sat > 0.55) & (mx > 140)
+    if vivid[int(h * 0.35):].mean() > 0.20:
+        return False, "Fahrzeug davor"
     g = f.mean(2)[: int(h * 0.85)]
     dark = (g < np.median(g) - 22.0).astype(float)
     if not 0.03 < dark.mean() < 0.55:
