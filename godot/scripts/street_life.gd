@@ -87,6 +87,8 @@ func build(t: Terrain, life: Dictionary) -> void:
 	for m in life.get("monuments", []):
 		var sc := float(m[4])
 		_add(String(m[0]), float(m[1]), float(m[2]), float(m[3]), 0, 0.0, 0.0, Transform3D(Basis().scaled(Vector3(sc, sc, sc)), Vector3.ZERO))
+		if String(m[0]) == "mon_fountain":
+			_fountain_jet(Vector3(float(m[1]), terrain.height_at(float(m[1]), float(m[2])), float(m[2])), sc)
 	for s in life.get("signs", []):
 		_traffic_sign(s)
 	if OS.has_environment("DRESDEN_TRACE"): print("  T _street_names")
@@ -836,3 +838,42 @@ func _process(_delta: float) -> void:
 	label_ms += (Time.get_ticks_usec() - t0) / 1000.0
 	if _label_specs.is_empty():
 		set_process(false)
+
+
+static var _jet_mat: StandardMaterial3D
+static var _jet_proc: ParticleProcessMaterial
+
+
+func _fountain_jet(base: Vector3, sc: float) -> void:
+	## Wasserspiel der Zierbrunnen: Fontäne aus der Bekrönung, fällt in die Schalen zurück (nur in der Nähe sichtbar)
+	if _jet_proc == null:
+		var pm := ParticleProcessMaterial.new()
+		pm.direction = Vector3(0, 1, 0)
+		pm.spread = 9.0
+		pm.initial_velocity_min = 4.2
+		pm.initial_velocity_max = 5.4
+		pm.gravity = Vector3(0, -9.8, 0)
+		pm.scale_min = 0.5
+		pm.scale_max = 1.1
+		pm.color = Color(0.90, 0.95, 1.0, 0.85)
+		_jet_proc = pm
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+		m.vertex_color_use_as_albedo = true
+		m.albedo_texture = Boats._puff_tex()
+		_jet_mat = m
+	var ps := GPUParticles3D.new()
+	ps.amount = 110
+	ps.lifetime = 1.15
+	ps.process_material = _jet_proc
+	var q := QuadMesh.new()
+	q.size = Vector2(0.34, 0.34)
+	q.material = _jet_mat
+	ps.draw_pass_1 = q
+	ps.position = base + Vector3(0, 2.45 * sc, 0)
+	ps.visibility_aabb = AABB(Vector3(-3, -3, -3), Vector3(6, 7, 6))
+	ps.visibility_range_end = 140.0
+	ps.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(ps)
