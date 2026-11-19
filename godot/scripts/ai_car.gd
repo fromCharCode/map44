@@ -997,7 +997,8 @@ func _emergency_yield() -> float:
 		if dist > 75.0 or dist < 0.5:
 			continue
 		var ef := Vector3(-sin(ec.heading), 0.0, -cos(ec.heading))
-		if d.dot(ef) < 0.0 or absf(d.cross(ef).y) > 7.0 or fwd.dot(ef) < 0.3:
+		# vor dem Einsatzfahrzeug, auf seiner Straße – auch der Gegenverkehr macht Platz (nicht der Querverkehr)
+		if d.dot(ef) < 0.0 or absf(d.cross(ef).y) > 7.0 or absf(fwd.dot(ef)) < 0.5:
 			continue
 		_yield_shift = -1.3
 		_ind = 1
@@ -1738,7 +1739,13 @@ func _update_lights(delta: float) -> void:
 	_ind = ind
 	var on := 1.0 if traffic.night > 0.3 or traffic.rain > 0.5 else 0.0
 	for li in lights:
+		# nach einem Unfall kann das Schadensmodell Bauteile ersetzt haben: ungültige Einträge überspringen
+		# (führte im Prüfstand zu einem Absturz, Signal 11)
+		if not is_instance_valid(li):
+			continue
 		var mi := li as MeshInstance3D
+		if mi == null or not mi.is_inside_tree():
+			continue
 		mi.set_instance_shader_parameter("lights_on", on)
 		mi.set_instance_shader_parameter("brake_on", 1.0 if _brake else 0.0)
 		mi.set_instance_shader_parameter("ind_l", 1.0 if ind == -1 or ind == 2 else 0.0)

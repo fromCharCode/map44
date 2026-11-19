@@ -267,10 +267,21 @@ func _process(delta: float) -> void:
 	for i in range(cars.size() - 1, -1, -1):
 		var c: AICar = cars[i]
 		var cp := c.world_pos()
-		var far := cp.distance_to(ppos) > (520.0 if c.is_bus else 460.0)
+		var far_r := 520.0 if c.is_bus else 460.0
+		if c is ServiceCar and (c as ServiceCar).mission:
+			far_r = 1000.0                           # Einsatzfahrzeuge auf dem Weg zur Unfallstelle bleiben
+		var far := cp.distance_to(ppos) > far_r
+		if c.dead and c is ServiceCar and (c as ServiceCar).mission and not (c as ServiceCar).on_scene \
+				and c.death in ["routenende", "festgefahren", "patt"]:
+			# Einsatzfahrzeug kommt nicht weiter (Sackgasse, Stau): bleibt mit Blaulicht stehen, statt zu verschwinden
+			c.dead = false
+			(c as ServiceCar).arrive()
+			continue
 		if c.dead or far or (terrain.has_method("has_ground") and not terrain.has_ground(cp.x, cp.z)):
 			var why := c.death if c.dead else ("weit" if far else "kein_boden")
 			stats[why] = int(stats.get(why, 0)) + 1
+			if c is ServiceCar and OS.has_environment("DRESDEN_UNFALL"):
+				print("EINSATZ entfernt: %s (%s), Einsatz %s" % [str((c as ServiceCar).service), why, str((c as ServiceCar).mission)])
 			c.release()
 			c.queue_free()
 			cars.remove_at(i)
@@ -490,13 +501,103 @@ func _spawn_service_near(kind: int, at: Vector3, r0: float, r1: float, target: V
 	return null
 
 
+func _edge_at(p: Vector3, fwd: Vector3) -> Array:
+	## Kante, Fahrtrichtung und Bogenlänge an einem Punkt auf der Fahrbahn: [kante, richtung, s] oder []
+	var best := 9.0
+	var res: Array = []
+	var ck := Vector2i(floori(p.x / 100.0), floori(p.z / 100.0))
+	for dx in range(-1, 2):
+		for dz in range(-1, 2):
+			for ei in edge_cells.get(ck + Vector2i(dx, dz), []):
+				var e: Dictionary = edges[int(ei)]
+				for dir in [1, -1]:
+					var ow := int(e["oneway"])
+					if (dir == 1 and ow < 0) or (dir == -1 and ow > 0):
+						continue
+					var pts := edge_points(int(ei), dir)
+					var acc := 0.0
+					for i in pts.size() - 1:
+						var a3: Vector3 = pts[i]
+						var b3: Vector3 = pts[i + 1]
+						var ab := Vector2(b3.x - a3.x, b3.z - a3.z)
+						var l := ab.length()
+						if l < 0.01:
+							continue
+						var t := clampf(Vector2(p.x - a3.x, p.z - a3.z).dot(ab) / (l * l), 0.0, 1.0)
+						var q := Vector2(a3.x, a3.z) + ab * t
+						var d := q.distance_to(Vector2(p.x, p.z))
+						if d < best and (ab / l).dot(Vector2(fwd.x, fwd.z)) > 0.5:
+							best = d
+							res = [int(ei), dir, acc + l * t]
+						acc += l
+	return res
+
+
+func _spawn_service_behind(kind: int, ei: int, dir: int, s_acc: float, target: Vector2) -> ServiceCar:
+	## Einsatzfahrzeug auf derselben Fahrbahn 60–150 m vor der Unfallstelle (in Fahrtrichtung dahinter) einsetzen
+	var pts := edge_points(ei, dir)
+	for back in [120.0, 90.0, 150.0, 60.0, 40.0]:
+		var s := maxf(s_acc - float(back), 6.0)
+		if s_acc - s < 25.0:
+			continue
+		var p := _point_at(pts, s)
+		var pos := Vector3(p.x, p.y, p.z)
+		if not _spawn_ok(pos, player.global_position, 9.0):
+			continue
+		var sc := ServiceCar.new()
+		add_child(sc)
+		sc.setup_service(self, kind, ei, dir, s, true, target)
+		cars.append(sc)
+		return sc
+	return null
+
+
 func _accident_tick(delta: float, ppos: Vector3) -> void:
 	## Fremdunfälle: alle paar Minuten verunglücken zwei Fahrzeuge in der weiteren Umgebung. Sie bleiben liegen,
 	## der Verkehr staut sich und umfährt die Stelle, Polizei und Rettungswagen rücken mit Blaulicht an.
 	if not accident.is_empty():
 		accident["t"] = float(accident["t"]) + delta
 		var apos: Vector3 = accident["pos"]
+		if OS.has_environment("DRESDEN_UNFALL_SHOT") and not accident.has("shot"):
+			# Diagnose: Kamera an die Unfallstelle, Bilder nach 6, 30 und 60 s
+			var t_acc := float(accident["t"])
+			var stage := int(accident.get("stage", 0))
+			if stage < 3 and t_acc > [12.0, 50.0, 75.0][stage]:
+				var cam3 := get_node_or_null("AccCam") as Camera3D
+				if cam3 == null:
+					cam3 = Camera3D.new()
+					cam3.name = "AccCam"
+					cam3.fov = 60.0
+					cam3.far = 1500.0
+					add_child(cam3)
+				cam3.global_position = apos + Vector3(11.0, 6.0, 11.0)
+				cam3.look_at(apos + Vector3(0, 0.8, 0), Vector3.UP)
+				cam3.make_current()
+				accident["stage"] = stage + 1
+				accident["shot_frame"] = Engine.get_process_frames() + 6
+			if accident.has("shot_frame") and Engine.get_process_frames() >= int(accident["shot_frame"]):
+				get_viewport().get_texture().get_image().save_png("%s/unfall_%d.png" % [OS.get_environment("DRESDEN_UNFALL_SHOT"), int(accident["stage"])])
+				accident.erase("shot_frame")
+				if int(accident["stage"]) >= 3:
+					get_tree().quit()
 		var gone := apos.distance_to(ppos) > 700.0
+		var qu: Array = accident.get("queue", [])
+		if not qu.is_empty() and float(accident["t"]) >= float(qu[0][0]):
+			var due: Array = qu.pop_front()
+			var at: Array = accident.get("at", [])
+			var un: ServiceCar = null
+			if at.size() == 3:
+				un = _spawn_service_behind(int(due[1]), int(at[0]), int(at[1]), float(at[2]), Vector2(apos.x, apos.z))
+			if un == null:
+				un = _spawn_service_near(int(due[1]), apos, 120.0, 300.0, Vector2(apos.x, apos.z))
+			if un != null:
+				(accident["units"] as Array).append(un)
+		if OS.has_environment("DRESDEN_UNFALL") and int(float(accident["t"]) / 10.0) != int((float(accident["t"]) - delta) / 10.0):
+			for u in accident["units"]:
+				if is_instance_valid(u):
+					var su: ServiceCar = u
+					print("EINSATZ t=%.0f %s Abstand %.0f m, v %.1f, vor Ort %s, Weg %d, Grenze %s" % [float(accident["t"]), str(su.service),
+						Vector2(su.pos.x, su.pos.z).distance_to(Vector2(apos.x, apos.z)), su.speed, str(su.on_scene), su._path.size(), su._limit + (" Versatz %.1f Überhol %.1f" % [su.lane_shift, su._pass_t])])
 		if float(accident["t"]) > 210.0 or gone:
 			for c in accident["cars"]:
 				if is_instance_valid(c) and not (c as AICar).dead:
@@ -550,17 +651,13 @@ func _accident_tick(delta: float, ppos: Vector3) -> void:
 		nm = String(edges[a.cur_edge].get("name", ""))
 	if nm == "":
 		nm = "in der Nähe"
-	var tgt := Vector2(a.pos.x, a.pos.z)
+	# Einsatzkräfte rücken zeitversetzt auf der Unfallstraße an (von hinten an die Unfallstelle heran)
 	var units: Array = []
-	for k in [ServiceCar.Service.POLICE, ServiceCar.Service.AMBULANCE]:
-		var u2 := _spawn_service_near(k, a.pos, 260.0, 520.0, tgt)
-		if u2 != null:
-			units.append(u2)
-	if rng.randf() < 0.35:
-		var u3 := _spawn_service_near(ServiceCar.Service.FIRE, a.pos, 320.0, 560.0, tgt)
-		if u3 != null:
-			units.append(u3)
-	accident = {"pos": a.pos, "t": 0.0, "cars": involved, "units": units, "name": nm}
+	var queue: Array = [[rng.randf_range(18.0, 30.0), ServiceCar.Service.POLICE], [rng.randf_range(32.0, 48.0), ServiceCar.Service.AMBULANCE]]
+	if rng.randf() < 0.4:
+		queue.append([rng.randf_range(45.0, 65.0), ServiceCar.Service.FIRE])
+	accident = {"pos": a.pos, "t": 0.0, "cars": involved, "units": units, "name": nm, "queue": queue,
+		"at": _edge_at(a.pos, fwd)}
 	radio = "Verkehrsfunk: Unfall %s – mit Behinderungen rechnen" % nm
 	stats["unfall"] = int(stats.get("unfall", 0)) + 1
 	if OS.has_environment("DRESDEN_UNFALL"):
@@ -603,6 +700,53 @@ func _point_at(pts: Array, s: float) -> Vector3:
 			return a.lerp(b, (s - acc) / maxf(l, 0.001))
 		acc += l
 	return pts[pts.size() - 1]
+
+
+func route_to(from_node: int, target: Vector2, max_nodes: int = 3500) -> Array:
+	## Schnellster Weg (Fahrzeit) vom Knoten zu dem Knoten, der target am nächsten liegt: [[kante, richtung], …].
+	## A*-Suche über den Fahrgraphen (für Einsatzfahrzeuge, die gezielt zu einer Unfallstelle fahren).
+	var dist := {from_node: 0.0}
+	var prev := {}
+	var open: Array = [[0.0, 0.0, from_node]]            # [f, g, knoten]
+	var done := {}
+	var best_n := from_node
+	var best_d := INF
+	while not open.is_empty() and done.size() < max_nodes:
+		var bi := 0
+		for i in open.size():
+			if float(open[i][0]) < float(open[bi][0]):
+				bi = i
+		var cur: Array = open[bi]
+		open.remove_at(bi)
+		var n: int = cur[2]
+		if done.has(n) or n < 0 or n >= nodes.size():
+			continue
+		done[n] = true
+		var np: Array = nodes[n]["pos"]
+		var d := Vector2(float(np[0]), float(np[2])).distance_to(target)
+		if d < best_d:
+			best_d = d
+			best_n = n
+		if d < 25.0:
+			break
+		for o in out_edges.get(n, []):
+			var e: Dictionary = edges[int(o[0])]
+			var m: int = int(e["b"]) if int(o[1]) == 1 else int(e["a"])
+			if m < 0 or m >= nodes.size() or done.has(m):
+				continue
+			var g := float(cur[1]) + float(e["len"]) / maxf(float(e["speed"]) / 3.6, 6.0)
+			if not dist.has(m) or g < float(dist[m]):
+				dist[m] = g
+				prev[m] = [n, int(o[0]), int(o[1])]
+				var mp: Array = nodes[m]["pos"]
+				open.append([g + Vector2(float(mp[0]), float(mp[2])).distance_to(target) / 22.0, g, m])
+	var path: Array = []
+	var k := best_n
+	while prev.has(k):
+		var pv: Array = prev[k]
+		path.push_front([pv[1], pv[2]])
+		k = pv[0]
+	return path
 
 
 func pick_next(node_id: int, from_edge: int, last_tangent: Vector2, goal: Vector2 = Vector2.INF, goal_k: float = 0.0) -> Array:

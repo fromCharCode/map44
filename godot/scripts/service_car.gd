@@ -185,9 +185,22 @@ func _start_siren() -> void:
 	_siren.play()
 
 
+var _path: Array = []          # berechneter Weg zum Einsatzort: [[kante, richtung], …]
+var _path_tries := 0
+
+
 func _choose_next() -> Array:
 	if mission and target != Vector2.INF:
 		goal = target
+		if _path.is_empty() and _path_tries < 6:
+			_path_tries += 1
+			_path = traffic.route_to(cur_node, target)
+		while not _path.is_empty():
+			var step: Array = _path.pop_front()
+			for o in traffic.out_edges.get(cur_node, []):
+				if int(o[0]) == int(step[0]) and int(o[1]) == int(step[1]):
+					return [int(step[0]), int(step[1])]
+			_path.clear()                             # vom Weg abgekommen: beim nächsten Knoten neu rechnen
 		return traffic.pick_next(cur_node, cur_edge, last_tangent, goal, goal_k)
 	return super()
 
@@ -200,6 +213,28 @@ func _junction_cap(m: Dictionary, d_node: float, delta: float) -> float:
 	return c
 
 
+var _pass_t := 0.0             # Zeit (s), in der noch links vorbeigefahren wird
+
+
+func _obstacle_cap() -> float:
+	## Einsatzfahrt: an stehenden oder langsam fahrenden Fahrzeugen links vorbeifahren (die anderen fahren rechts
+	## heran). Erst ausscheren, dann mit mäßigem Tempo vorbei; danach zurück in die Spur.
+	var c := super()
+	if not mission or on_scene:
+		return c
+	if c < 5.0:
+		_pass_t = 4.0
+	if _pass_t > 0.0:
+		_pass_t -= THINK
+		_yield_shift = 3.0
+		if lane_shift < 2.0:
+			lane_shift = move_toward(lane_shift, 3.0, 0.5)     # auch im Stand zügig ausscheren
+			return maxf(c, 1.5)
+		return maxf(c, 6.5)
+	_yield_shift = 0.0
+	return c
+
+
 func _special_limit(delta: float) -> float:
 	if not mission:
 		return INF
@@ -208,15 +243,28 @@ func _special_limit(delta: float) -> float:
 		return 0.0
 	if target != Vector2.INF:
 		var d := Vector2(pos.x, pos.z).distance_to(target)
+		if d < 34.0 and speed < 1.0:
+			arrive()
+			return 0.0
 		if d < 22.0:
-			on_scene = true
-			if _siren:
-				_siren.stop()
-			_ind = 0
 			return 0.0
 		if d < 80.0:
 			return maxf(3.0, d * 0.22)
 	return INF
+
+
+func arrive() -> void:
+	on_scene = true
+	speed = 0.0
+	if _siren:
+		_siren.stop()
+
+
+func _physics_process(delta: float) -> void:
+	if mission and on_scene:
+		scene_t += delta                             # steht am Einsatzort
+		return
+	super(delta)
 
 
 func end_mission() -> void:
