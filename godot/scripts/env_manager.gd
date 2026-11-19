@@ -263,8 +263,13 @@ func set_time(h: float) -> void:
 	var warm := 1.0 - smoothstep(0.0, 0.42, elev)
 	sun.light_color = Color(1.0, 0.97, 0.92).lerp(Color(1.0, 0.55, 0.28), warm)
 	var wcfg: Array = WEATHER[weather]
-	sun.light_energy = lerpf(0.0, float(tune["sun"]), day) * lerpf(0.55, 1.0, smoothstep(0.0, 0.3, elev)) * float(wcfg[3])
-	sun.visible = elev > -0.08
+	# Tiefe Sonne ist schwach (langer Weg durch die Luft: bei 5° Höhe rund ein Viertel): vorher strahlten senkrechte
+	# Flächen im Gegenlicht – Grasbüschel, Baumkronen – bei Sonnenaufgang überbelichtet weiß.
+	# Direktes Sonnenlicht erst, wenn die Sonne über dem Horizont steht: von unten kommendes Licht wirft keinen
+	# Schatten (das Gelände ist einseitig) und ließ Gras und Büsche in der Dämmerung weiß aufleuchten
+	sun.light_energy = lerpf(0.0, float(tune["sun"]), day) * lerpf(0.14, 1.0, smoothstep(0.0, 0.36, elev)) * float(wcfg[3]) \
+		* smoothstep(0.0, 0.07, elev)
+	sun.visible = elev > 0.0
 	moon.light_energy = lerpf(0.09, 0.0, day) * (1.0 if mv.y > 0.0 else 0.0)     # Mondlicht schwach: die Stadt leuchtet selbst
 	moon.visible = mv.y > 0.0
 	var night := 1.0 - smoothstep(-0.12, 0.08, elev)

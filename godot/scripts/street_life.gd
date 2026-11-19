@@ -199,6 +199,8 @@ static func _load_parts(name: String) -> Array:
 				var nm := String(m.resource_name)
 				if nm.begins_with("Paint"):
 					mesh.surface_set_material(i, _paint_mat(m))
+				elif (nm == "Grass" or nm == "Leaves" or nm.begins_with("veg_")) and m is StandardMaterial3D:
+					mesh.surface_set_material(i, _veg_mat(m as StandardMaterial3D))
 				elif nm.begins_with("SignFace"):
 					mesh.surface_set_material(i, _atlas_mat("signs", "res://assets/textures/street/traffic_signs.png", Vector2(8, 8), true))
 					special = "atlas"
@@ -217,6 +219,19 @@ static func _load_parts(name: String) -> Array:
 			stack.append([c, xf])
 	root.free()
 	return res
+
+
+static func _veg_mat(src: StandardMaterial3D) -> Material:
+	## Blattwerk ohne Glanzlicht: bei tiefer Sonne im Gegenlicht leuchteten Gras und Büsche sonst weiß auf
+	var k := "veg_" + str(src.get_instance_id())
+	var c := _cache_get(k)
+	if c != null:
+		return c
+	var m := src.duplicate() as StandardMaterial3D
+	m.metallic_specular = 0.0
+	m.roughness = 1.0
+	m.metallic = 0.0
+	return _cache_put(k, m)
 
 
 static func _paint_mat(src: Material) -> Material:

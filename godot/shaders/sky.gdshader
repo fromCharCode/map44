@@ -72,7 +72,9 @@ void sky() {
 	if (dir.y > 0.0) {
 		vec3 sp = floor(dir * 260.0);
 		float h = hash13(sp);
-		float star = step(0.9965, h) * (0.4 + 0.6 * hash13(sp + 7.0));
+		// runder, weicher Punkt in der Zellmitte statt der ganzen Zelle (vorher eckige, zu große Sterne)
+		vec3 sf = fract(dir * 260.0) - 0.5;
+		float star = step(0.9950, h) * (0.25 + 0.75 * pow(hash13(sp + 7.0), 2.0)) * smoothstep(0.30, 0.06, length(sf));
 		col += vec3(0.9, 0.95, 1.0) * star * (1.0 - day) * smoothstep(0.0, 0.15, dir.y) * 1.2;
 	}
 
