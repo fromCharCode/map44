@@ -53,6 +53,23 @@ func build(t: Terrain, city: Dictionary) -> void:
 var _rail_grid: Dictionary = {}
 
 
+func _crosses_rail(pts: Array) -> bool:
+	## Widerlagermauer: Die Mauerlinie kreuzt ein Gleis (Stützmauern neben dem Gleis tun das nicht)
+	for i in pts.size() - 1:
+		var a := Vector2(pts[i][0], pts[i][1])
+		var b := Vector2(pts[i + 1][0], pts[i + 1][1])
+		var n := maxi(1, int(ceil(a.distance_to(b) / 6.0)))
+		for k in n + 1:
+			var q := a.lerp(b, float(k) / float(n))
+			var c := Vector2i(floori(q.x / 8.0), floori(q.y / 8.0))
+			for dx in range(-1, 2):
+				for dz in range(-1, 2):
+					for sg in _rail_grid.get(c + Vector2i(dx, dz), []):
+						if Geometry2D.segment_intersects_segment(a, b, sg[0], sg[1]) != null:
+							return true
+	return false
+
+
 func _rail_y(p: Vector2, dist: float) -> float:
 	## Höhe des tiefsten Gleises im Umkreis (INF, wenn keines): Mauern dürfen dort nicht über die Schwellen ragen
 	var c := Vector2i(floori(p.x / 8.0), floori(p.y / 8.0))
@@ -186,6 +203,11 @@ func _barrier(bar: Dictionary) -> void:
 					if _rail_y(Vector2(q[0], q[1]), 25.0) != INF:
 						thick = 0.55
 						break
+	# Widerlagermauern (kreuzen ein Gleis) liegen auf ganzer Länge im Brückenbereich: Krone überall unter der
+	# Gleisebene (Umkreis 30 m), sonst blieben Keilstücke auf breiten Gleisdecks liegen
+	var rail_r := thick * 0.5 + 3.4
+	if (kind == "retaining_wall" or kind == "city_wall") and _crosses_rail(pts):
+		rail_r = 30.0
 	for i in pts.size() - 1:
 		var a := Vector2(pts[i][0], pts[i][1])
 		var b := Vector2(pts[i + 1][0], pts[i + 1][1])
@@ -202,8 +224,8 @@ func _barrier(bar: Dictionary) -> void:
 		var ya_top := ga + h
 		var yb_top := gb + h
 		if not tops.is_empty():
-			ya_top = minf(float(tops[i]) + 1.0, _rail_y(a, thick * 0.5 + 3.4) - 0.35)
-			yb_top = minf(float(tops[i + 1]) + 1.0, _rail_y(b, thick * 0.5 + 3.4) - 0.35)
+			ya_top = minf(float(tops[i]) + 1.0, _rail_y(a, rail_r) - 0.35)
+			yb_top = minf(float(tops[i + 1]) + 1.0, _rail_y(b, rail_r) - 0.35)
 			ya_bot = float(bots[i]) - 0.6
 			yb_bot = float(bots[i + 1]) - 0.6
 		elif kind == "retaining_wall" or kind == "city_wall":
@@ -216,12 +238,12 @@ func _barrier(bar: Dictionary) -> void:
 			var step_h := maxf(absf(la - ra), absf(lb - rb))
 			if kind == "retaining_wall" or step_h > 1.2:
 				var parapet := 1.0 if kind == "city_wall" else 0.2
-				ya_top = minf(maxf(la, ra) + parapet, _rail_y(a, thick * 0.5 + 3.4) - 0.35)
-				yb_top = minf(maxf(lb, rb) + parapet, _rail_y(b, thick * 0.5 + 3.4) - 0.35)
+				ya_top = minf(maxf(la, ra) + parapet, _rail_y(a, rail_r) - 0.35)
+				yb_top = minf(maxf(lb, rb) + parapet, _rail_y(b, rail_r) - 0.35)
 				ya_bot = minf(la, ra) - 0.4
 				yb_bot = minf(lb, rb) - 0.4
 				if kind == "retaining_wall" and bar["h"] != null:
-					if _rail_y(a, thick * 0.5 + 3.4) == INF:
+					if _rail_y(a, rail_r) == INF:
 						ya_top = maxf(ya_top, ga + 0.3)
 		var cell := _cell(a.x, a.y)
 		if kind == "fence":
