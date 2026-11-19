@@ -285,7 +285,7 @@ func _soccer(c: Vector3, ux: Vector3, uz: Vector3, L: float, W: float) -> void:
 	for i in n:
 		var x0 := -L * 0.5 + L * float(i) / float(n)
 		var x1 := -L * 0.5 + L * float(i + 1) / float(n)
-		var col := Color(0.10, 0.25, 0.07) if i % 2 == 0 else Color(0.13, 0.30, 0.09)
+		var col := Color(0.11, 0.20, 0.08) if i % 2 == 0 else Color(0.13, 0.24, 0.09)
 		_quad(_st, c + ux * x0 - uz * W * 0.5, c + ux * x0 + uz * W * 0.5, c + ux * x1 + uz * W * 0.5, c + ux * x1 - uz * W * 0.5, col)
 	var big := L > 85.0
 	var m := 1.5 if L > 108.0 else 0.6               # OSM-Fläche reicht oft etwas über die Linien hinaus
