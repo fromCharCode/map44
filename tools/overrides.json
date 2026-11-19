@@ -196,6 +196,9 @@
   },
   "Blockhaus": {
    "wall": "#e8dcc0"
+  },
+  "Kathedrale Ss. Trinitatis": {
+   "wall": "#9a927f"
   }
  },
  "look_by_name_note": "Dach-/Wandfarben historischer Bauten nach ihrem heutigen Aussehen (Kupferdächer Zwinger/Japanisches Palais usw.); wendet tools/landmark_looks.py an"

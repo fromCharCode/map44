@@ -6,9 +6,9 @@ const DIR := "res://assets/models/landmarks/"
 
 # file, x, z, yaw (Grad, Drehung um Y; Front = -Z), footprint w (x), d (z) nach der Drehung
 const LIST := [
-	{"file": "frauenkirche.glb", "x": 796.0, "z": -156.0, "yaw": 0.0, "w": 54.0, "d": 54.0, "name": "Frauenkirche"},
-	{"file": "hofkirche.glb", "x": 503.0, "z": -333.0, "yaw": -90.0, "w": 89.0, "d": 55.0, "name": "Hofkirche"},
-	{"file": "semperoper.glb", "x": 385.0, "z": -455.0, "yaw": -145.0, "w": 100.0, "d": 90.0, "name": "Semperoper"},
+	{"file": "frauenkirche.glb", "x": 796.0, "z": -156.0, "yaw": 0.0, "w": 54.0, "d": 54.0, "name": "Frauenkirche", "gain": 2.3},
+	{"file": "hofkirche.glb", "x": 503.0, "z": -333.0, "yaw": -90.0, "w": 89.0, "d": 55.0, "name": "Hofkirche", "gain": 1.7},
+	{"file": "semperoper.glb", "x": 385.0, "z": -455.0, "yaw": -145.0, "w": 100.0, "d": 90.0, "name": "Semperoper", "gain": 1.7},
 	# Modell enthält zusätzlich einen Schlossflügel (x 488–528) -> auf den Turm zuschneiden ("keep", Welt-x/z);
 	# im Turmgrundriss ("core") werden alle LoD2-Teile entfernt, sonst nur solche >= min_h
 	{"file": "hausmannsturm.glb", "x": 500.0, "z": -280.0, "yaw": 0.0, "w": 56.0, "d": 18.0, "name": "Hausmannsturm", "min_h": 40.0,
@@ -175,7 +175,7 @@ func build(t: Terrain, noise: ImageTexture) -> void:
 		root.name = lm["name"]
 		if lm.has("keep"):
 			_clip_to_box(root, lm["keep"])
-		_apply_materials(root)
+		_apply_materials(root, float(lm.get("gain", 1.0)))
 		add_child(root)
 		if lm.has("boxes"):
 			# Kollision aus Boxen im Modellsystem (gedreht wie das Modell)
@@ -419,12 +419,14 @@ static func set_night(v: float) -> void:
 		return
 	_night_last = k
 	_shared_lock.lock()
-	for nm in ["Sandstone", "SandstoneDark", "Plaster"]:
-		if _shared_mats.has(nm):
+	for nm in _shared_mats.keys():
+		if String(nm).begins_with("Sandstone") or nm == "Plaster":
 			var m: StandardMaterial3D = _shared_mats[nm]
 			m.emission_enabled = k > 0.03
 			if k > 0.03:
-				m.emission = Color(1.0, 0.80, 0.52) * m.albedo_color
+				var ec := Color(1.0, 0.80, 0.52) * m.albedo_color
+				var emax := maxf(ec.r, 1.0)             # aufgehellte Modelle nicht stärker anstrahlen als die übrigen
+				m.emission = Color(ec.r / emax, ec.g / emax, ec.b / emax)
 				m.emission_texture = m.albedo_texture
 				m.emission_energy_multiplier = 0.035 * k      # Nachtbelichtung ist sehr empfindlich: wenig genügt
 	_shared_lock.unlock()
@@ -489,7 +491,9 @@ func _build_materials() -> void:
 	mats["Slate"] = slate
 
 
-func _apply_materials(root: Node) -> void:
+func _apply_materials(root: Node, gain := 1.0) -> void:
+	## gain: Helligkeitsfaktor für den Sandstein dieses Modells (die Modelle tragen unterschiedlich dunkle
+	## Vertexfarben; ohne Ausgleich wirken Frauenkirche und Semperoper dunkelbraun statt sandsteinhell)
 	var stack: Array = [root]
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
@@ -504,4 +508,14 @@ func _apply_materials(root: Node) -> void:
 					continue
 				var nm := String(m.resource_name)
 				if mats.has(nm):
-					mi.set_surface_override_material(i, mats[nm])
+					var mm: Material = mats[nm]
+					if gain != 1.0 and nm == "Sandstone":
+						var gk := "Sandstone@%.2f" % gain
+						_shared_lock.lock()
+						if not mats.has(gk):
+							var d := (mm as StandardMaterial3D).duplicate() as StandardMaterial3D
+							d.albedo_color = Color(d.albedo_color.r * gain * 0.94, d.albedo_color.g * gain * 0.96, d.albedo_color.b * gain * 1.08)
+							mats[gk] = d
+						mm = mats[gk]
+						_shared_lock.unlock()
+					mi.set_surface_override_material(i, mm)

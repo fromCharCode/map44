@@ -179,6 +179,8 @@ void fragment() {
 			pitch = mix(2.8, 3.8, h1); ww = 1.2;
 		} else if (era < 14.5) {         // Dorfkern: kleine Fenster
 			pitch = mix(2.2, 3.0, h1); ww = 0.9; wh = 1.25; wy = 0.90; shape = 0; plain_era = true;
+		} else if (era > 16.5) {         // Kirchen: schlanke hohe Rundbogenfenster
+			pitch = 4.0; ww = 1.5; wh = fh * 0.60; wy = fh * 0.22; shape = 2;
 		} else if (era > 15.5) {         // barocke Galerie: Rundbogenfenster über fast die ganze Höhe
 			pitch = 4.4; ww = 2.3; wh = fh * 0.70 - 0.6; wy = fh * 0.10 + 0.25; shape = 2;
 		}

@@ -25,6 +25,12 @@ def main():
         ch = 0
         for b in city.get("buildings", []):
             lk = LOOKS.get(b.get("name") or "")
+            if not lk and b.get("kind") in ("church", "cathedral", "chapel") and b.get("style") == 1 \
+                    and int(b.get("era") or 0) in (0, 1, 2, 3, 4, 5, 6, 7, 17):
+                # historische Kirchen: hohe Rundbogenfenster in ein bis mehreren Zonen (Epoche 17)
+                lk = {"era": 17, "order_h": 11.0}
+            elif lk and "era" not in lk and b.get("kind") in ("church", "cathedral", "chapel") and b.get("style") == 1:
+                lk = dict(lk, era=17, order_h=11.0)
             if not lk:
                 continue
             if lk.get("roof") and b.get("roof_col") != lk["roof"]:
