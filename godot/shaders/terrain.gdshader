@@ -142,7 +142,7 @@ void fragment() {
 			float bg = dot(base.a, vec3(0.3, 0.59, 0.11));
 			float bn = texture(noise_tex, wuv * 0.05 + 0.21).r;
 			float bn2 = texture(noise_tex, wuv * 0.33 + 0.57).r;
-			base.a = mix(vec3(bg), base.a, 0.45) * vec3(0.66, 0.66, 0.67) * mix(0.84, 1.10, bn) * mix(0.93, 1.06, bn2);
+			base.a = mix(vec3(bg), base.a, 0.18) * vec3(0.58, 0.58, 0.60) * mix(0.82, 1.12, bn) * mix(0.92, 1.07, bn2);
 		}
 		if (veg > 0.01) {
 			float gmix = smoothstep(0.4, 0.6, nlow) * 0.6;
