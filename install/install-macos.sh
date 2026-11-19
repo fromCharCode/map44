@@ -69,68 +69,80 @@ sum_of() {  # $1 sha256-datei, $2 dateiname
   [ -f "$1" ] && grep " $2\$" "$1" | cut -d' ' -f1 || true
 }
 
-# Kartendaten alter Datenversionen (ohne Manifest): alle Teile laden, data/ komplett ersetzen
+# >>> Kartendaten (in install.sh und install-macos.sh wortgleich; tools/test_installer.sh prüft das)
+# Kartendaten alter Datenversionen (ohne Manifest): alle Teile laden, dann data/ komplett ersetzen
 legacy_data() {  # $1 datenversion, $2 zielordner (enthält data/)
-  local need="$1" root="$2"
+  local need="$1" root="$2" urls dsum parts n i=0 u
   say "Lade die Kartendaten $need (rund 5 GB, einmalig – das dauert je nach Leitung eine Weile) …"
-  DATA_URLS=$(assets "$API/tags/$need")
-  DSUM_URL=$(echo "$DATA_URLS" | grep -E "/map44-$need\.sha256\$" | head -1)
-  [ -n "$DSUM_URL" ] && curl -fsSL -o "$DL/data.sha256" "$DSUM_URL"
-  PARTS=$(echo "$DATA_URLS" | grep -E "/map44-$need-[0-9]+\.zip\$" | sort)
-  [ -n "$PARTS" ] || die "Kartendaten $need nicht gefunden."
-  n=$(echo "$PARTS" | wc -l | tr -d ' '); i=0
-  for u in $PARTS; do
-    i=$((i + 1)); f="$DL/$(basename "$u")"
+  urls=$(assets "$API/tags/$need")
+  dsum=$(echo "$urls" | grep -E "/map44-$need\.sha256\$" | head -1 || true)
+  [ -n "$dsum" ] && curl -fsSL -o "$DL/data.sha256" "$dsum"
+  parts=$(echo "$urls" | grep -E "/map44-$need-[0-9]+\.zip\$" | sort || true)
+  [ -n "$parts" ] || die "Kartendaten $need nicht gefunden."
+  n=$(echo "$parts" | wc -l | tr -d ' ')
+  for u in $parts; do
+    i=$((i + 1))
     say "Kartendaten Teil $i/$n"
-    fetch "$u" "$f" "$(sum_of "$DL/data.sha256" "$(basename "$u")")"
+    fetch "$u" "$DL/$(basename "$u")" "$(sum_of "$DL/data.sha256" "$(basename "$u")")"
   done
   say "Entpacke Kartendaten …"
   rm -rf "$root/data"
-  for u in $PARTS; do unzip -oq "$DL/$(basename "$u")" -d "$root"; done      # Pakete enthalten data/…
+  for u in $parts; do unzip -oq "$DL/$(basename "$u")" -d "$root"; done      # Pakete enthalten data/…
   echo "$need" > "$root/data/VERSION"
   [ "${MAP44_KEEP_ZIPS:-0}" = 1 ] || rm -f "$DL"/map44-"$need"-*.zip
 }
 
-# Kartendaten inkrementell (ab Datenversionen mit Manifest): nur geänderte Pakete laden.
-# Zustand in data/MANIFEST (installierte Pakete) und data/.packs/<paket>.files (deren Dateien) –
-# wird pro Schritt fortgeschrieben, ein abgebrochenes Update setzt beim nächsten Lauf sauber fort.
+# Kartendaten inkrementell (Datenversionen mit Manifest): nur geänderte Pakete laden.
+# Zustand in data/MANIFEST (installierte Pakete) und data/.packs/<paket>.files (deren Dateien) – wird pro
+# Schritt fortgeschrieben, ein abgebrochenes Update setzt beim nächsten Lauf sauber fort. Gelöscht wird erst,
+# wenn alle neuen Pakete geladen und geprüft sind.
 install_data() {  # $1 datenversion, $2 zielordner (enthält data/)
   local need="$1" root="$2" data="$2/data" mf="$DL/data.manifest"
-  local st="$data/.packs" inst="$data/MANIFEST"
-  if ! curl -fsSL -o "$mf" "https://github.com/$REPO/releases/download/$need/map44-$need.manifest"; then
-    legacy_data "$need" "$root"; return
-  fi
-  [ -f "$inst" ] || rm -rf "$data"      # Installation ohne Manifest: einmal komplett neu
-  mkdir -p "$st"; touch "$inst"
-  rm -f "$data/VERSION"
-  local todo gone
-  todo=$(awk 'FILENAME==ARGV[1]{h[$1" "$3]=1;next} !(($1" "$3) in h)' "$inst" "$mf")
-  gone=$(awk 'FILENAME==ARGV[1]{w[$1" "$3]=1;next} !(($1" "$3) in w)' "$mf" "$inst")
+  local st="$2/data/.packs" inst="$2/data/MANIFEST" have="$2/data/MANIFEST" fresh=0 code todo gone
+  code=$(curl -sSL --retry 5 --retry-delay 3 -o "$mf" -w '%{http_code}' \
+    "https://github.com/$REPO/releases/download/$need/map44-$need.manifest") || code="000"
+  case "$code" in
+    200) ;;
+    404) legacy_data "$need" "$root"; return ;;
+    *)   die "Manifest der Kartendaten $need nicht abrufbar (HTTP $code) – bitte später erneut versuchen." ;;
+  esac
+  if [ ! -f "$inst" ]; then fresh=1; have=/dev/null; fi   # Installation ohne Manifest: einmal alles neu
+  todo=$(awk 'FILENAME==ARGV[1]{h[$1" "$3]=1;next} NF>=4 && !(($1" "$3) in h)' "$have" "$mf")
+  gone=$(awk 'FILENAME==ARGV[1]{w[$1" "$3]=1;next} NF>=4 && !(($1" "$3) in w)' "$mf" "$have")
   if [ -n "$todo" ]; then
-    local n mb i=0
+    local n mb i=0 sha size name tag rest
     n=$(echo "$todo" | wc -l | tr -d ' ')
     mb=$(echo "$todo" | awk '{s+=$2} END{printf "%d", s/1e6}')
     say "Lade die Kartendaten $need: $n Paket(e), rund $mb MB …"
-    while read -r sha size name tag; do
+    while read -r sha size name tag rest; do
       i=$((i + 1)); say "Kartendaten Teil $i/$n ($name)"
       fetch "https://github.com/$REPO/releases/download/$tag/$name" "$DL/$name" "$sha"
     done <<< "$todo"
   fi
-  # erst wenn alles geladen ist: veraltete Pakete entfernen …
+  # alles geladen – ab hier wird der Bestand verändert
+  rm -f "$data/VERSION"
+  if [ "$fresh" = 1 ]; then
+    rm -rf "$data"
+    mkdir -p "$st"; : > "$inst"
+  fi
+  # veraltete Pakete entfernen …
   if [ -n "$gone" ]; then
-    while read -r sha size name tag; do
+    local sha size name tag rest f
+    while read -r sha size name tag rest; do
       if [ -f "$st/$name.files" ]; then
         while read -r f; do case "$f" in */|"") ;; *) rm -f "$root/$f";; esac; done < "$st/$name.files"
         rm -f "$st/$name.files"
       fi
       grep -v " $name " "$inst" > "$inst.tmp" || true; mv "$inst.tmp" "$inst"
     done <<< "$gone"
-    find "$data" -mindepth 1 -type d -empty -delete 2>/dev/null || true
+    find "$data" -mindepth 1 -type d -empty ! -path "$st" -delete 2>/dev/null || true
   fi
   # … dann neue entpacken
+  mkdir -p "$st"
   if [ -n "$todo" ]; then
+    local sha size name tag rest
     say "Entpacke Kartendaten …"
-    while read -r sha size name tag; do
+    while read -r sha size name tag rest; do
       unzip -oq "$DL/$name" -d "$root"
       unzip -Z1 "$DL/$name" > "$st/$name.files"
       echo "$sha $size $name $tag" >> "$inst"
@@ -139,6 +151,7 @@ install_data() {  # $1 datenversion, $2 zielordner (enthält data/)
   fi
   echo "$need" > "$data/VERSION"
 }
+# <<< Kartendaten
 
 say "Suche die neueste Version …"
 GAME_URLS=$(assets "$API/latest")

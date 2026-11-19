@@ -77,9 +77,9 @@
         if (-not $env:MAP44_KEEP_ZIPS) { foreach ($p in $parts) { Remove-Item -Force (Join-Path $Dl $p.name) } }
     }
 
-    # Kartendaten inkrementell (ab Datenversionen mit Manifest): nur geänderte Pakete laden.
-    # Zustand in data\MANIFEST (installierte Pakete) und data\.packs\<paket>.files (deren Dateien) -
-    # wird pro Schritt fortgeschrieben, ein abgebrochenes Update setzt beim nächsten Lauf sauber fort.
+    # Kartendaten inkrementell (Datenversionen mit Manifest): nur geänderte Pakete laden; entspricht dem
+    # Kartendaten-Block in install.sh (dort getestet von tools/test_installer.sh). Zustand in data\MANIFEST und
+    # data\.packs\<paket>.files, pro Schritt fortgeschrieben; gelöscht wird erst nach vollständigem Download.
     function ReadManifest($file) {
         $r = [ordered]@{}
         if (Test-Path $file) {
@@ -95,17 +95,23 @@
         $st = Join-Path $dataDir '.packs'
         $inst = Join-Path $dataDir 'MANIFEST'
         $mf = Join-Path $Dl 'data.manifest'
-        try {
-            Invoke-WebRequest -Uri "https://github.com/$Repo/releases/download/$need/map44-$need.manifest" -OutFile $mf -UseBasicParsing
-        } catch {
-            LegacyData $need; return
+        $url = "https://github.com/$Repo/releases/download/$need/map44-$need.manifest"
+        $ok = $false
+        for ($try = 1; $try -le 5 -and -not $ok; $try++) {
+            try {
+                Invoke-WebRequest -Uri $url -OutFile $mf -UseBasicParsing
+                $ok = $true
+            } catch {
+                $code = 0
+                try { $code = [int]$_.Exception.Response.StatusCode } catch {}
+                if ($code -eq 404) { LegacyData $need; return }
+                if ($try -eq 5) { throw "Manifest der Kartendaten $need nicht abrufbar (HTTP $code) - bitte später erneut versuchen." }
+                Start-Sleep -Seconds 3
+            }
         }
-        if (-not (Test-Path $inst) -and (Test-Path $dataDir)) { Remove-Item -Recurse -Force $dataDir }   # Installation ohne Manifest: einmal komplett neu
-        New-Item -ItemType Directory -Force -Path $st | Out-Null
-        if (-not (Test-Path $inst)) { New-Item -ItemType File -Path $inst | Out-Null }
-        Remove-Item -Force (Join-Path $dataDir 'VERSION') -ErrorAction SilentlyContinue
+        $fresh = -not (Test-Path $inst)          # Installation ohne Manifest: einmal alles neu
         $want = ReadManifest $mf
-        $have = ReadManifest $inst
+        $have = if ($fresh) { [ordered]@{} } else { ReadManifest $inst }
         $todo = @($want.Keys | Where-Object { -not $have.Contains($_) } | ForEach-Object { $want[$_] })
         $gone = @($have.Keys | Where-Object { -not $want.Contains($_) } | ForEach-Object { $have[$_] })
         if ($todo.Count) {
@@ -118,7 +124,14 @@
                 Fetch "https://github.com/$Repo/releases/download/$($p.Tag)/$($p.Name)" (Join-Path $Dl $p.Name) $p.Sha
             }
         }
-        # erst wenn alles geladen ist: veraltete Pakete entfernen ...
+        # alles geladen - ab hier wird der Bestand verändert
+        Remove-Item -Force (Join-Path $dataDir 'VERSION') -ErrorAction SilentlyContinue
+        if ($fresh) {
+            if (Test-Path $dataDir) { Remove-Item -Recurse -Force $dataDir }
+            New-Item -ItemType Directory -Force -Path $st | Out-Null
+            New-Item -ItemType File -Force -Path $inst | Out-Null
+        }
+        # veraltete Pakete entfernen ...
         foreach ($p in $gone) {
             $list = Join-Path $st "$($p.Name).files"
             if (Test-Path $list) {
@@ -131,10 +144,12 @@
             Set-Content -Path $inst -Value $keep
         }
         if ($gone.Count) {
-            Get-ChildItem -Path $dataDir -Directory -Recurse | Sort-Object { $_.FullName.Length } -Descending |
+            Get-ChildItem -Path $dataDir -Directory -Recurse | Where-Object { $_.FullName -ne $st } |
+                Sort-Object { $_.FullName.Length } -Descending |
                 Where-Object { -not (Get-ChildItem -LiteralPath $_.FullName -Force) } | Remove-Item -Force
         }
         # ... dann neue entpacken
+        New-Item -ItemType Directory -Force -Path $st | Out-Null
         if ($todo.Count) {
             Say 'Entpacke Kartendaten ...'
             Add-Type -AssemblyName System.IO.Compression.FileSystem

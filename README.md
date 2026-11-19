@@ -115,8 +115,10 @@ Deckaufbau neu: `bash tools/post_bridges.sh` (bridge_arches + bridge_decks für 
 Brückenprüfung ohne Fahren (lädt je Kachel das 3×3-Umfeld, prüft auf und unter jeder Brücke ein Fahrzeug mittig in
 jeder Spur): `godot --headless --path godot -- --cam=0,0,0,-30,80 --bridgeaudit [--auditout=<json>]`;
 Durchfahrt mit Fahrphysik: `--drive=x,z --routetest=<kachel>:<weg-id>` bzw. `--routelist=<json>`. Release-Pakete:
-`tools/package_release.sh <version> <datenversion> [vorherige]` – Kartendaten in reproduzierbaren 2×2-km-Paketen;
-unveränderte verweist das Manifest auf das ältere Release, hochzuladen ist nur `dist/UPLOAD_DATA`.
+`tools/package_release.sh <version> <datenversion> [vorherige]` – Kartendaten in 2×2-km-Paketen; Pakete mit
+unverändertem Inhalt verweist das Manifest auf das ältere Release, hochzuladen ist nur `dist/UPLOAD_DATA`. Erster
+Vollbau (Vorversion ohne Manifest) mit `MAP44_FULL_DATA=1`. **Alte `data-v*`-Releases nie löschen** – neuere Manifeste
+verweisen auf ihre Pakete. Installer-Test: `tools/test_installer.sh`.
 
 ## Daten und Lizenzen
 
