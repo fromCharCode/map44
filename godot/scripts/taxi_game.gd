@@ -123,6 +123,8 @@ func _load() -> void:
 
 
 func save() -> void:
+	if _auto_n > 0:
+		return                       # Selbsttest: den Spielstand des Spielers nicht anfassen
 	var f := FileAccess.open(SAVE, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify({"money": snappedf(money, 0.01), "trips": trips, "km": snappedf(km_total, 0.01), "taxi_mode": mode_taxi,
@@ -183,6 +185,8 @@ func _process(delta: float) -> void:
 		ptype = int(OS.get_environment("DRESDEN_TAXI_FIG"))
 		var bx := player.global_transform.basis
 		_show(pp - bx.z * 6.0 + bx.x * 3.2, Color(1.0, 0.85, 0.1, 0.28), true)
+	if OS.has_environment("DRESDEN_TAXI_AUTO"):
+		_auto(pp)
 	match state:
 		FREI:
 			if not mode_taxi:
@@ -527,6 +531,10 @@ func remove_stands(tile: Tile) -> void:
 
 func _pick_input() -> int:
 	## 0..2 = Auftrag annehmen, 9 = andere Aufträge/abbrechen, -1 = nichts
+	if _auto_pick >= 0:
+		var ap := _auto_pick
+		_auto_pick = -1
+		return ap
 	var combo := Input.is_action_pressed("look_back")
 	if Input.is_action_just_pressed("taxi_1") or (combo and Input.is_action_just_pressed("gear_up")):
 		return 0
@@ -644,3 +652,51 @@ func _set_figure(t: int) -> void:
 	var ap := node.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if ap and ap.has_animation("Idle"):
 		ap.play("Idle")
+
+
+var _auto_n := 0
+var _auto_pick := -1
+var _auto_done := 0
+var _auto_state := -1
+
+
+func _auto(pp: Vector3) -> void:
+	## Selbsttest (DRESDEN_TAXI_AUTO=<Fahrten>): nimmt Aufträge an, versetzt den Wagen zum Fahrgast und zum Ziel und
+	## protokolliert jede Abrechnung. Der Spielstand wird weder gelesen noch geschrieben.
+	if _auto_n == 0:
+		_auto_n = maxi(int(OS.get_environment("DRESDEN_TAXI_AUTO")), 1)
+		money = 0.0
+		shift_money = 0.0
+		trips = 8
+		rated = 8
+		rating_sum = 36.0
+		goal_done = false
+		mode_taxi = true
+		print("TAXI AUTO: Start, Rang %s" % String(RANKS[rank()][0]))
+	if state != _auto_state:
+		if state == AUSSTEIGEN:
+			_auto_done += 1
+			print("TAXI AUTO: Fahrt %d (%s) Preis %s, Kasse %s, Schicht %s, Rang %s, Sterne %.1f, Meldung '%s'" % [_auto_done,
+				special if special != "" else String(PTYPES[ptype][0]), eur(fare), eur(money), eur(shift_money),
+				String(RANKS[rank()][0]), last_rating, _after_msg])
+		_auto_state = state
+	match state:
+		FREI:
+			if _auto_done >= _auto_n:
+				print("TAXI AUTO: fertig, %d Fahrten, Tagesziel %s" % [trips, str(goal_done)])
+				get_tree().quit()
+			elif not offers.is_empty():
+				# bevorzugt einen Sonderauftrag
+				_auto_pick = 0
+				for i in offers.size():
+					if String(offers[i].get("special", "")) != "":
+						_auto_pick = i
+		ANFAHRT:
+			if _flat_dist(pp, pickup) > 4.0:
+				player.global_position = pickup + Vector3(0, 0.8, 0)
+				player.linear_velocity = Vector3.ZERO
+		BESETZT:
+			if _flat_dist(pp, dest) > 6.0:
+				fare_km = pickup.distance_to(dest) * 1.3 / 1000.0
+				player.global_position = dest + Vector3(0, 0.8, 0)
+				player.linear_velocity = Vector3.ZERO
