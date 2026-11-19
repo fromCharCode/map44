@@ -57,8 +57,9 @@ func _rail_y(p: Vector2, dist: float) -> float:
 	## Höhe des tiefsten Gleises im Umkreis (INF, wenn keines): Mauern dürfen dort nicht über die Schwellen ragen
 	var c := Vector2i(floori(p.x / 8.0), floori(p.y / 8.0))
 	var y := INF
-	for dx in range(-1, 2):
-		for dz in range(-1, 2):
+	var rr := maxi(1, int(ceil(dist / 8.0)))
+	for dx in range(-rr, rr + 1):
+		for dz in range(-rr, rr + 1):
 			for sg in _rail_grid.get(c + Vector2i(dx, dz), []):
 				if Geometry2D.get_closest_point_to_segment(p, sg[0], sg[1]).distance_to(p) < dist:
 					y = minf(y, float(sg[2]))
@@ -180,6 +181,11 @@ func _barrier(bar: Dictionary) -> void:
 			bots = prof["bot"]
 			if float(prof["big"]) >= 5.0:
 				thick = 3.2      # Terrassenmauer: deckt die Rasterstufen der Geländekante (bis 1,5 m vor der Linie) mit ab
+				# an Bahnbrücken (Widerlager) nicht: Die breiten Kronen lagen als schräge Platten auf Deck und Straße
+				for q in pts:
+					if _rail_y(Vector2(q[0], q[1]), 25.0) != INF:
+						thick = 0.55
+						break
 	for i in pts.size() - 1:
 		var a := Vector2(pts[i][0], pts[i][1])
 		var b := Vector2(pts[i + 1][0], pts[i + 1][1])

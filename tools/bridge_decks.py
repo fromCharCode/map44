@@ -386,7 +386,9 @@ def _fill(out, geom, pl, dy):
 def deck_layout(city, raw_walk_lines, ext_roads=()):
     rails_y = []
     for r in city.get("rails", []):
-        if r.get("bridge") and len(r["pts"]) >= 2:
+        # auch Gleise OHNE Brückenkennzeichnung, die auf dem Deck liegen (on_deck prüft die Höhe): Das Deck reicht oft
+        # über das gekennzeichnete Stück hinaus, das Schotterbett endete dann als Rechteck mitten auf dem Deck
+        if not r.get("tunnel") and len(r["pts"]) >= 2:
             rails_y.append((LineString([(p[0], p[1]) for p in r["pts"]]), [p[2] for p in r["pts"]], r.get("kind")))
     roads_y = []
     for r in city.get("roads", []):
@@ -421,7 +423,8 @@ def deck_layout(city, raw_walk_lines, ext_roads=()):
         def on_deck(ln, ys):
             """Linie liegt auf diesem Deck (Höhe ±1 m über den Deckpunkten)? ys None = Höhe egal"""
             part = ln.intersection(deck2d)
-            if part.is_empty or part.length < 2.0:
+            # ab 0,5 m: Anschlussstücke am Deckende zählen mit (sonst endete der Asphalt als Rundung vor dem Deckende)
+            if part.is_empty or part.length < 0.5:
                 return None
             if ys is None:
                 return part
@@ -1605,7 +1608,11 @@ def tile_decks(name, decks):
     st["rails_add"] = len(extra)
     st["rails_cut"] = raise_rails(city, extra, nbr_roads, name)
     st["poles"] = bridge_tram_poles(city)
+    # Laternen, die spätere Schritte ergänzt haben (nicht in lamps0), bleiben erhalten
+    k0 = {(round(l[0], 1), round(l[1], 1)) for l in city.get("lamps0") or []}
+    extra_lamps = [l for l in city.get("lamps", []) if (round(l[0], 1), round(l[1], 1)) not in k0] if k0 else []
     st["lamps"] = lift_lamps(city)
+    city["lamps"] += extra_lamps
     city["bridge_meshes"] = [bm for bm in city["bridge_meshes"] if not str(bm.get("id", "")).startswith("ext:")]
     cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
     print(f"  {name}: {nw} Brückenwege mit recherchierter Breite, {nc} auf Deckbreite begrenzt, {nt} Straßen mit Gleis in der Mitte, "

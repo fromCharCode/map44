@@ -869,12 +869,21 @@ func _bridge(b: Dictionary) -> void:
 			if drive:
 				var tw: Array = tops["walk"]
 				var tr: Array = tops["road"]
-				_strip_quad(tw[0], tw[1], tw[2], tw[3], faces, prev[0] + up, prev[1] + up, cur[1] + up, cur[0] + up, Vector3.UP)
+				# Liegt direkt daneben eine zweite Fahrbahnplatte (getrennte Richtungsfahrbahnen einer Zufahrt), bleibt
+				# die Seite dorthin Fahrbahn – sonst lag ein Kappenstreifen mitten zwischen den beiden Fahrbahnen
+				var nb_l := _near_other_bridge((prev[0] + cur[0]) * 0.5, b, true)
+				var nb_r := _near_other_bridge((prev[3] + cur[3]) * 0.5, b, true)
+				if nb_l:
+					_strip_quad(tr[0], tr[1], tr[2], tr[3], faces, prev[0], prev[1], cur[1], cur[0], Vector3.UP)
+				else:
+					_strip_quad(tw[0], tw[1], tw[2], tw[3], faces, prev[0] + up, prev[1] + up, cur[1] + up, cur[0] + up, Vector3.UP)
+					_side_quad(sv, sn, si, faces, prev[1], cur[1], cur[1] + up, prev[1] + up, (prev[2] - prev[1]).normalized())
 				_strip_quad(tr[0], tr[1], tr[2], tr[3], faces, prev[1], prev[2], cur[2], cur[1], Vector3.UP)
-				_strip_quad(tw[0], tw[1], tw[2], tw[3], faces, prev[2] + up, prev[3] + up, cur[3] + up, cur[2] + up, Vector3.UP)
-				# Bordsteinkanten (zur Fahrbahn hin)
-				_side_quad(sv, sn, si, faces, prev[1], cur[1], cur[1] + up, prev[1] + up, (prev[2] - prev[1]).normalized())
-				_side_quad(sv, sn, si, faces, prev[2], cur[2], cur[2] + up, prev[2] + up, (prev[1] - prev[2]).normalized())
+				if nb_r:
+					_strip_quad(tr[0], tr[1], tr[2], tr[3], faces, prev[2], prev[3], cur[3], cur[2], Vector3.UP)
+				else:
+					_strip_quad(tw[0], tw[1], tw[2], tw[3], faces, prev[2] + up, prev[3] + up, cur[3] + up, cur[2] + up, Vector3.UP)
+					_side_quad(sv, sn, si, faces, prev[2], cur[2], cur[2] + up, prev[2] + up, (prev[1] - prev[2]).normalized())
 			else:
 				var tw2: Array = tops["ballast" if is_rail else "walk"]
 				_strip_quad(tw2[0], tw2[1], tw2[2], tw2[3], faces, prev[0], prev[3], cur[3], cur[0], Vector3.UP)
@@ -950,10 +959,10 @@ func _rail_on_road(p: Vector3) -> bool:
 	return d < float(rd.get("width", 4.0)) * 0.5 - 0.1 and absf(float(hit["py"]) - p.y) < 1.5
 
 
-func _near_other_bridge(p: Vector3, self_b: Dictionary) -> bool:
+func _near_other_bridge(p: Vector3, self_b: Dictionary, only_drive := false) -> bool:
 	## Brüstung weglassen, wo eine andere Brücke (Nachbarfahrbahn, Gehweg) direkt anschließt.
 	for ob in city["bridges"]:
-		if ob == self_b:
+		if ob == self_b or (only_drive and String(ob.get("kind", "")) != "drive"):
 			continue
 		var op: Array = ob["pts"]
 		var hw: float = maxf(float(ob["width"]), 2.5) * 0.5 + 0.8
