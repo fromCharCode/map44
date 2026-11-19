@@ -712,12 +712,23 @@ func route_to(from_node: int, target: Vector2, max_nodes: int = 3500) -> Array:
 	var best_n := from_node
 	var best_d := INF
 	while not open.is_empty() and done.size() < max_nodes:
-		var bi := 0
-		for i in open.size():
-			if float(open[i][0]) < float(open[bi][0]):
-				bi = i
-		var cur: Array = open[bi]
-		open.remove_at(bi)
+		# Binärer Heap nach f (vorher lineare Suche: bei 3500 Knoten rund 95 ms im Hauptthread)
+		var cur: Array = open[0]
+		var last: Array = open.pop_back()
+		if not open.is_empty():
+			var hi := 0
+			var hn := open.size()
+			while true:
+				var c1 := hi * 2 + 1
+				if c1 >= hn:
+					break
+				if c1 + 1 < hn and float(open[c1 + 1][0]) < float(open[c1][0]):
+					c1 += 1
+				if float(open[c1][0]) >= float(last[0]):
+					break
+				open[hi] = open[c1]
+				hi = c1
+			open[hi] = last
 		var n: int = cur[2]
 		if done.has(n) or n < 0 or n >= nodes.size():
 			continue
@@ -739,7 +750,16 @@ func route_to(from_node: int, target: Vector2, max_nodes: int = 3500) -> Array:
 				dist[m] = g
 				prev[m] = [n, int(o[0]), int(o[1])]
 				var mp: Array = nodes[m]["pos"]
-				open.append([g + Vector2(float(mp[0]), float(mp[2])).distance_to(target) / 22.0, g, m])
+				var it: Array = [g + Vector2(float(mp[0]), float(mp[2])).distance_to(target) / 22.0, g, m]
+				open.append(it)
+				var ci := open.size() - 1
+				while ci > 0:
+					var pi := (ci - 1) / 2
+					if float(open[pi][0]) <= float(it[0]):
+						break
+					open[ci] = open[pi]
+					ci = pi
+				open[ci] = it
 	var path: Array = []
 	var k := best_n
 	while prev.has(k):

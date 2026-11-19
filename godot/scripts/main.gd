@@ -428,6 +428,13 @@ func _on_tile_added(tile: Tile) -> void:
 	var tr := OS.get_cmdline_user_args().has("--attachtrace")
 	peds.add_tile(tile)
 	if tr: print("tile_added %s: peds %.1f ms" % [tile.key, (Time.get_ticks_usec() - t0) / 1000.0])
+	# Während der Fahrt die drei Blöcke (Fußgänger, Gleise, Fahrgraph: zusammen bis 65 ms) auf drei Bilder verteilen.
+	# Beim Start bleibt alles in einem Bild, weil der Aufbau gleich danach auf den Graphen zugreift.
+	var spread := traffic != null and Dressing.clock > 20.0
+	if spread:
+		await get_tree().process_frame
+		if not is_instance_valid(tile) or not world.tiles.has(tile.key):
+			return
 	t0 = Time.get_ticks_usec()
 	tree_lod.register(tile.dressing)
 	ground_cover.add_terrain(tile.terrain)
@@ -440,6 +447,10 @@ func _on_tile_added(tile: Tile) -> void:
 			stops.append(Vector2(float(m[0]), float(m[1])))
 	trams.add_rails(tile.terrain, tile.city["rails"], tile.tram_container, tile.city.get("tram_poles", []), stops)
 	if tr: print("tile_added %s: tram %.1f ms" % [tile.key, (Time.get_ticks_usec() - t0) / 1000.0])
+	if spread:
+		await get_tree().process_frame
+		if not is_instance_valid(tile) or not world.tiles.has(tile.key):
+			return
 	t0 = Time.get_ticks_usec()
 	if traffic:
 		traffic.add_graph(tile.city["graph"], tile.key)
