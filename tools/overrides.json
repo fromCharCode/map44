@@ -135,5 +135,66 @@
   "DESNATPU1000EAUr": 10,
   "DESNATPU1000Fh0f": 11
  },
- "era_by_gid_note": "Altmarkt-Randbebauung 1953–58 (Nationale Tradition, Arkaden) = Epoche 10; Kulturpalast 1969 = 11"
+ "era_by_gid_note": "Altmarkt-Randbebauung 1953–58 (Nationale Tradition, Arkaden) = Epoche 10; Kulturpalast 1969 = 11",
+ "look_by_name": {
+  "Zwinger": {
+   "roof": "#6a9f8e",
+   "wall": "#cdbb93"
+  },
+  "Japanisches Palais": {
+   "roof": "#5f9a88",
+   "wall": "#cdbf9a"
+  },
+  "Sekundogenitur": {
+   "roof": "#6a9f8e"
+  },
+  "Kunstakademie": {
+   "wall": "#c8b48e"
+  },
+  "Sächsisches Ständehaus": {
+   "roof": "#55606a",
+   "wall": "#b9a37e"
+  },
+  "Albertinum": {
+   "roof": "#5b5f63",
+   "wall": "#b09a78"
+  },
+  "Residenzschloss Dresden": {
+   "roof": "#4f545a",
+   "wall": "#cfc4ad"
+  },
+  "Hotel Taschenbergpalais Kempinski": {
+   "wall": "#f0d7a8"
+  },
+  "Coselpalais": {
+   "wall": "#f3e2b6"
+  },
+  "Landhaus": {
+   "wall": "#efe6cf"
+  },
+  "Kurländer Palais": {
+   "wall": "#f1ebdc"
+  },
+  "Dreikönigskirche": {
+   "wall": "#c7b58f"
+  },
+  "Neues Rathaus": {
+   "roof": "#8c4a3a",
+   "wall": "#b9a886"
+  },
+  "Dresden Hauptbahnhof": {
+   "roof": "#dfe3e2",
+   "wall": "#c4b08a"
+  },
+  "Yenidze": {
+   "wall": "#e9dcc0"
+  },
+  "Schauspielhaus": {
+   "wall": "#c9bd9e"
+  },
+  "Blockhaus": {
+   "wall": "#e8dcc0"
+  }
+ },
+ "look_by_name_note": "Dach-/Wandfarben historischer Bauten nach ihrem heutigen Aussehen (Kupferdächer Zwinger/Japanisches Palais usw.); wendet tools/landmark_looks.py an"
 }

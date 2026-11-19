@@ -139,6 +139,7 @@ func _photo_walls(t: Terrain) -> void:
 
 func build(t: Terrain, noise: ImageTexture) -> void:
 	terrain = t
+	_toppers(t)
 	_make_materials()
 	_photo_walls(t)
 	for lm in LIST:
@@ -297,6 +298,113 @@ func _make_materials() -> void:
 		_shared_mats = mats
 	mats = _shared_mats
 	_shared_lock.unlock()
+
+
+# Markante Dachaufbauten, die im Gebäudemodell nur als Klotz vorkommen: [art, x, z, y Unterkante, Radius]
+const TOPPERS := [
+	["zitronenpresse", 894.3, -228.5, 35.4, 8.4],      # Glaskuppel der Kunstakademie mit vergoldeter Fama
+]
+
+
+func _toppers(t: Terrain) -> void:
+	for tp in TOPPERS:
+		if not t.contains(float(tp[1]), float(tp[2])):
+			continue
+		if String(tp[0]) == "zitronenpresse":
+			_glass_dome(Vector3(float(tp[1]), float(tp[3]), float(tp[2])), float(tp[4]))
+
+
+func _glass_dome(base: Vector3, r: float) -> void:
+	## gefaltete Glaskuppel („Zitronenpresse“): Tambour, 16 Rippen mit eingezogenen Glasfeldern, Laterne, goldene Figur
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var gl := SurfaceTool.new()
+	gl.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var stone := Color(0.72, 0.66, 0.54)
+	var rib := Color(0.45, 0.50, 0.48)
+	var glass := Color(0.62, 0.78, 0.76, 0.55)
+	var segs := 16
+	var rings := 9
+	var h := r * 1.25
+	var quad := func(s: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, col: Color, want: Vector3) -> void:
+		var n := (b - a).cross(c - a)
+		var flip := n.dot(want) < 0.0
+		var pts := [a, b, c, a, c, d] if flip else [a, c, b, a, d, c]
+		var nn := (-n if flip else n).normalized()
+		for q in pts:
+			s.set_normal(nn)
+			s.set_color(col)
+			s.add_vertex(q)
+	for i in segs:
+		var a0 := TAU * float(i) / float(segs)
+		var a1 := TAU * float(i + 1) / float(segs)
+		var am := (a0 + a1) * 0.5
+		var d0 := Vector3(cos(a0), 0, sin(a0))
+		var d1 := Vector3(cos(a1), 0, sin(a1))
+		var dm := Vector3(cos(am), 0, sin(am))
+		# Tambour
+		quad.call(st, base + d0 * r, base + d1 * r, base + d1 * r + Vector3(0, 2.2, 0), base + d0 * r + Vector3(0, 2.2, 0), stone, dm)
+		for k in rings:
+			var t0 := float(k) / float(rings)
+			var t1 := float(k + 1) / float(rings)
+			var r0 := r * cos(t0 * PI * 0.5) * 0.98 + 0.9 * t0
+			var r1 := r * cos(t1 * PI * 0.5) * 0.98 + 0.9 * t1
+			var y0 := 2.2 + h * sin(t0 * PI * 0.5)
+			var y1 := 2.2 + h * sin(t1 * PI * 0.5)
+			# gefaltet: Feldmitte eingezogen
+			var m0 := base + dm * r0 * 0.90 + Vector3(0, y0, 0)
+			var m1 := base + dm * r1 * 0.90 + Vector3(0, y1, 0)
+			var p00 := base + d0 * r0 + Vector3(0, y0, 0)
+			var p01 := base + d0 * r1 + Vector3(0, y1, 0)
+			var p10 := base + d1 * r0 + Vector3(0, y0, 0)
+			var p11 := base + d1 * r1 + Vector3(0, y1, 0)
+			quad.call(gl, p00, m0, m1, p01, glass, dm + Vector3(0, 0.6, 0))
+			quad.call(gl, m0, p10, p11, m1, glass, dm + Vector3(0, 0.6, 0))
+			# Rippe entlang d0
+			var s0 := Vector3(-d0.z, 0, d0.x) * 0.14
+			quad.call(st, p00 - s0 + d0 * 0.05, p00 + s0 + d0 * 0.05, p01 + s0 + d0 * 0.05, p01 - s0 + d0 * 0.05, rib, d0 + Vector3(0, 0.5, 0))
+		# Laterne
+		var top := base + Vector3(0, 2.2 + h, 0)
+		quad.call(st, top + d0 * 0.9, top + d1 * 0.9, top + d1 * 0.9 + Vector3(0, 2.4, 0), top + d0 * 0.9 + Vector3(0, 2.4, 0), stone, dm)
+		quad.call(st, top + d0 * 1.1 + Vector3(0, 2.4, 0), top + d1 * 1.1 + Vector3(0, 2.4, 0), top + Vector3(0, 3.6, 0), top + Vector3(0, 3.6, 0), rib, dm + Vector3(0, 1, 0))
+	var mesh := st.commit()
+	var m := StandardMaterial3D.new()
+	m.vertex_color_use_as_albedo = true
+	m.roughness = 0.6
+	mesh.surface_set_material(0, m)
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.visibility_range_end = 2500.0
+	add_child(mi)
+	var gmesh := gl.commit()
+	var gm := StandardMaterial3D.new()
+	gm.vertex_color_use_as_albedo = true
+	gm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	gm.cull_mode = BaseMaterial3D.CULL_DISABLED
+	gm.roughness = 0.08
+	gm.metallic = 0.3
+	gmesh.surface_set_material(0, gm)
+	var gi := MeshInstance3D.new()
+	gi.mesh = gmesh
+	gi.visibility_range_end = 2500.0
+	gi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(gi)
+	# vergoldete Figur (Fama) auf der Laterne: schlanke Gestalt mit erhobenem Arm, vereinfacht
+	var gold := StandardMaterial3D.new()
+	gold.albedo_color = Color(0.92, 0.72, 0.22)
+	gold.metallic = 1.0
+	gold.roughness = 0.25
+	var fig_y := base.y + 2.2 + h + 3.6
+	for part in [[0.28, 2.6, Vector3(0, 1.3, 0)], [0.22, 0.5, Vector3(0, 2.85, 0)], [0.08, 1.6, Vector3(0.35, 2.9, 0)]]:
+		var cm := CapsuleMesh.new()
+		cm.radius = float(part[0])
+		cm.height = maxf(float(part[1]), float(part[0]) * 2.0)
+		var fi := MeshInstance3D.new()
+		fi.mesh = cm
+		fi.material_override = gold
+		fi.position = Vector3(base.x, fig_y, base.z) + (part[2] as Vector3)
+		fi.visibility_range_end = 1500.0
+		add_child(fi)
 
 
 static var _night_last := -1.0

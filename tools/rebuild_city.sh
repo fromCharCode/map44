@@ -22,3 +22,4 @@ python facade_eras.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo
 python stops_fix.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "STOPFIXFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python sports.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "SPORTFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
 python taxi_stands.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "TAXIFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
+python landmark_looks.py "$1" >> "../data/raw/tilelogs/rebuild_$1.log" 2>&1 || echo "LOOKFAIL $1" >> ../data/raw/tilelogs/REBUILD_FAILS.txt
