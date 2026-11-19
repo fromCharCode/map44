@@ -85,7 +85,8 @@ void fragment() {
 	float era = floor(shopinfo.w + 0.5);
 	float levels = max(UV2.x, 1.0);
 	float height = max(UV2.y, 3.0);
-	float fh = clamp(height / levels, 2.7, 4.6);
+	// Epoche 16 = barocke Galerie (Zwinger): eine einzige hohe Ordnung mit großen Rundbogenfenstern
+	float fh = clamp(height / levels, 2.7, era > 15.5 ? 12.0 : 4.6);
 	vec2 p = UV;
 	float row = floor(p.y / fh);
 	float vy = p.y - row * fh;
@@ -178,6 +179,8 @@ void fragment() {
 			pitch = mix(2.8, 3.8, h1); ww = 1.2;
 		} else if (era < 14.5) {         // Dorfkern: kleine Fenster
 			pitch = mix(2.2, 3.0, h1); ww = 0.9; wh = 1.25; wy = 0.90; shape = 0; plain_era = true;
+		} else if (era > 15.5) {         // barocke Galerie: Rundbogenfenster über fast die ganze Höhe
+			pitch = 4.4; ww = 2.3; wh = fh * 0.70 - 0.6; wy = fh * 0.10 + 0.25; shape = 2;
 		}
 	}
 	float col = floor(p.x / pitch);

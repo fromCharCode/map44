@@ -2,7 +2,7 @@
 
   python tools/landmark_looks.py [E,N ...]      (ohne Argument: alle Kacheln)
 
-Liest tools/overrides.json "look_by_name": {Gebäudename: {"roof": "#rrggbb", "wall": "#rrggbb"}} und trägt die
+Liest tools/overrides.json "look_by_name": {Gebäudename: {"roof": "#rrggbb", "wall": "#rrggbb", "era": n, "style": n, "order_h": Meter}} und trägt die
 Farben bei allen Gebäudeteilen mit genau diesem Namen ein. Wiederholbar.
 """
 import json
@@ -33,6 +33,18 @@ def main():
             if lk.get("wall") and b.get("wall") != lk["wall"]:
                 b["wall"] = lk["wall"]
                 ch += 1
+            if lk.get("era") and b.get("era") != lk["era"]:
+                b["era"] = lk["era"]
+                ch += 1
+            if lk.get("style") is not None and b.get("style") != lk["style"]:
+                b["style"] = lk["style"]
+                ch += 1
+            if lk.get("order_h"):
+                # eine Ordnung je order_h Meter Traufhöhe (barocke Galerien: ein hohes Geschoss)
+                lv = max(1, int(round(float(b.get("eave", 0.0)) / float(lk["order_h"]))))
+                if b.get("levels") != lv:
+                    b["levels"] = lv
+                    ch += 1
         if ch:
             cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")
             n += ch

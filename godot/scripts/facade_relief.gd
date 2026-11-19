@@ -391,6 +391,8 @@ static func grid(style: int, era: int, seed: float, fh: float) -> Dictionary:
 				g["pitch"] = lerpf(2.8, 3.8, h1); g["ww"] = 1.2
 			14:
 				g["pitch"] = lerpf(2.2, 3.0, h1); g["ww"] = 0.9; g["wh"] = 1.25; g["wy"] = 0.90; g["plain"] = true
+			16:
+				g["pitch"] = 4.4; g["ww"] = 2.3; g["wh"] = fh * 0.70 - 0.6; g["wy"] = fh * 0.10 + 0.25
 	return g
 
 
@@ -401,13 +403,15 @@ static func edge(out: Dictionary, cell_of: Callable, levels_f: float, height: fl
 	## (gleiches Format wie die Balkone in buildings.gd).
 	if not enabled or not (style in [0, 1, 3, 6]) or ln < 4.0 or era == 11 or era == 15:
 		return
+	if era == 16 and height < 4.5:
+		return
 	if era == 0:
 		era = 1 if style == 1 else (6 if style == 6 else (8 if style == 3 else 4))
 	var low_ok := era >= 7                      # Siedlungs-, Dorf- und Reformbauten sind oft nur zweigeschossig
-	if height < (4.8 if low_ok else 7.5):
+	if height < (4.8 if low_ok else 7.5) and era != 16:
 		return
 	var levels := maxf(levels_f, 1.0)
-	var fh := clampf(height / levels, 2.7, 4.6)
+	var fh := clampf(height / levels, 2.7, 12.0 if era == 16 else 4.6)
 	var rows := int(floor(height / fh))
 	var g := grid(style, era, seed, fh)
 	var pitch: float = g["pitch"]
@@ -446,6 +450,39 @@ static func edge(out: Dictionary, cell_of: Callable, levels_f: float, height: fl
 	var y_eave := ref + height - ch
 	var shop_all := has_shop or (style in [0, 3, 6] and _h11(seed * 3.3) > 0.88 and height > 6.0)
 	var mid := ncol / 2
+	if era == 16:
+		# Barocke Galerie (Zwinger): je Achse ein großes Rundbogenfenster mit Archivolte und Schlussstein, dazwischen
+		# Pilaster über die volle Höhe, über dem Gebälk eine Balusterbrüstung mit Vasen auf den Pilasterachsen
+		var nrows := maxi(rows, 1)
+		for r in nrows:
+			var yb := ref + float(r) * fh
+			for cc in cols:
+				var al: float = cc[0]
+				var y0g := yb + wy
+				put.call("arch", "s", al, y0g + wh - ww * 0.5, ww + 0.30, ww + 0.30)
+				put.call("key", "s", al, y0g + wh - 0.05, 1.7, 1.7)
+				put.call("box", "s", al, y0g - 0.14, ww + 0.36, 0.14, 0.14)
+				put.call("box", "s", al - ww * 0.5 - 0.12, y0g + wh - ww * 0.5 - 0.16, 0.34, 0.16, 0.10)     # Kämpfer
+				put.call("box", "s", al + ww * 0.5 + 0.12, y0g + wh - ww * 0.5 - 0.16, 0.34, 0.16, 0.10)
+				if wy > 0.7:
+					put.call("panel", "s", al, yb + 0.12, ww * 0.8, wy - 0.34)
+			var yp0 := yb + 0.05
+			var yp1 := yb + fh - (ch + 0.45 if r == nrows - 1 else 0.40)
+			for ci in ncol + 1:
+				var px: float = (float(cols[0][0]) - pitch * 0.5) if ci == 0 else (float(cols[ci - 1][0]) + pitch * 0.5)
+				if px < 0.35 or px > ln - 0.35:
+					continue
+				put.call("base", "s", px, yp0, 1.7, 1.7)
+				put.call("pil", "s", px, yp0 + 0.40, 1.7, yp1 - yp0 - 0.40, 1.5)
+				put.call("cap", "s", px, yp1, 1.7, 1.7)
+				if r == nrows - 1:
+					put.call("box", "s", px, ref + height, 0.42, 1.02, 0.42, -0.30)                          # Postament
+					put.call("box", "s", px, ref + height + 1.02, 0.30, 0.50, 0.30, -0.24)                   # Vase
+			if r < nrows - 1:
+				put.call("box", "s", ln * 0.5, yb + fh - 0.36, ln, 0.30, 0.16)                               # Gurtgesims
+		for cc in cols:
+			put.call("baluster", "s", float(cc[0]), ref + height, pitch - 0.44, 1.55, 1.0, -0.28)
+		return
 
 	# --- Erker (ersetzt die Fenster seiner Achse) ---
 	var erker_col := -1

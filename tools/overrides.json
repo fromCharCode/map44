@@ -139,7 +139,9 @@
  "look_by_name": {
   "Zwinger": {
    "roof": "#6a9f8e",
-   "wall": "#cdbb93"
+   "wall": "#cdbb93",
+   "era": 16,
+   "order_h": 9.0
   },
   "Japanisches Palais": {
    "roof": "#5f9a88",

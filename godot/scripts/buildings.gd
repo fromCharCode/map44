@@ -486,7 +486,7 @@ func _deco_edge(b: Dictionary, style: int, seed: float, p0: Vector2, p1: Vector2
 	# Epoche (tools/facade_eras.py): ab 1919 keine Gründerzeit-Balkone; Loggien/Balkone der Siedlungsbauten und
 	# der 1950er setzt der Fassaden-Baukasten (FacadeRelief)
 	var era := int(b.get("era", 0))
-	if era in [8, 9, 10, 14] and style in [0, 3, 6]:
+	if era == 16 or (era in [8, 9, 10, 14] and style in [0, 3, 6]):
 		return
 	if era == 12 and style in [0, 6]:
 		style = 3
