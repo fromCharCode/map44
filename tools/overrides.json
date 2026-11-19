@@ -125,5 +125,15 @@
    0
   ]
  ],
- "speedcams_extra_note": "Waldschlößchenbrücke land-/stadtwärts (Standortliste der Stadt 2017, Nr. 13/14); in OSM nicht als Blitzer erfasst, Lage auf der Brücke geschätzt (Brückenmitte)"
+ "speedcams_extra_note": "Waldschlößchenbrücke land-/stadtwärts (Standortliste der Stadt 2017, Nr. 13/14); in OSM nicht als Blitzer erfasst, Lage auf der Brücke geschätzt (Brückenmitte)",
+ "era_by_gid": {
+  "DESNATPU1000Gnne": 10,
+  "DESNATP19o0005Xy": 10,
+  "DESNATPU1000DTA5": 10,
+  "DESNATP1gB0001Ic": 10,
+  "DESNATP1gB0001Ig": 10,
+  "DESNATPU1000EAUr": 10,
+  "DESNATPU1000Fh0f": 11
+ },
+ "era_by_gid_note": "Altmarkt-Randbebauung 1953–58 (Nationale Tradition, Arkaden) = Epoche 10; Kulturpalast 1969 = 11"
 }

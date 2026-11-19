@@ -27,6 +27,7 @@ ERAS = ["", "barock", "klassizismus", "dresdner_schule", "gruenderzeit", "wuerfe
         "weimar", "ns_heimatschutz", "wiederaufbau_50er", "ddr_typenbau", "nach_1990", "villen", "dorfkern",
         "industrie_kommunal"]
 E_ = {n: i for i, n in enumerate(ERAS)}
+ERA_FIX = json.loads((ROOT / "tools" / "overrides.json").read_text(encoding="utf-8")).get("era_by_gid", {})
 VILLAGE = {"A11", "A21"}
 CUBE = {"A13"}
 SINGLE = {"A12", "B11"}
@@ -132,7 +133,7 @@ def tile_eras(name):
                 era = "gruenderzeit"
             if sst in VILLAGE and lv <= 2 and y < 1919:
                 era = "dorfkern"
-        b["era"] = E_[era]
+        b["era"] = int(ERA_FIX.get(bid, E_[era]))
         b["yr"] = int(year) if year else 0
         stat[era] = stat.get(era, 0) + 1
     cf.write_text(json.dumps(city, separators=(",", ":")), encoding="utf-8")

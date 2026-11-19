@@ -362,6 +362,8 @@ static func edge(out: Dictionary, cell_of: Callable, levels_f: float, height: fl
 	var h3 := _h11(seed * 7.7)
 	var h4 := _h11(seed * 5.3)                  # Rezept
 	var h5 := _h11(seed * 29.1)                 # Nebenmerkmale
+	if era == 10 and style == 1:
+		h4 = 0.2                                  # Sandsteinbauten der 1950er (Altmarkt): immer Nationale Tradition
 	var e := (p1 - p0) / ln
 	var basis := Basis(Vector3.UP.cross(-nrm).normalized(), Vector3.UP, -nrm)
 	var put := func(model: String, tone: String, along: float, y: float, sx: float, sy: float, sz := 1.0, zoff := 0.0) -> void:
