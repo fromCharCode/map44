@@ -18,6 +18,7 @@ Map44 nutzt offene Daten und freie Inhalte. Die Quellenvermerke unten gelten fü
 |---|---|---|
 | Materialtexturen (Putz, Ziegel, Pflaster, Asphalt …) | [ambientCG](https://ambientcg.com), Liste in `godot/assets/textures/LICENSES.md` | CC0 1.0 |
 | Klänge (Motoren, Reifen, Straßenbahn, Stadt …) | [freesound.org](https://freesound.org), Urheber in `godot/assets/audio/LICENSES.md` | CC0 1.0 |
+| Piktogramme der Ladenschilder | [Maki](https://github.com/mapbox/maki) und [Temaki](https://github.com/rapideditor/temaki), Liste in `tools/shop_icons/SOURCES.txt` | CC0 1.0 |
 | Schriften Noto Sans / Noto Serif | The Noto Project Authors | SIL Open Font License 1.1 (`godot/assets/fonts/OFL.txt`) |
 | Spiel-Engine | [Godot Engine](https://godotengine.org) | MIT |
 
