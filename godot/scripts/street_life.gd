@@ -48,6 +48,50 @@ const SHOP_COL := {
 	"culture": [Color(0.5, 0.08, 0.12), Color(1, 0.95, 0.85)], "hotel": [Color(0.12, 0.12, 0.2), Color(0.95, 0.82, 0.45)],
 	"other": [Color(0.3, 0.3, 0.33), Color(1, 1, 1)], "vacant": [Color(0.96, 0.96, 0.94), Color(0.75, 0.1, 0.08)],
 }
+# Tafel-Oberfläche je Kategorie (shop_board.gdshader): 0 Lack, 1 Holz, 2 Metall gebürstet, 3 Emaille, 4 Leuchtkasten
+const SHOP_FINISH := {"food": 1, "gastro": 1, "super": 4, "health": 4, "bank": 2, "service": 2, "fashion": 3,
+	"culture": 3, "hotel": 3, "home": 0, "other": 0, "vacant": 0}
+# Schildsymbol (shop_icons.png): OSM-Typ -> Symbol, sonst Stichwort im Namen, sonst Kategorie
+const SHOP_ICON_TYPE := {
+	"bakery": "bakery", "pastry": "bakery", "confectionery": "bakery", "butcher": "butcher", "deli": "butcher",
+	"cheese": "grocery", "seafood": "seafood", "cafe": "coffee", "coffee": "coffee", "tea": "coffee",
+	"restaurant": "cutlery", "biergarten": "beer", "pub": "beer", "bar": "bar", "nightclub": "bar",
+	"beverages": "alcohol", "wine": "alcohol", "alcohol": "alcohol", "ice_cream": "icecream", "chocolate": "gift",
+	"fast_food": "fastfood", "supermarket": "grocery", "convenience": "grocery", "kiosk": "shop", "organic": "grocery",
+	"health_food": "grocery", "greengrocer": "grocery", "department_store": "mall", "mall": "mall",
+	"variety_store": "shop", "chemist": "cosmetics", "drugstore": "cosmetics", "cosmetics": "cosmetics",
+	"perfumery": "cosmetics", "gift": "gift", "clothes": "clothing", "fashion": "clothing", "boutique": "clothing",
+	"second_hand": "clothing", "tailor": "clothing", "fabric": "clothing", "shoes": "shoe", "leather": "handbag",
+	"bag": "handbag", "fashion_accessories": "handbag", "jewelry": "jewelry", "watches": "jewelry",
+	"hairdresser": "hairdresser", "beauty": "beauty", "massage": "beauty", "tattoo": "tattoo",
+	"optician": "optician", "mobile_phone": "phone", "electronics": "electronics", "computer": "electronics",
+	"florist": "florist", "garden_centre": "garden", "books": "book", "stationery": "book", "newsagent": "book",
+	"library": "library", "furniture": "furniture", "interior_decoration": "furniture", "kitchen": "furniture",
+	"bed": "furniture", "houseware": "furniture", "lighting": "furniture", "hardware": "hardware",
+	"doityourself": "hardware", "paint": "paint", "car_parts": "car", "car_repair": "car", "craft": "tools",
+	"doctors": "doctor", "clinic": "doctor", "dentist": "dentist", "veterinary": "veterinary", "pet": "pet",
+	"pharmacy": "pharmacy", "bank": "bank", "bureau_de_change": "bank", "hotel": "lodging", "hostel": "lodging",
+	"guest_house": "lodging", "cinema": "cinema", "theatre": "theatre", "arts_centre": "theatre",
+	"music": "music", "musical_instrument": "music", "ticket": "ticket", "lottery": "ticket",
+	"bicycle": "bicycle", "post_office": "post", "laundry": "laundry", "dry_cleaning": "laundry",
+}
+const SHOP_ICON_WORDS := [
+	["apotheke", "pharmacy"], ["bäcker", "bakery"], ["backhaus", "bakery"], ["backstube", "bakery"],
+	["fleischerei", "butcher"], ["metzgerei", "butcher"], ["eiscafé", "icecream"], ["eiscafe", "icecream"],
+	["café", "coffee"], ["cafe", "coffee"], ["kaffee", "coffee"], ["pizza", "pizza"], ["döner", "fastfood"],
+	["kebab", "fastfood"], ["imbiss", "fastfood"], ["burger", "fastfood"], ["restaurant", "cutlery"],
+	["gaststätte", "cutlery"], ["ristorante", "cutlery"], ["trattoria", "cutlery"], ["kneipe", "beer"],
+	["brauhaus", "beer"], ["friseur", "hairdresser"], ["frisör", "hairdresser"], ["haar", "hairdresser"],
+	["kosmetik", "beauty"], ["nails", "beauty"], ["optik", "optician"], ["brillen", "optician"],
+	["blumen", "florist"], ["buch", "book"], ["sparkasse", "bank"], ["bank", "bank"], ["hotel", "lodging"],
+	["hostel", "lodging"], ["pension", "lodging"], ["fahrrad", "bicycle"], ["schmuck", "jewelry"],
+	["juwelier", "jewelry"], ["zahn", "dentist"], ["praxis", "doctor"], ["arzt", "doctor"], ["physio", "doctor"],
+	["deutsche post", "post"], ["schuh", "shoe"], ["mode", "clothing"], ["vodafone", "phone"],
+	["telekom", "phone"], ["handy", "phone"], ["wäsch", "laundry"], ["tattoo", "tattoo"],
+]
+const SHOP_ICON_CAT := {"food": "grocery", "super": "grocery", "fashion": "clothing", "service": "tools",
+	"home": "furniture", "gastro": "cutlery", "bank": "bank", "health": "doctor", "culture": "theatre",
+	"hotel": "lodging", "other": "shop"}
 const AWNING_COL := [Color(0.62, 0.1, 0.08), Color(0.14, 0.32, 0.2), Color(0.86, 0.82, 0.7), Color(0.12, 0.2, 0.4),
 	Color(0.85, 0.45, 0.1), Color(0.3, 0.3, 0.32)]
 
@@ -678,8 +722,9 @@ func _fuel(sites: Array) -> void:
 func _shops(shops: Array) -> void:
 	if shops.is_empty():
 		return
-	var boards := Surf.new()
-	var awn := Surf.new()
+	# je 125-m-Zelle eigene Meshes: die Sichtweite misst Godot zur AABB-Mitte, ein Mesh pro Kachel (2 km)
+	# wäre aus der Nähe meist schon ausgeblendet
+	var cells := {}
 	for s in shops:
 		var a := Vector3(s[1], 0, s[2])
 		var b := Vector3(s[3], 0, s[4])
@@ -687,6 +732,12 @@ func _shops(shops: Array) -> void:
 		var cat: String = s[9]
 		var name: String = s[8]
 		var mid := (a + b) * 0.5
+		var ck := _cell(mid.x, mid.z)
+		if not cells.has(ck):
+			cells[ck] = [Surf.new(), Surf.new(), IconQuads.new()]
+		var boards: Surf = cells[ck][0]
+		var awn: Surf = cells[ck][1]
+		var icons: IconQuads = cells[ck][2]
 		var gy := terrain.height_at(mid.x, mid.z)
 		var w := a.distance_to(b)
 		var t := (b - a).normalized()
@@ -701,19 +752,38 @@ func _shops(shops: Array) -> void:
 		if cat == "vacant":
 			text = "ZU VERMIETEN"
 		if text != "":
-			# Tafel nur mit Namen (leere Tafeln wirken wie Fremdkörper)
-			boards.box(center, basis, Vector3(bw, 0.52, 0.08), cols[0])
+			# Tafel nur mit Namen (leere Tafeln wirken wie Fremdkörper); COLOR.a = Oberflächenart für den Shader
+			var bc: Color = cols[0]
+			bc.a = float(SHOP_FINISH.get(cat, 0)) / 8.0
+			boards.box(center, basis, Vector3(bw, 0.52, 0.08), bc)
+			var tw := 72.0 * float(text.length()) * 0.44   # Schriftbreite in Pixeln (Noto Sans Condensed, gemessen)
+			# Symbol links vom Namen, wenn die Tafel Platz dafür hat
+			var icon := -1
+			if cat != "vacant":
+				icon = _shop_icon(String(s[11]) if s.size() > 11 else "", name, cat)
+			var ic := 0.38
+			var gap := 0.09
+			var avail := bw * 0.9
+			if icon >= 0 and avail - ic - gap >= 0.7:
+				avail -= ic + gap
+			else:
+				icon = -1
+			var px := clampf(avail / maxf(tw, 1.0), 0.0018, 0.0052)
+			var text_x := 0.0
+			if icon >= 0:
+				var x0 := -(ic + gap + tw * px) * 0.5
+				icons.add(center + basis.x * (x0 + ic * 0.5) + n * 0.047, basis, ic, icon, cols[1])
+				text_x = x0 + ic + gap + tw * px * 0.5
 			var lb := {}
 			lb.text = text
 			lb.font = _font_file()
 			lb.font_size = 72
-			var tw := 0.62 * 72.0 * float(text.length()) * 0.55
-			lb.pixel_size = clampf((bw * 0.9) / maxf(tw, 1.0), 0.0018, 0.0052)
+			lb.pixel_size = px
 			lb.modulate = cols[1]
 			lb.shaded = false
 			lb.double_sided = false
 			lb.visibility_range_end = 110.0
-			lb.transform = Transform3D(basis, center + n * 0.045)
+			lb.transform = Transform3D(basis, center + basis.x * text_x + n * 0.045)
 			_label_specs.append(lb)
 		# Markise
 		if int(s[10]) == 1:
@@ -727,8 +797,107 @@ func _shops(shops: Array) -> void:
 			awn.quad4(out - hx, out + hx, out + hx + vb, out - hx + vb, ac.darkened(0.15))
 			awn.quad4(top - hx, out - hx, out - hx + vb, top - hx + Vector3(0, -0.05, 0), ac.darkened(0.25))
 			awn.quad4(top + hx, out + hx, out + hx + vb, top + hx + Vector3(0, -0.05, 0), ac.darkened(0.25))
-	boards.commit(self, 220.0)
-	awn.commit(self, 240.0, true)
+	for ck in cells:
+		cells[ck][0].commit(self, 220.0, false, _board_mat())
+		cells[ck][1].commit(self, 240.0, true)
+		cells[ck][2].commit(self, 110.0, _icon_mat())
+
+
+static var _icon_cells := {}
+static var _icon_grid := Vector2(8, 7)
+
+
+static func _shop_icon(typ: String, name: String, cat: String) -> int:
+	if _icon_cells.is_empty():
+		var p := "res://assets/textures/street/shop_icons.json"
+		if not FileAccess.file_exists(p):
+			return -1
+		var j = JSON.parse_string(FileAccess.get_file_as_string(p))
+		if not (j is Dictionary):
+			return -1
+		var g: Array = j.get("grid", [8, 7])
+		_icon_grid = Vector2(float(g[0]), float(g[1]))
+		var cells: Dictionary = j.get("cells", {})
+		for k in cells:
+			_icon_cells[String(k)] = int(cells[k])
+	var key: String = SHOP_ICON_TYPE.get(typ, "")
+	if key == "":
+		var low := name.to_lower()
+		for kw in SHOP_ICON_WORDS:
+			if low.contains(kw[0]):
+				key = kw[1]
+				break
+	if key == "":
+		key = SHOP_ICON_CAT.get(cat, "")
+	return int(_icon_cells.get(key, -1))
+
+
+static func _board_mat() -> Material:
+	var c := _cache_get("shop_board")
+	if c != null:
+		return c
+	var sm := ShaderMaterial.new()
+	sm.shader = load("res://shaders/shop_board.gdshader")
+	return _cache_put("shop_board", sm)
+
+
+static func _icon_mat() -> Material:
+	var c := _cache_get("shop_icons")
+	if c != null:
+		return c
+	var m := StandardMaterial3D.new()
+	var p := "res://assets/textures/street/shop_icons.png"
+	if ResourceLoader.exists(p):
+		m.albedo_texture = load(p)
+	m.vertex_color_use_as_albedo = true
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	m.alpha_scissor_threshold = 0.5
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	return _cache_put("shop_icons", m)
+
+
+# Schildsymbole (Maki/Temaki, CC0): Quads mit UV in den Atlas, Farbe = Schriftfarbe
+class IconQuads:
+	var v := PackedVector3Array()
+	var n := PackedVector3Array()
+	var c := PackedColorArray()
+	var uv := PackedVector2Array()
+
+	func add(center: Vector3, basis: Basis, size: float, cell: int, col: Color) -> void:
+		var hx := basis.x * size * 0.5
+		var hy := basis.y * size * 0.5
+		var grid := StreetLife._icon_grid
+		var cxy := Vector2(cell % int(grid.x), cell / int(grid.x))
+		var u0 := cxy / grid
+		var u1 := (cxy + Vector2.ONE) / grid
+		# Ecken oben links, oben rechts, unten rechts, unten links (von vorn, +basis.z, gesehen);
+		# Godot: Vorderseite im Uhrzeigersinn
+		var p := [center - hx + hy, center + hx + hy, center + hx - hy, center - hx - hy]
+		var t := [u0, Vector2(u1.x, u0.y), u1, Vector2(u0.x, u1.y)]
+		for i in [0, 1, 2, 0, 2, 3]:
+			v.append(p[i])
+			n.append(basis.z)
+			c.append(col)
+			uv.append(t[i])
+
+	func commit(parent: Node3D, range_end: float, mat: Material) -> void:
+		if v.is_empty():
+			return
+		var arr := []
+		arr.resize(Mesh.ARRAY_MAX)
+		arr[Mesh.ARRAY_VERTEX] = v
+		arr[Mesh.ARRAY_NORMAL] = n
+		arr[Mesh.ARRAY_COLOR] = c
+		arr[Mesh.ARRAY_TEX_UV] = uv
+		var mesh := ArrayMesh.new()
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+		mesh.surface_set_material(0, mat)
+		var mi := MeshInstance3D.new()
+		mi.mesh = mesh
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visibility_range_end = range_end
+		parent.add_child(mi)
 
 
 # --- Müll ------------------------------------------------------------------------
@@ -805,10 +974,10 @@ class Surf:
 			var f: Array = faces[fi]
 			var fc: Vector3 = (corners[f[0]] + corners[f[1]] + corners[f[2]] + corners[f[3]]) * 0.25
 			var col2: Color = col * float(shade[fi])
-			col2.a = 1.0
+			col2.a = col.a
 			quad4(corners[f[0]], corners[f[1]], corners[f[2]], corners[f[3]], col2, (fc - center).normalized())
 
-	func commit(parent: Node3D, range_end: float, double_sided := false) -> void:
+	func commit(parent: Node3D, range_end: float, double_sided := false, mat: Material = null) -> void:
 		if v.is_empty():
 			return
 		var arr := []
@@ -818,11 +987,14 @@ class Surf:
 		arr[Mesh.ARRAY_COLOR] = c
 		var mesh := ArrayMesh.new()
 		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
-		var m := StandardMaterial3D.new()
-		m.vertex_color_use_as_albedo = true
-		m.roughness = 0.7
-		if double_sided:
-			m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		var m: Material = mat
+		if m == null:
+			var sm := StandardMaterial3D.new()
+			sm.vertex_color_use_as_albedo = true
+			sm.roughness = 0.7
+			if double_sided:
+				sm.cull_mode = BaseMaterial3D.CULL_DISABLED
+			m = sm
 		mesh.surface_set_material(0, m)
 		var mi := MeshInstance3D.new()
 		mi.mesh = mesh

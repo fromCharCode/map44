@@ -3,7 +3,8 @@ schilder, Café-Außenplätze und Müll. Wird von build_city.main() aufgerufen; 
 
 Alle Koordinaten lokal (Spiel: x = Ost, z = −Nord), nur Objekte innerhalb der Kachel.
 Ausgabeformat (kompakt, Listen):
-  shops:     [b_id, x0, z0, x1, z1, nx, nz, y, name, cat, awning(0/1)]   Ladenfront auf der Wand (x0,z0)-(x1,z1)
+  shops:     [b_id, x0, z0, x1, z1, nx, nz, y, name, cat, awning(0/1), typ]   Ladenfront auf der Wand (x0,z0)-(x1,z1);
+             typ = OSM-Wert (shop/amenity/tourism bzw. "craft") für das Schildsymbol
   furniture: [model, x, z, yaw, y, var]                                  yaw: Vorderseite (-Z des Modells) zur Straße
   signs:     [plate, atlas, x, z, yaw, y]                                Verkehrszeichen am Pfosten
   names:     [x, z, yaw, y, name1, name2]                                Straßennamensschild (Pfosten mit 1-2 Tafeln)
@@ -219,6 +220,15 @@ class StreetLife:
             return "hotel", False
         return None, False
 
+    @staticmethod
+    def _shop_type(t, cat):
+        if cat == "vacant":
+            return ""
+        for k in ("shop", "amenity", "tourism"):
+            if t.get(k):
+                return str(t[k])[:24]
+        return "craft" if "craft" in t else ""
+
     def _street_edge(self, pg, x, z):
         """Gebäudekante, die zur Straße zeigt und dem Punkt am nächsten liegt: (i, a, b, n, t)."""
         ring = list(pg.exterior.coords)[:-1]
@@ -304,7 +314,7 @@ class StreetLife:
             name = (t.get("name") or t.get("brand") or "").strip()[:40]
             self.out["shops"].append([b["id"], round(float(q0[0]), 2), round(float(q0[1]), 2), round(float(q1[0]), 2),
                                       round(float(q1[1]), 2), round(float(n[0]), 3), round(float(n[1]), 3), round(y, 2),
-                                      name, cat, 1 if aw else 0])
+                                      name, cat, 1 if aw else 0, self._shop_type(t, cat)])
             n_ok += 1
             # Außenplätze vor Gastronomie
             if cat == "gastro" and (t.get("outdoor_seating") == "yes" or (t.get("outdoor_seating") != "no" and aw)):
