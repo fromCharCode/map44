@@ -2246,7 +2246,141 @@ def build_passages(buildings):
                 _og = owner.rpartition("_")[0] if owner.rpartition("_")[2].isdigit() else owner
                 w = max(w, float(OVERRIDES.get("passage_min_w", {}).get(_og, 0.0)))    # z. B. Georgentor
                 out.append({"b": owner, "bs": [pid for pid, _ in crossed], "pts": pts, "w": round(w, 2), "h": round(h, 2)})
+    out += _stub_passages(load("roads"), groups, gkeys, unions, tree, box_l)
     return out
+
+
+def _stub_passages(roads, groups, gkeys, unions, tree, box_l):
+    """Hofdurchfahrten, die in OSM nicht als Weg durchs Haus erfasst sind: Ein Weg endet blind an der Fassade
+    (Zufahrt-Stummel bis zur Hauswand, Hof dahinter). Der Weg wird in seiner Richtung durch das Gebäude verlängert;
+    liegt dahinter nach 3–20 m freie Fläche (Hof), wird das eine Durchfahrt. Nur Fahrwege: Fußwege enden meist an
+    der Haustür (Plattenbau-Zugänge). Mindest-Traufhöhe 6 m, damit Garagentore keine Löcher bekommen.
+    overrides.json: "passage_stub_skip" (Weg-ids, deren Stummel falsch liegt), "passage_extra" (Durchfahrten von
+    Hand: "at" = Punkt bis 1,5 m vor der Fassade, "to" = Punkt im Haus/Hof in Fahrtrichtung, je [lon, lat])."""
+    use = defaultdict(int)
+    for el in roads:
+        if el["type"] == "way" and el.get("tags", {}).get("highway") and el.get("nodes"):
+            for nid in set(el["nodes"]):
+                use[nid] += 1
+    skip = set(OVERRIDES.get("passage_stub_skip", []))
+    out, seen = [], set()
+    for ex in OVERRIDES.get("passage_extra", []):
+        p, q = (np.array(to_local(*TO_UTM.transform(*ll)), dtype=float) for ll in (ex["at"], ex["to"]))
+        d = (q - p) / max(float(np.hypot(*(q - p))), 1e-6)
+        ps = _through(p, d, float(ex.get("w", 3.0)), groups, gkeys, unions, tree, box_l, seen)
+        if ps:
+            out.append(ps)
+    for el in roads:
+        t = el.get("tags", {})
+        cls = t.get("highway")
+        if el["type"] != "way" or cls not in DRIVE or not el.get("nodes") or t.get("covered") == "no":
+            continue
+        if t.get("tunnel") not in (None, "no") or t.get("bridge") not in (None, "no") or t.get("area") == "yes":
+            continue
+        if el["id"] in skip:
+            continue
+        c = way_coords(el)
+        if len(c) < 2:
+            continue
+        loc = [to_local(e, n) for e, n in c]
+        for end, prev, nid in ((loc[-1], loc[-2], el["nodes"][-1]), (loc[0], loc[1], el["nodes"][0])):
+            if use[nid] != 1:
+                continue
+            p = np.array(end, dtype=float)
+            d = p - np.array(prev, dtype=float)
+            ln = float(np.hypot(*d))
+            if ln < 0.5:
+                continue
+            ps = _through(p, d / ln, float(np.clip(road_width(t), 2.4, 3.5)), groups, gkeys, unions, tree, box_l, seen)
+            if ps:
+                out.append(ps)
+    return out
+
+
+def _through(p, d, w, groups, gkeys, unions, tree, box_l, seen):
+    """Durchfahrt vom Punkt p vor der Fassade in Richtung d durch ein Gebäude in den Hof, oder None."""
+    ray = LineString([p - d * 2.0, p + d * 25.0])
+    if not ray.intersects(box_l):
+        return None
+    pe = Point(p)
+    for gi in tree.query(ray):
+        uni = unions[int(gi)]
+        if uni.distance(pe) > 1.5:
+            continue
+        inter = ray.intersection(uni)
+        segs = [g for g in getattr(inter, "geoms", [inter]) if g.geom_type == "LineString" and g.length > 0.1]
+        if not segs:
+            continue
+        g = min(segs, key=lambda s: min(ray.project(Point(s.coords[0])), ray.project(Point(s.coords[-1]))))
+        a, b = np.array(g.coords[0]), np.array(g.coords[-1])
+        if np.dot(b - a, d) < 0:
+            a, b = b, a
+        if np.hypot(*(a - p)) > 2.0 or not (3.0 <= g.length <= 20.0):
+            continue
+        exit_pt = Point(b + d * 1.5)
+        if any(unions[int(j)].contains(exit_pt) for j in tree.query(exit_pt)):
+            continue                        # dahinter wieder Haus: kein Hof
+        members = groups[gkeys[int(gi)]]
+        gb = g.buffer(0.6)
+        crossed = [(pid, ev) for pg, pid, ev in members if pg.intersects(gb)]
+        if not crossed:
+            continue
+        eave = max(ev for _, ev in crossed)
+        if eave < 6.0:
+            continue
+        key = (round(a[0]), round(a[1]))
+        if key in seen:
+            return None
+        seen.add(key)
+        h = float(min(max(3.2, min(0.2 * eave, 4.5)), eave - 1.0))
+        mid = g.interpolate(0.5, normalized=True)
+        owner = next((pid for pg, pid, _ in members if pg.contains(mid)), crossed[0][0])
+        # Boden: Gerade zwischen Straße und Hof. Das DGM ist unter Gebäuden interpoliert und hat dort oft
+        # einen Buckel, der bis in den Hof reicht (Kamenzer Str. 22: +2 m, erst 15 m hinter dem Haus wieder
+        # eben) -> Band bis dorthin verlängern, wo der Hof wieder auf Straßenhöhe liegt, und absenken
+        gy = lambda q: ground(q[0] + ORIGIN_E, ORIGIN_N - q[1])
+        p0, p1 = a - d * 1.5, b + d * 1.5
+        y0, y1 = gy(p0), gy(p1)
+        if y1 > y0 + 0.5:
+            for k in range(2, 21):
+                q = b + d * float(k)
+                if any(unions[int(j)].contains(Point(q)) for j in tree.query(Point(q))):
+                    break
+                if gy(q) <= y0 + 0.5:
+                    p1, y1 = q, gy(q)
+                    break
+        _flatten_band(p0, p1, y0, y1, w * 0.5 + 0.6)
+        pts = []
+        for q in (a - d * 0.3, b + d * 0.3):
+            pts.append([round(float(q[0]), 2), round(float(q[1]), 2), round(gy(q), 2)])
+        return {"b": owner, "bs": [pid for pid, _ in crossed], "pts": pts, "w": round(w, 2), "h": round(h, 2)}
+    return None
+
+
+def _flatten_band(p0, p1, y0, y1, hw, feather=6.0):
+    """TERRAIN im Band p0–p1 (lokal, Halbbreite hw) auf die Gerade y0–y1 setzen; seitlich davon über `feather` m
+    weich auslaufend nur absenken (kein Graben im Hof, wenn der Buckel breiter ist als die Durchfahrt)."""
+    v = p1 - p0
+    ln2 = float(v @ v)
+    xs, zs = (p0[0], p1[0]), (p0[1], p1[1])
+    rad = hw + feather
+    c0 = max(int(min(xs) - rad + ORIGIN_E - MIN_E) - 1, 0)
+    c1 = min(int(max(xs) + rad + ORIGIN_E - MIN_E) + 2, SIZE)
+    r0 = max(int(MAX_N - ORIGIN_N + min(zs) - rad) - 1, 0)
+    r1 = min(int(MAX_N - ORIGIN_N + max(zs) + rad) + 2, SIZE)
+    if c0 >= c1 or r0 >= r1:
+        return
+    cc, rr = np.meshgrid(np.arange(c0, c1) + 0.5, np.arange(r0, r1) + 0.5)
+    px = cc + MIN_E - ORIGIN_E                  # Pixelmitte lokal
+    pz = rr - (MAX_N - ORIGIN_N)
+    t = np.clip(((px - p0[0]) * v[0] + (pz - p0[1]) * v[1]) / ln2, 0.0, 1.0)
+    dist = np.hypot(px - (p0[0] + t * v[0]), pz - (p0[1] + t * v[1]))
+    target = y0 + (y1 - y0) * t
+    cur = TERRAIN[r0:r1, c0:c1]
+    wgt = np.clip(1.0 - (dist - hw) / feather, 0.0, 1.0)
+    wgt = wgt * wgt * (3.0 - 2.0 * wgt)
+    low = cur + (np.minimum(target, cur) - cur) * wgt
+    cur[:] = np.where(dist <= hw, target, low)
 
 
 def build_life(buildings, roads, graph, crossings, curb=None):
@@ -3012,6 +3146,9 @@ def main() -> None:
         grass = grass + [g for v in verge for g in getattr(v, "geoms", [v]) if isinstance(g, Polygon) and g.area > 5]
         print(f"  Autobahn: {len(verge)} Verkehrsflächen im Trassenband als Grünstreifen", flush=True)
     road_img, walk_img, plaza_img = build_splats(layers, grass, forest, parking, plz, water)
+    # vor raise_curbs: Hofdurchfahrten ebnen das Gelände in ihrem Band (wird dort mit geschrieben)
+    passages = build_passages(buildings)
+    print(f"  {len(passages)} Durchfahrten/Durchgänge in Gebäuden", flush=True)
     raise_curbs(road_img, walk_img, plaza_img)
     trees, lamps, signals, crossings, stops, props = build_points(water)
     print(f"  {len(trees)} Bäume, {len(lamps)} Laternen, {len(signals)} Ampeln, {len(crossings)} Übergänge", flush=True)
@@ -3040,8 +3177,6 @@ def main() -> None:
 
     barriers, steps_out = build_walls_steps(load("roads"))
     barriers, steps_out = clip_2d(barriers), clip_2d(steps_out)
-    passages = build_passages(buildings)
-    print(f"  {len(passages)} Durchfahrten/Durchgänge in Gebäuden", flush=True)
     print(f"  {len(barriers)} Mauern/Zäune, {len(steps_out)} Treppen", flush=True)
     graph = build_graph(roads, [[s[0], s[1], *s[3:5]] for s in signals])
     print(f"  Graph: {len(graph['nodes'])} Knoten, {len(graph['edges'])} Kanten", flush=True)
