@@ -149,6 +149,7 @@ func build(k: String, noise: ImageTexture) -> void:
 
 	var life := StreetLife.new()
 	life.name = "StreetLife"
+	life.set_buildings(city.get("buildings", []))
 	_mods.append(life)
 	if World.quitting:
 		return

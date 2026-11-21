@@ -106,6 +106,14 @@ static var _mat_cache := {}
 var terrain: Terrain
 var _groups := {}          # [model, cell] -> Array[[Transform3D, Color, cell_idx]]
 var _bodies := {}          # cell -> StaticBody3D
+var _wall_tops := {}       # Gebäude-ID -> Traufhöhe (Welt-y) für die Höhe der Ladenschilder
+
+
+func set_buildings(buildings: Array) -> void:
+	for b in buildings:
+		if b.get("elev", false) or float(b.get("min_h", 0.0)) > 0.5 or not b.has("eave"):
+			continue
+		_wall_tops[str(b["id"])] = float(b.get("ref", 0.0)) + float(b["eave"])
 
 
 func build(t: Terrain, life: Dictionary) -> void:
@@ -747,11 +755,20 @@ func _shops(shops: Array) -> void:
 		var basis := Basis(t, Vector3.UP, t.cross(Vector3.UP).normalized())
 		var cols: Array = SHOP_COL.get(cat, SHOP_COL["other"])
 		var bw := clampf(w * 0.86, 1.6, 9.0)
-		var center := mid + n * 0.07 + Vector3(0, gy + 3.35, 0)
+		# Höhe nach der Traufe: Schild-Mitte höchstens 0,35 m darunter; ist die Wand zu niedrig für eine flache
+		# Tafel über der Tür, kommt ein Fahnenschild (quer zur Wand) mit Symbol
+		var wall_h := 99.0
+		if _wall_tops.has(str(s[0])):
+			wall_h = float(_wall_tops[str(s[0])]) - gy
+		var sign_y := minf(3.35, wall_h - 0.35)
+		var blade := sign_y < 2.6
+		var center := mid + n * 0.07 + Vector3(0, gy + sign_y, 0)
 		var text := name
 		if cat == "vacant":
 			text = "ZU VERMIETEN"
-		if text != "":
+		if text != "" and blade:
+			_blade_sign(boards, icons, mid, n, t, gy, wall_h, text, cat, String(s[11]) if s.size() > 11 else "", cols)
+		elif text != "":
 			# Tafel nur mit Namen (leere Tafeln wirken wie Fremdkörper); COLOR.a = Oberflächenart für den Shader
 			var bc: Color = cols[0]
 			bc.a = float(SHOP_FINISH.get(cat, 0)) / 8.0
@@ -789,8 +806,13 @@ func _shops(shops: Array) -> void:
 		if int(s[10]) == 1:
 			var ac: Color = AWNING_COL[int(absf(mid.x * 7.0 + mid.z * 3.0)) % AWNING_COL.size()]
 			var aw := clampf(w * 0.92, 1.5, 9.0)
-			var top := mid + n * 0.05 + Vector3(0, gy + 2.95, 0)
-			var out := top + n * 1.35 + Vector3(0, -0.55, 0)
+			# Oberkante knapp unter dem Schild (bzw. der Traufe), Abfall so, dass der Volant über 2 m bleibt
+			var top_y := minf(2.95, (sign_y - 0.34) if not blade else (wall_h - 0.15))
+			var drop := clampf(top_y - 2.25, 0.0, 0.55)
+			if drop < 0.15:
+				continue
+			var top := mid + n * 0.05 + Vector3(0, gy + top_y, 0)
+			var out := top + n * 1.35 + Vector3(0, -drop, 0)
 			var hx := t * (aw * 0.5)
 			awn.quad4(top - hx, top + hx, out + hx, out - hx, ac)
 			var vb := Vector3(0, -0.22, 0)
@@ -801,6 +823,43 @@ func _shops(shops: Array) -> void:
 		cells[ck][0].commit(self, 220.0, false, _board_mat())
 		cells[ck][1].commit(self, 240.0, true)
 		cells[ck][2].commit(self, 110.0, _icon_mat())
+
+
+# Fahnenschild: quadratische Tafel quer zur Wand an einem Ausleger, Symbol auf beiden Seiten
+# (ohne Symbol der Name, beidseitig)
+func _blade_sign(boards: Surf, icons: IconQuads, mid: Vector3, n: Vector3, t: Vector3, gy: float, wall_h: float,
+		text: String, cat: String, typ: String, cols: Array) -> void:
+	var size := 0.62
+	var cy := gy + clampf(wall_h - 0.5, 2.35, 2.6)
+	var c := mid + n * (0.12 + size * 0.5) + Vector3(0, cy, 0)
+	var bb := Basis(n, Vector3.UP, t)
+	var bc: Color = cols[0]
+	bc.a = float(SHOP_FINISH.get(cat, 0)) / 8.0
+	boards.box(c, bb, Vector3(size, size, 0.06), bc)
+	var arm := Color(0.18, 0.18, 0.19)
+	boards.box(mid + n * (0.06 + size * 0.5) + Vector3(0, cy + size * 0.5 + 0.03, 0), bb,
+		Vector3(size + 0.12, 0.035, 0.035), arm)
+	var icon := -1 if cat == "vacant" else _shop_icon(typ, text, cat)
+	for side in [1.0, -1.0]:
+		var z: Vector3 = t * side
+		var fb := Basis(Vector3.UP.cross(z).normalized(), Vector3.UP, z)
+		var face := c + z * 0.034
+		if icon >= 0:
+			icons.add(face, fb, size * 0.78, icon, cols[1])
+		else:
+			var lb := {}
+			lb.text = text
+			lb.font = _font_file()
+			lb.font_size = 72
+			lb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			lb.width = size * 0.9 / 0.0022
+			lb.pixel_size = 0.0022
+			lb.modulate = cols[1]
+			lb.shaded = false
+			lb.double_sided = false
+			lb.visibility_range_end = 60.0
+			lb.transform = Transform3D(fb, face + z * 0.002)
+			_label_specs.append(lb)
 
 
 static var _icon_cells := {}
