@@ -28,6 +28,7 @@ func build(t: Terrain, c: Dictionary, idx: RoadIndex) -> void:
 	index = idx
 	_materials()
 	_find_junctions()
+	_tunnel_segs()
 	for r in city["roads"]:
 		_markings(r)
 	_crossings()
@@ -166,6 +167,54 @@ func _gy(x: float, z: float) -> float:
 	return terrain.height_at(x, z) + 0.05
 
 
+var _tseg: Array = []    # Tunnelachsen der Kachel [Vector2 a, Vector2 b, halbe Breite, y_a, y_b]
+
+
+var _tgrid := {}         # Vector2i (32-m-Zelle) -> Einträge aus _tseg
+
+
+func _tunnel_segs() -> void:
+	for tn in city.get("tunnels", []):
+		var q: Array = tn["pts"]
+		var hw := float(tn["w"]) * 0.5 + 0.5
+		for i in q.size() - 1:
+			var a := Vector2(float(q[i][0]), float(q[i][1]))
+			var b := Vector2(float(q[i + 1][0]), float(q[i + 1][1]))
+			var e := [a, b, hw, float(q[i][2]), float(q[i + 1][2])]
+			_tseg.append(e)
+			for cx in range(floori((minf(a.x, b.x) - hw) / 32.0), floori((maxf(a.x, b.x) + hw) / 32.0) + 1):
+				for cz in range(floori((minf(a.y, b.y) - hw) / 32.0), floori((maxf(a.y, b.y) + hw) / 32.0) + 1):
+					var k := Vector2i(cx, cz)
+					if not _tgrid.has(k):
+						_tgrid[k] = []
+					(_tgrid[k] as Array).append(e)
+
+
+func _in_tunnel(p: Vector2, y: float, extra := 0.0, above := 3.0) -> bool:
+	## Liegt p (Fahrbahnhöhe y) in einer Tunnelröhre? Straßenstücke, die einige Meter ins Portal hineinreichen,
+	## zogen ihre Markierung sonst quer durch die Öffnung (die Röhre hat eigene Linien)
+	for s in _tgrid.get(Vector2i(floori(p.x / 32.0), floori(p.y / 32.0)), []):
+		var a: Vector2 = s[0]
+		var ab: Vector2 = (s[1] as Vector2) - a
+		var l2 := ab.length_squared()
+		if l2 < 1e-6:
+			continue
+		var t := (p - a).dot(ab) / l2
+		if t < 0.0 or t > 1.0:
+			continue
+		var ty := lerpf(float(s[3]), float(s[4]), t)
+		if p.distance_to(a + ab * t) < float(s[2]) + extra and y > ty - 3.0 and y < ty + above:
+			return true
+	return false
+
+
+func _my(x: float, z: float, y_road: float) -> float:
+	## Markierungshöhe: auf dem Gelände, außer es weicht stark vom Straßenprofil ab (Tunnelportal mit überschüttetem
+	## Kasten, Trogwand, Stützmauer neben der Fahrbahn) – dann stieg die Linie senkrecht an der Kante hoch.
+	var g := _gy(x, z)
+	return g if absf(g - y_road) < 1.5 else y_road + 0.05
+
+
 func _line_strip(bucket_map: Dictionary, pts: Array, offset: float, width: float, dash_on: float, dash_off: float, skip_junction: float, on_deck: bool = false) -> void:
 	## Streifen entlang einer Polylinie (seitlich versetzt), optional gestrichelt.
 	var samples: Array = []   # [x, z]
@@ -206,6 +255,8 @@ func _line_strip(bucket_map: Dictionary, pts: Array, offset: float, width: float
 				continue
 		if skip_junction > 0.0 and _near_junction(p0.x, p0.y, skip_junction):
 			continue
+		if not _tseg.is_empty() and _in_tunnel(p0, float(y_list[i])):
+			continue
 		var t0: Vector2 = tan_list[i]
 		var t1: Vector2 = tan_list[i + 1]
 		var n0 := Vector2(-t0.y, t0.x) * width * 0.5
@@ -217,11 +268,13 @@ func _line_strip(bucket_map: Dictionary, pts: Array, offset: float, width: float
 			_quad(b, Vector3(p0.x - n0.x, y0, p0.y - n0.y), Vector3(p1.x - n1.x, y1, p1.y - n1.y),
 				Vector3(p1.x + n1.x, y1, p1.y + n1.y), Vector3(p0.x + n0.x, y0, p0.y + n0.y))
 			continue
+		var ya := float(y_list[i])
+		var yb := float(y_list[i + 1])
 		_quad(b,
-			Vector3(p0.x - n0.x, _gy(p0.x - n0.x, p0.y - n0.y), p0.y - n0.y),
-			Vector3(p1.x - n1.x, _gy(p1.x - n1.x, p1.y - n1.y), p1.y - n1.y),
-			Vector3(p1.x + n1.x, _gy(p1.x + n1.x, p1.y + n1.y), p1.y + n1.y),
-			Vector3(p0.x + n0.x, _gy(p0.x + n0.x, p0.y + n0.y), p0.y + n0.y))
+			Vector3(p0.x - n0.x, _my(p0.x - n0.x, p0.y - n0.y, ya), p0.y - n0.y),
+			Vector3(p1.x - n1.x, _my(p1.x - n1.x, p1.y - n1.y, yb), p1.y - n1.y),
+			Vector3(p1.x + n1.x, _my(p1.x + n1.x, p1.y + n1.y, yb), p1.y + n1.y),
+			Vector3(p0.x + n0.x, _my(p0.x + n0.x, p0.y + n0.y, ya), p0.y + n0.y))
 
 
 func _markings(r: Dictionary) -> void:
@@ -1096,6 +1149,12 @@ func _curbs(curbs: Array) -> void:
 			var d := Vector3(pb.x - pa.x, 0, pb.z - pa.z)
 			var L := d.length()
 			if L < 0.02 or L > 8.0 or absf(pb.y - pa.y) > 1.5:
+				continue
+			# Bordstein aus dem Geländeraster, der an einer Mauer/Portalkante hochklettert (Steigung > 30 %), oder im
+			# Lichtraum von Portal/Röhre: weglassen
+			if absf(pb.y - pa.y) > 0.3 * L:
+				continue
+			if not _tseg.is_empty() and (_in_tunnel(Vector2(pa.x, pa.z), pa.y, 1.2, 5.3) or _in_tunnel(Vector2(pb.x, pb.z), pb.y, 1.2, 5.3)):
 				continue
 			d /= L
 			var lft := Vector3(-d.z, 0, d.x)            # Gehwegseite wie in tools/curbs.py: (−dz, dx)

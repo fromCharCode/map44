@@ -1,7 +1,7 @@
 class_name TunnelTest
 extends Node
 ## Entwickler: Durchfahrt durch einen Tunnel mit echter Fahrphysik.
-##   godot --path . -- --tunneltest=<kachel>:<index> [--tunnelgas=0.5] [--shot=<png>]
+##   godot --path . -- --tunneltest=<kachel>:<index> [--tunnelgas=0.5] [--tunnelshot=<png> [--tunnelshotat=<s>]]
 ## Setzt das Auto 25 m vor das Anfangsportal der Tunnelkette (city["tunnels"][index] der Kachel), fährt mit
 ## Pure-Pursuit-Lenkung entlang der Kette und meldet je Sekunde Ort, Höhe über Fahrbahn und Tempo; am Ende, ob
 ## die Röhre ohne Rücksetzen/Absturz durchfahren wurde.
@@ -20,6 +20,7 @@ var _tile := ""
 var _idx := 0
 var _shot := ""
 var _shot_done := false
+var _shot_t := 12.0
 var _ai_max := 0
 
 
@@ -30,6 +31,7 @@ func start(m: Node, args: Dictionary) -> void:
 	_idx = int(spec[1]) if spec.size() > 1 else 0
 	_gas = float(args.get("tunnelgas", 0.5))
 	_shot = String(args.get("tunnelshot", ""))
+	_shot_t = float(args.get("tunnelshotat", 12.0))
 
 
 func _physics_process(delta: float) -> void:
@@ -119,7 +121,7 @@ func _physics_process(delta: float) -> void:
 				n_in += 1
 		_ai_max = maxi(_ai_max, n_in)
 		print("  KI-Autos im Tunnel: %d" % n_in)
-	if _shot != "" and not _shot_done and _t > 12.0:
+	if _shot != "" and not _shot_done and _t > _shot_t:
 		_shot_done = true
 		main.get_viewport().get_texture().get_image().save_png(_shot)
 	var done := best >= pts.size() - 2 and bd < 8.0
