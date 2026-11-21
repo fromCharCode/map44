@@ -587,17 +587,20 @@ func _door(b: Dictionary, style: int, seed: float, p0: Vector2, p1: Vector2, ln:
 	var model := "door_portal" if style in [0, 1, 6] else "door_modern"
 	if StreetLife.parts(model).is_empty() or style == 5 or PhotoFacades.covers(tile_key, (p0 + p1) * 0.5):
 		return
-	# keine Tür in eine Durchfahrt stellen (stand z. B. mitten im Georgentor und versperrte es)
+	# keine Tür in eine Durchfahrt stellen (stand z. B. mitten im Georgentor und versperrte es): Fensterachsen
+	# neben der Durchfahrt bleiben möglich (Kamenzer Str. 22: Haustür direkt links neben der Hofdurchfahrt)
+	var blocked: Array = []         # [Mitte entlang der Kante (m ab p0), Halbbreite + Abstand]
 	for ps in _pass_by_b.get(str(b.get("id", "")), []):
 		var pp: Array = ps["pts"]
-		var half_w := float(ps.get("w", 4.0)) * 0.5 + 2.0
+		var half_w := float(ps.get("w", 4.0)) * 0.5 + 1.3
 		for i in pp.size() - 1:
 			var a2 := Vector2(pp[i][0], pp[i][1])
 			var b2 := Vector2(pp[i + 1][0], pp[i + 1][1])
-			if Geometry2D.segment_intersects_segment(p0, p1, a2, b2) != null:
-				return
-			if Geometry2D.get_closest_point_to_segment((p0 + p1) * 0.5, a2, b2).distance_to((p0 + p1) * 0.5) < half_w:
-				return
+			var hit = Geometry2D.segment_intersects_segment(p0, p1, a2, b2)
+			if hit != null:
+				blocked.append([p0.distance_to(hit), half_w])
+			elif Geometry2D.get_closest_point_to_segment((p0 + p1) * 0.5, a2, b2).distance_to((p0 + p1) * 0.5) < half_w + 0.7:
+				return          # Durchfahrt längs dieser Kante (Kante liegt im Tunnel)
 	var h1 := _h11(seed * 91.7)
 	var pitch := 2.6
 	match style:
@@ -628,6 +631,12 @@ func _door(b: Dictionary, style: int, seed: float, p0: Vector2, p1: Vector2, ln:
 			if t > float(iv[0]) - 1.2 / ln and t < float(iv[1]) + 1.2 / ln:
 				in_shop = true
 		if in_shop:
+			continue
+		var in_pass := false
+		for bl in blocked:
+			if absf(along - float(bl[0])) < float(bl[1]):
+				in_pass = true
+		if in_pass:
 			continue
 		var d := absf(along - ln * 0.5)
 		if d < best_d:

@@ -108,6 +108,11 @@
  "passage_min_w": {
   "DESNATPU1000EjsO": 7.0
  },
+ "passage_stub_skip": [327112610],
+ "passage_stub_skip_note": "Zufahrt-Stummel endet an der falschen Hauswand (Kamenzer Str. 22/24), Durchfahrt steht in passage_extra",
+ "passage_extra": [
+  {"at": [13.7579755, 51.0671168], "to": [13.7580537, 51.0670947], "w": 3.0, "note": "Kamenzer Str. 22, rechts neben der Haustür"}
+ ],
  "speedcams_extra": [
   [
    3301.6,
