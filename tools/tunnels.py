@@ -6,10 +6,13 @@ OSM-Wege mit tunnel=yes (Kfz-Straßen, ≥ 25 m) werden zu Ketten verbunden (Por
 linear zwischen den Höhen der anschließenden Straßen (city.json roads) an beiden Portalen. Je Stützpunkt (2 m):
   * Überdeckung = sichtbares Gelände (terrain.f32) − Fahrbahn. Liegt sie unter 4,95 m (Röhrendecke 4,8 m), ist der Abschnitt
     ein Portal-/Trogbauwerk ("box"): im Spiel ein Betonkasten mit Decke. Sonst Röhre unter dem Hang.
-  * Sichtbares Gelände bleibt unverändert (der Shader blendet es im Lichtraum der Röhre aus).
+  * Sichtbares Gelände im Lichtraum blendet der Shader aus.
   * Kollisionsraster (terrain_col.f32) im ganzen Tunnelband unter die Fahrbahnplatte abgesenkt; über der Röhre legt das
     Spiel einen Kollisionsdeckel in Geländehöhe (scripts/tunnels.gd).
-Ausgabe je Kachel: city["tunnels"] = [{"name", "w", "pts": [[x, z, y, gelände], …], "box": [0|1, …], "p0", "p1"}]
+  * Sichtbares Gelände über Kasten, Portal und flach überdeckter Röhre geglättet (_cover_terrain); kurze Kästen vor
+    steilem Hang bekommen eine Stirnwand bis ans Gelände ("h0"/"h1", _head) und werden bis dorthin überschüttet.
+Ausgabe je Kachel: city["tunnels"] = [{"name", "w", "pts": [[x, z, y, gelände], …], "box": [0|1, …], "p0", "p1",
+"h0", "h1"}]
 (Stützpunkte der Kette, die in der Kachel ± 30 m liegen; p0/p1 = Portal am Kettenanfang/-ende liegt in der Kachel).
 """
 import json
@@ -178,7 +181,7 @@ def approach(pt, inward, w):
     last = max((i for i, q in enumerate(out) if q[3] > 0 or q[4] > 0), default=-1)
     if last < 3:
         return None
-    return out[:last + 2]
+    return out[:last + 2], max(w, float(road["width"]))
 
 
 def chains():
@@ -300,6 +303,7 @@ def build():
         for i in range(1, n - 1):
             if box[i] == 0 and box[i - 1] == 1 and i + 4 < n and any(box[i + 1:i + 5]):
                 box[i] = 1
+        hp = (_head(pts, box), _head(pts[::-1], box[::-1]))
         name = tags.get("name") or tags.get("tunnel:name") or ""
         if name in SKIP:
             print(f"  (übersprungen laut overrides.json: {name})")
@@ -313,13 +317,16 @@ def build():
         # Anfahrtströge: senkrechte Betonwände statt der gezackten Geländeböschung neben der Rampe
         for pt, inw in ((a, (cs[1][0] - cs[0][0], cs[1][1] - cs[0][1])), (b, (cs[-2][0] - cs[-1][0], cs[-2][1] - cs[-1][1]))):
             il = math.hypot(*inw) or 1.0
-            tr = approach(pt, (inw[0] / il, inw[1] / il), w)
-            if tr:
+            res = approach(pt, (inw[0] / il, inw[1] / il), w)
+            if res:
+                # Trogbreite = breitere von Röhre und anschließender Straße (sonst standen die Trogwände in der
+                # Fahrbahn einer breiteren Zufahrt, z. B. Waldschlößchen Ost: Röhre 7 m, Straße 9,5 m)
+                tr, tw = res
                 for tn in {tile_of(q[0], q[1]) for q in tr}:
                     x0_, z0_ = tile_origin(tn)
                     sub = [q for q in tr if x0_ - MARGIN <= q[0] < x0_ + 2000 + MARGIN and z0_ - MARGIN <= q[1] < z0_ + 2000 + MARGIN]
                     if len(sub) >= 2:
-                        troughs.setdefault(tn, []).append({"w": round(w, 2), "pts": sub})
+                        troughs.setdefault(tn, []).append({"w": round(tw, 2), "pts": sub})
         print(f"  Tunnel {name or tags.get('highway')}: {L:.0f} m, y {ya:.1f} → {yb:.1f}, Breite {w:.1f} m, "
               f"Bauwerk {sum(box) * STEP:.0f} m / Röhre {(n - sum(box)) * STEP:.0f} m")
         tiles = {tile_of(p[0], p[1]) for p in pts}
@@ -331,7 +338,8 @@ def build():
                 continue
             i0, i1 = keep[0], keep[-1]
             sub = {"name": name, "w": round(w, 2), "pts": pts[i0:i1 + 1], "box": box[i0:i1 + 1],
-                   "p0": i0 == 0 and tile_of(*pts[0][:2]) == tn, "p1": i1 == n - 1 and tile_of(*pts[-1][:2]) == tn}
+                   "p0": i0 == 0 and tile_of(*pts[0][:2]) == tn, "p1": i1 == n - 1 and tile_of(*pts[-1][:2]) == tn,
+                   "h0": hp[0], "h1": hp[1]}
             per_tile.setdefault(tn, []).append(sub)
         # Verkehrsgraph: Kante Portalknoten -> Portalknoten, damit die KI durch den Tunnel fährt
         na, nb = node_near(*a), node_near(*b)
@@ -360,6 +368,7 @@ def build():
                     "width": round(w, 2), "len": round(L - ea - eb, 1), "bridge": False, "pts": epts, "name": name,
                     "wid": 0, "pl": 0.0, "pr": 0.0, "prio": True, "rb": False, "bus": False, "tunnel": True}
             graph_add.setdefault(ta, []).append((edge, None if tb == ta else ndb))
+    _unify_heads(per_tile)
     print(f"{n_ch} Tunnelketten, Kacheln: {len(per_tile)}, Verkehrskanten: {sum(len(v) for v in graph_add.values())}, "
           f"Anfahrtströge: {sum(len(v) for v in troughs.values())}")
     if dry:
@@ -393,6 +402,7 @@ def build():
         if tl:
             _clear_objects(d, city, tl)
             _terrain(d, tl)
+            _cover_terrain(d, tl)
             # Bäume im Grundriss der Portalbauwerke entfernen (stünden sonst auf/in der Decke)
             x0, z0 = tile_origin(d.name)
             boxes = []
@@ -454,6 +464,161 @@ def _trough_terrain(d, trs):
                 ch += int(low.sum())
         f.write_bytes(arr.astype("<f4").tobytes())
         print(f"  {d.name}: Trog-Gelände {fn}: {ch} Punkte abgesenkt")
+
+
+HEAD_MAX = 4.0       # Stirnwand höchstens so viel über die Kastendecke hinaus
+HEAD_RUN = 30.0      # längere Kästen am Portal: Decke liegt frei (offene Bauweise), keine hohe Stirnwand
+
+
+def _head(pts, box):
+    """Höhe der Stirnwand über der Fahrbahn am Kettenanfang: Endet der Kasten am Portal nach kurzer Strecke an
+    einem steilen Hang (Überdeckung der Röhre dahinter höher als die Kastendecke), reicht die Portalwand bis an das
+    Gelände dahinter, und der Kasten wird bis dorthin überschüttet (sonst Mulde/Geländekante über dem Portal)."""
+    k = 0
+    while k < len(box) and box[k]:
+        k += 1
+    deck = CLEAR + ROOF
+    if k >= len(box) or k * STEP > HEAD_RUN:
+        return round(deck, 2)
+    cov = sorted(p[3] - p[2] for p in pts[max(k, 1):max(k, 1) + 4])
+    return round(min(max(cov[len(cov) // 2], deck), deck + HEAD_MAX), 2)
+
+
+def _unify_heads(per_tile, rad=25.0):
+    """Nebeneinanderliegende Portale (Zwillingsröhren, Rampen mit gemeinsamem Bauwerk) bekommen dieselbe
+    Stirnwandhöhe (die größte der Gruppe) – sonst stehen unterschiedlich hohe Portalrahmen nebeneinander."""
+    ends = []
+    for subs in per_tile.values():
+        for t in subs:
+            for key, i in (("p0", 0), ("p1", -1)):
+                if t.get(key):
+                    ends.append((t, "h" + key[1], t["pts"][i][0], t["pts"][i][1]))
+    grp = list(range(len(ends)))
+
+    def root(i):
+        while grp[i] != i:
+            grp[i] = grp[grp[i]]
+            i = grp[i]
+        return i
+    for i in range(len(ends)):
+        for j in range(i + 1, len(ends)):
+            if math.hypot(ends[i][2] - ends[j][2], ends[i][3] - ends[j][3]) < rad:
+                grp[root(i)] = root(j)
+    top = {}
+    for i, e in enumerate(ends):
+        top[root(i)] = max(top.get(root(i), 0.0), e[0][e[1]])
+    for i, e in enumerate(ends):
+        e[0][e[1]] = top[root(i)]
+
+
+COVER_BLEND = 3.0    # Übergang der geglätteten Decke ins umliegende Gelände (m)
+
+
+def _cover_terrain(d, tl):
+    """Sichtbares Gelände über den Tunnelbauwerken glätten (terrain.f32): Das Geländemodell (2-m-Raster) hat über
+    Portal und Kasten Buckel und Mulden – über dem flachen Kastendach ragten Geländebuckel heraus, an flach
+    überdeckten Röhrenstücken schnitt der Shader Löcher bis in die Röhre. Im Band (Außenwand + 0,5 m):
+      * Kasten ("box"): Gelände knapp unter die Dachoberkante -> das Betondach ist die glatte Decke, höheres
+        Gelände daneben läuft über COVER_BLEND m auf die Dachkante herunter,
+      * Röhre: Gelände mindestens auf Dachoberkante (keine Löcher in der Überdeckung),
+      * kurzer Kasten am Portal vor steilem Hang (Stirnwand "h0"/"h1" höher als die Decke, _head): Kasten bis auf
+        Stirnwandhöhe überschüttet, Gelände daneben läuft in beide Richtungen auf diese Höhe.
+    Wiederholbar (nur Klemmungen)."""
+    f = d / "terrain.f32"
+    if not f.exists():
+        return
+    x0, z0 = tile_origin(d.name)
+    arr = np.frombuffer(f.read_bytes(), dtype="<f4").reshape(2000, 2000).copy()
+    orig = arr.copy()
+    # Schutzflächen: Lichtraum aller Röhren (Rand eines Kastens darf nicht in die Nachbarröhre) und die Zufahrt vor
+    # jedem Portal (versetzte Zwillingsportale: Band/Rand der einen Röhre stünde sonst vor der Öffnung der anderen)
+    corr = np.zeros((2000, 2000), dtype=bool)
+    appr = np.zeros((2000, 2000), dtype=bool)
+    for t in tl:
+        pts = t["pts"]
+        band = t["w"] * 0.5 + WALL + 0.5
+        segs = [(pts[i], pts[i + 1], -0.6, 0.6, corr) for i in range(len(pts) - 1)]
+        if t.get("p0"):
+            segs.append((pts[0], pts[1], -10.0, None, appr))
+        if t.get("p1"):
+            segs.append((pts[-1], pts[-2], -10.0, None, appr))
+        for a, b, lo_, hi_, mk in segs:
+            dx, dz = b[0] - a[0], b[1] - a[1]
+            L = math.hypot(dx, dz)
+            if L < 0.05:
+                continue
+            hi_ = 0.0 if hi_ is None else L + hi_
+            r = band + 1.0
+            c0 = int(max(min(a[0], b[0]) - x0 - r - 11, 0)); c1 = int(min(max(a[0], b[0]) - x0 + r + 12, 2000))
+            r0 = int(max(min(a[1], b[1]) - z0 - r - 11, 0)); r1 = int(min(max(a[1], b[1]) - z0 + r + 12, 2000))
+            if c1 <= c0 or r1 <= r0:
+                continue
+            gx, gz = np.meshgrid(np.arange(c0, c1) + 0.5 + x0, np.arange(r0, r1) + 0.5 + z0)
+            s_ = ((gx - a[0]) * dx + (gz - a[1]) * dz) / L
+            v_ = np.abs((gx - a[0]) * -dz + (gz - a[1]) * dx) / L
+            mk[r0:r1, c0:c1] |= (s_ >= lo_) & (s_ <= hi_) & (v_ <= (band if mk is corr else r))
+    for pass_box in (False, True):                       # erst Röhren anheben, dann Kästen (Kasten gewinnt)
+        for t in tl:
+            pts, box = t["pts"], t["box"]
+            band = t["w"] * 0.5 + WALL + 0.5
+            e = band + COVER_BLEND
+            n = len(pts)
+            lev = [CLEAR + ROOF] * n                     # Geländehöhe über der Fahrbahn im Band
+            for key, idx in (("p0", range(n)), ("p1", range(n - 1, -1, -1))):
+                hh = float(t.get("h" + key[1], 0.0))
+                if t.get(key) and hh > CLEAR + ROOF + 0.05:
+                    for j in idx:
+                        if not box[j]:
+                            break
+                        lev[j] = hh
+            for i in range(n - 1):
+                if bool(box[i] or box[i + 1]) != pass_box:
+                    continue
+                a, b = pts[i], pts[i + 1]
+                dx, dz = b[0] - a[0], b[1] - a[1]
+                L = math.hypot(dx, dz)
+                if L < 0.05:
+                    continue
+                tx, tz = dx / L, dz / L
+                nx, nz = -tz, tx
+                # 2 m vor der Portalwand enden: der Abhang zum Trog bleibt im Band (Shader blendet ihn aus),
+                # sonst stünde er als Geländewand vor der Öffnung
+                s_lo = 2.0 if (i == 0 and t.get("p0")) else -0.6
+                s_hi = L - 2.0 if (i == n - 2 and t.get("p1")) else L + 0.6
+                c0 = int(max(min(a[0], b[0]) - x0 - e - 2, 0)); c1 = int(min(max(a[0], b[0]) - x0 + e + 3, 2000))
+                r0 = int(max(min(a[1], b[1]) - z0 - e - 2, 0)); r1 = int(min(max(a[1], b[1]) - z0 + e + 3, 2000))
+                if c1 <= c0 or r1 <= r0:
+                    continue
+                gx, gz = np.meshgrid(np.arange(c0, c1) + 0.5 + x0, np.arange(r0, r1) + 0.5 + z0)
+                s_ = (gx - a[0]) * tx + (gz - a[1]) * tz
+                v_ = np.abs((gx - a[0]) * nx + (gz - a[1]) * nz)
+                inb = (s_ >= s_lo) & (s_ <= s_hi) & (v_ <= band)
+                deck = a[2] + (b[2] - a[2]) * np.clip(s_ / L, 0.0, 1.0) + CLEAR + ROOF
+                sub = arr[r0:r1, c0:c1]
+                ap = appr[r0:r1, c0:c1]
+                inb &= ~ap
+                rim = (s_ >= s_lo) & (s_ <= s_hi) & (v_ > band) & (v_ <= e) & ~ap & ~corr[r0:r1, c0:c1]
+                if not pass_box:
+                    up = inb & (sub < deck)
+                    sub[up] = deck[up]
+                    continue
+                head = max(lev[i], lev[i + 1]) - (CLEAR + ROOF)
+                k = np.clip((v_ - band) / COVER_BLEND, 0.0, 1.0)
+                if head > 0.05:
+                    # überschütteter Kasten: Band auf Stirnwandhöhe, Rand in beide Richtungen angeglichen
+                    top = deck + head
+                    sub[inb] = top[inb]
+                    tgt = top + (sub - top) * k
+                    sub[rim] = tgt[rim]
+                    continue
+                sub[inb] = deck[inb] - 0.05
+                # daneben: höheres Gelände läuft auf die Dachkante herunter
+                tgt = deck + (sub - deck) * k
+                lo = rim & (sub > tgt)
+                sub[lo] = tgt[lo]
+    ch = int((np.abs(arr - orig) > 0.01).sum())
+    f.write_bytes(arr.astype("<f4").tobytes())
+    print(f"  {d.name}: Gelände über Tunnelbauwerken: {ch} Punkte geglättet")
 
 
 def _clear_objects(d, city, tl):
@@ -591,9 +756,11 @@ def _terrain(d, tl):
             dx, dz = bx - ax, bz - az
             L = math.hypot(dx, dz) or 1.0
             nx, nz = -dz / L, dx / L
-            ux, uz = dx / L * 0.6, dz / L * 0.6           # leicht überlappend
-            quad = [(ax - ux + nx * hw, az - uz + nz * hw), (bx + ux + nx * hw, bz + uz + nz * hw),
-                    (bx + ux - nx * hw, bz + uz - nz * hw), (ax - ux - nx * hw, az - uz - nz * hw)]
+            ux, uz = dx / L * 0.6, dz / L * 0.6           # leicht überlappend, aber nicht über das Portal hinaus
+            ua = 0.0 if (i == 0 and t.get("p0")) else 1.0   # (sonst 1,2 m tiefer Schlitz vor der Öffnung)
+            ub = 0.0 if (i == len(pts) - 2 and t.get("p1")) else 1.0
+            quad = [(ax - ux * ua + nx * hw, az - uz * ua + nz * hw), (bx + ux * ub + nx * hw, bz + uz * ub + nz * hw),
+                    (bx + ux * ub - nx * hw, bz + uz * ub - nz * hw), (ax - ux * ua - nx * hw, az - uz * ua - nz * hw)]
             c0 = int(max(min(q[0] for q in quad) - 1, 0)); c1 = int(min(max(q[0] for q in quad) + 2, 2001))
             r0 = int(max(min(q[1] for q in quad) - 1, 0)); r1 = int(min(max(q[1] for q in quad) + 2, 2001))
             if c1 <= c0 or r1 <= r0:
